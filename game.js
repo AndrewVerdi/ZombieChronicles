@@ -526,6 +526,144 @@ function drawTruckRoof(){
   ctx.fillStyle='#211a14';ctx.fillRect(b0,by-6,b1-b0,9);ctx.fillStyle='#ffc53d';
   for(let x=-w;x<w;x+=60){const[p]=P(x,zB),[p2]=P(x+30,zB);ctx.fillRect(p,by-5,p2-p,4);}
 }
+
+/* ---------- STAGE 3: THE EMPTY TOWN (highway road). The squad walks down main street with the survivors, no wall ---------- */
+const S3_WAVES=3,WALK=105,CIV_N=10,BLD_X=640,BLD_SEG=430;
+let seed3=29;const rnd3=()=>(seed3=(seed3*16807)%2147483647)/2147483647;
+const hash3=n=>{let x=Math.sin(n*127.1+311.7)*43758.5453;return x-Math.floor(x);};
+const SKY3=PX(1000,170,(x,W,H)=>{
+  const g=x.createLinearGradient(0,0,0,H);g.addColorStop(0,'#0e0818');g.addColorStop(.55,'#2a1238');g.addColorStop(1,'#4a1f4c');x.fillStyle=g;x.fillRect(0,0,W,H);
+  for(let i=0;i<120;i++){x.fillStyle='rgba(240,230,255,'+(.2+rnd3()*.5)+')';x.fillRect((rnd3()*W)|0,(rnd3()*H*.6)|0,1,1);}
+  const mx=W*.78,my=H*.26,mg=x.createRadialGradient(mx,my,0,mx,my,70);mg.addColorStop(0,'rgba(190,245,60,.45)');mg.addColorStop(1,'rgba(190,245,60,0)');x.fillStyle=mg;x.fillRect(mx-70,my-70,140,140);
+  x.fillStyle='#c8f25a';x.beginPath();x.arc(mx,my,17,0,6.283);x.fill();x.fillStyle='rgba(120,160,40,.55)';for(const[a,b,r]of[[-5,-4,4],[6,3,3],[-2,7,2.5],[4,-8,2]]){x.beginPath();x.arc(mx+a,my+b,r,0,6.283);x.fill();}
+  for(let i=0;i<26;i++){x.fillStyle=i%2?'rgba(58,26,72,.75)':'rgba(84,36,96,.6)';const cx=rnd3()*W,cy=14+rnd3()*70,r=12+rnd3()*26;for(let k=0;k<5;k++){x.beginPath();x.ellipse(cx+(rnd3()-.5)*r*2.2,cy+(rnd3()-.5)*r*.4,r*(.6+rnd3()*.6),r*(.18+rnd3()*.15),0,0,6.283);x.fill();}}
+  // treeline + church + water tower at the end of the street
+  x.fillStyle='#160b1e';let px=0;while(px<W){const h=8+rnd3()*16;x.beginPath();x.moveTo(px,H);x.lineTo(px+5,H-h);x.lineTo(px+10,H);x.fill();px+=6+rnd3()*4;}
+  const cx=W/2;x.fillStyle='#1d0f26';x.fillRect(cx-16,H-34,32,34);x.beginPath();x.moveTo(cx-19,H-34);x.lineTo(cx,H-50);x.lineTo(cx+19,H-34);x.fill();
+  x.fillRect(cx-5,H-70,10,22);x.beginPath();x.moveTo(cx-6,H-70);x.lineTo(cx,H-98);x.lineTo(cx+6,H-70);x.fill();x.fillRect(cx-.5,H-106,1,8);x.fillRect(cx-3,H-103,6,1);
+  x.fillStyle='rgba(255,170,80,.75)';x.fillRect(cx-2,H-62,4,6);x.fillRect(cx-6,H-26,3,5);x.fillRect(cx+3,H-26,3,5);
+  const wx=W*.64;x.fillStyle='#1d0f26';x.fillRect(wx-1,H-46,2,46);x.fillRect(wx+13,H-46,2,46);x.fillRect(wx-4,H-66,22,20);x.beginPath();x.moveTo(wx-5,H-66);x.lineTo(wx+7,H-74);x.lineTo(wx+19,H-66);x.fill();
+});
+const GROUND3=PX(448,224,(x,W,H)=>{
+  const wx=v=>(v+1400)/2800*W;
+  x.fillStyle='#1f1622';x.fillRect(0,0,W,H);
+  x.fillStyle='#5a4d58';x.fillRect(wx(-640),0,wx(-470)-wx(-640),H);x.fillRect(wx(470),0,wx(640)-wx(470),H);
+  x.fillStyle='rgba(30,22,34,.6)';for(let y=0;y<H;y+=14){x.fillRect(wx(-640),y,wx(-470)-wx(-640),1);x.fillRect(wx(470),y,wx(640)-wx(470),1);}
+  x.fillStyle='#3a2f3c';x.fillRect(wx(-470),0,wx(470)-wx(-470),H);
+  for(let i=0;i<6000;i++){const v=rnd3(),px=wx(-470+rnd3()*940);x.fillStyle=v<.5?'rgba(20,14,24,.5)':v<.85?'rgba(80,66,84,.4)':'rgba(70,96,40,.35)';x.fillRect(px|0,(rnd3()*H)|0,1+(rnd3()*2|0),1);}
+  for(let i=0;i<1600;i++){const s=rnd3()<.5?-1:1,px=wx(s*(480+rnd3()*150));x.fillStyle=rnd3()<.5?'rgba(40,32,44,.5)':'rgba(120,104,112,.35)';x.fillRect(px|0,(rnd3()*H)|0,1,1);}
+  x.fillStyle='#8a7c80';x.fillRect(wx(-474),0,3,H);x.fillRect(wx(471),0,3,H);
+  for(let y=0;y<H;y+=28){x.fillStyle='rgba(255,197,61,.8)';x.fillRect(wx(-6),y,2,14);x.fillRect(wx(3),y,2,14);}
+  for(let i=0;i<14;i++){let px=wx(-440+rnd3()*880),py=rnd3()*H;x.fillStyle='rgba(16,10,20,.85)';for(let s=0;s<20;s++){x.fillRect(px|0,py|0,1,2);px+=rnd3()*3-1.5;py+=1.5+rnd3()*1.5;}}
+  for(let i=0;i<7;i++){const px=wx(-420+rnd3()*840),py=rnd3()*(H-14),w=8+rnd3()*12;x.fillStyle='rgba(26,18,32,.9)';x.fillRect(px,py,w,4+rnd3()*3);x.fillStyle=rnd3()<.5?'rgba(255,120,60,.5)':'rgba(182,242,58,.35)';x.fillRect(px+2,py+1,w*.5,1);}
+  for(let i=0;i<3;i++){const px=wx(-300+rnd3()*600),py=rnd3()*(H-10);x.fillStyle='#2a2230';x.fillRect(px,py,7,4);x.fillStyle='#4a3e4c';x.fillRect(px+1,py+1,5,1);}
+  for(let i=0;i<30;i++){const s=rnd3()<.5?-1:1,px=wx(s*(600+rnd3()*700)),py=rnd3()*H;x.fillStyle='rgba(16,10,20,.9)';x.fillRect(px|0,py|0,3,2);}
+});
+/* storefront facades, pixel-drawn: [ground floor shop, upper floors] */
+const FACADES=(()=>{const out=[];
+  const BR=[['#6b2f2a','#4e211e'],['#5b3a5e','#40273f'],['#7a4a2c','#573420'],['#4a3b52','#33283a'],['#6a5442','#4b3b2e']];
+  const AW=[['#ff6a2b','#2a1630'],['#b6f23a','#2a1630'],['#8a3fb5','#1d1024'],['#ffc53d','#3a1b18']];
+  for(let n=0;n<10;n++){const fl=2+(n%3===0?1:0),W=120,H=36+fl*30;
+    out.push(PX(W,H,(x)=>{const[b1,b2]=BR[n%BR.length];x.fillStyle=b1;x.fillRect(0,0,W,H);
+      for(let y=0;y<H;y+=3)for(let xx=(y/3)%2?0:3;xx<W;xx+=6){x.fillStyle=b2;x.fillRect(xx,y,5,1);x.fillRect(xx+5,y,1,3);}
+      x.fillStyle='#1a1020';x.fillRect(0,0,W,4);x.fillStyle=b2;x.fillRect(0,4,W,2);
+      for(let f=0;f<fl;f++){const y=8+f*30;for(let w=0;w<4;w++){const wx=8+w*28;x.fillStyle='#120a18';x.fillRect(wx,y,16,20);x.fillStyle=b2;x.fillRect(wx-2,y-2,20,2);x.fillRect(wx-1,y+20,18,2);
+        const r=hash3(n*31+f*7+w);if(r<.18){x.fillStyle='#ffb35c';x.fillRect(wx+2,y+2,12,16);x.fillStyle='#ff7a2e';x.fillRect(wx+2,y+12,12,6);}
+        else if(r<.5){x.fillStyle='#2b1a33';x.beginPath();x.moveTo(wx,y);x.lineTo(wx+9,y+8);x.lineTo(wx+5,y+20);x.lineTo(wx,y+20);x.fill();}
+        x.fillStyle='rgba(255,255,255,.08)';x.fillRect(wx+1,y+1,3,8);}}
+      const gy=H-34;const[a1,a2]=AW[n%AW.length];
+      x.fillStyle='#1c1220';x.fillRect(4,gy-12,W-8,10);x.fillStyle=a1;x.fillRect(6,gy-11,W-12,1);x.fillRect(6,gy-4,W-12,1);
+      for(let i=0;i<5;i++){x.fillStyle=hash3(n+i)<.5?a1:'#3a2a44';x.fillRect(14+i*20,gy-9,12,3);}
+      for(let i=0;i<W-8;i+=8){x.fillStyle=i/8%2?a1:a2;x.beginPath();x.moveTo(4+i,gy-1);x.lineTo(12+i,gy-1);x.lineTo(10+i,gy+5);x.lineTo(2+i,gy+5);x.fill();}
+      x.fillStyle='#0d0812';x.fillRect(6,gy+7,46,24);x.fillRect(70,gy+7,44,24);x.fillStyle='#22142a';x.fillRect(54,gy+5,14,29);x.fillStyle='#ffc53d';x.fillRect(65,gy+19,1,2);
+      x.fillStyle='rgba(182,242,58,.18)';x.fillRect(8,gy+9,42,4);x.fillStyle='rgba(255,140,60,.2)';x.fillRect(72,gy+24,40,6);
+      for(const sx of[6,70]){x.fillStyle='#3a2a44';for(let k=0;k<5;k++){const px=sx+hash3(n*9+k+sx)*40,py=gy+7+hash3(n*5+k*3+sx)*20;x.beginPath();x.moveTo(px,py);x.lineTo(px+4,py+5);x.lineTo(px-2,py+7);x.fill();}}
+      x.fillStyle='#2a1c30';x.fillRect(0,H-3,W,3);x.fillStyle='rgba(0,0,0,.35)';x.fillRect(0,0,3,H);x.fillRect(W-3,0,3,H);
+    }));}
+  return out;})();
+function drawFacadeSide(side){
+  const X=side*BLD_X,tw=FACADES[0].width;
+  const iA=Math.floor((20+roadScroll)/BLD_SEG),iB=Math.floor((3200+roadScroll)/BLD_SEG);
+  ctx.imageSmoothingEnabled=false;
+  for(let i=iB;i>=iA;i--){const h=hash3(i*3+(side>0?1:0)),tex=FACADES[Math.floor(h*FACADES.length)],gap=hash3(i*5+side)<.12;
+    if(gap)continue;const z0=Math.max(8,i*BLD_SEG-roadScroll),z1=i*BLD_SEG-roadScroll+BLD_SEG-6;if(z1<=z0)continue;
+    const Hw=tex.height*3.1,x0=WW/2+X*F/(z0+D),x1=WW/2+X*F/(z1+D),fade=Math.min(1,Math.max(0,(3200-z1)/900));
+    const lo=Math.floor(Math.min(x0,x1)),hi=Math.ceil(Math.max(x0,x1));ctx.globalAlpha=fade;
+    for(let c=Math.max(-2,lo);c<=Math.min(WW+2,hi);c+=1){const dx=c+.5-WW/2;if(dx*side<=0)continue;const z=F*X/dx-D;if(z<z0||z>z1)continue;
+      let u=(z-z0)/(z1-z0);if(side<0)u=1-u;const k=F/(z+D),yb=HOR+CAMH*k,yt=HOR+(CAMH-Hw)*k;
+      ctx.drawImage(tex,Math.min(tw-1,Math.floor(u*tw)),0,1,tex.height,c,yt,1.6,yb-yt);}
+    // dark end wall where the block starts
+    const k0=F/(z0+D);ctx.fillStyle='rgba(10,6,14,.9)';const ye=HOR+CAMH*k0,yt0=HOR+(CAMH-Hw)*k0;ctx.fillRect(x0-(side>0?0:2),yt0,2,ye-yt0);
+  }
+  ctx.globalAlpha=1;
+}
+function drawTownWorld(dt){
+  if(state==='play')roadScroll+=dt*WALK;
+  ctx.save();ctx.imageSmoothingEnabled=false;
+  {const sh=HOR+4,sw=Math.max(WW+20,sh*SKY3.width/SKY3.height);ctx.drawImage(SKY3,WW/2-sw/2,HOR+4-sh,sw,sh);}
+  const TILE=560,Wt=GROUND3.width,Ht=GROUND3.height;
+  for(let y=WH+30;y>HOR+1;y-=1){const k=(y-HOR)/CAMH,z=F/k-D;if(z>4200)break;let v=((z-roadScroll)/TILE)%1;if(v<0)v+=1;const hw=1400*k;ctx.drawImage(GROUND3,0,Math.floor(v*Ht),Wt,1,WW/2-hw,y,hw*2,1.25);}
+  drawFacadeSide(-1);drawFacadeSide(1);
+  ctx.restore();
+  // horizon fog swallowing the far street
+  const hz=ctx.createLinearGradient(0,HOR-30,0,HOR+40);hz.addColorStop(0,'rgba(74,31,76,0)');hz.addColorStop(.45,'rgba(60,40,70,.75)');hz.addColorStop(1,'rgba(60,40,70,0)');ctx.fillStyle=hz;ctx.fillRect(-20,HOR-30,WW+40,70);
+  // streetlights, wrecks, low green fog: far to near
+  const items=[],span=3600,zmin=30;const wrap=(base,sp)=>{const out=[];for(let i=0;i*sp<span;i++)out.push(zmin+((((base-roadScroll)%span)+span)%span+i*sp)%span);return out;};
+  wrap(60,620).forEach((z,i)=>items.push([z,'lamp',i%2?1:-1,i]));
+  wrap(330,1500).forEach((z,i)=>items.push([z,'car',i%2?-1:1,i]));
+  items.sort((a,b)=>b[0]-a[0]);
+  for(const it of items){const[z,kind,s,i]=it;if(z>3300)continue;ctx.globalAlpha=Math.min(1,(3300-z)/900);
+    if(kind==='lamp'){const[x0,y0,k]=P(s*520,z),[,yt]=P(s*520,z,330),[xa,ya]=P(s*440,z,330);
+      ctx.fillStyle='#24182a';ctx.fillRect(x0-3.5*k,yt,Math.max(1,7*k),y0-yt);ctx.strokeStyle='#24182a';ctx.lineWidth=Math.max(1,5*k);ctx.beginPath();ctx.moveTo(x0,yt);ctx.lineTo(xa,ya);ctx.stroke();
+      const ph=(t*.9+hash3(i+Math.floor((roadScroll+z)/620))*5)%3,dead=hash3(Math.floor((roadScroll+z)/620)*7)<.3,on=!dead&&!(ph>2.6&&ph<2.68)&&!(ph>2.75&&ph<2.8);
+      if(on){ctx.globalCompositeOperation='lighter';const gr=ctx.createRadialGradient(xa,ya+3*k,0,xa,ya+3*k,46*k);gr.addColorStop(0,'rgba(255,170,90,.85)');gr.addColorStop(1,'rgba(255,170,90,0)');ctx.fillStyle=gr;ctx.fillRect(xa-46*k,ya-43*k,92*k,92*k);
+        const gy=P(s*440,z)[1],pg=ctx.createRadialGradient(xa,gy,0,xa,gy,110*k);pg.addColorStop(0,'rgba(255,150,80,.2)');pg.addColorStop(1,'rgba(255,150,80,0)');ctx.fillStyle=pg;ctx.fillRect(xa-110*k,gy-36*k,220*k,72*k);ctx.globalCompositeOperation='source-over';}
+      else{ctx.fillStyle='#3a2a30';ctx.fillRect(xa-4*k,ya,8*k,3*k);}}
+    else if(kind==='car'&&envReady&&EM.pcar){const fr=EM.pcar[0],r=ER[fr],[x0,y0,k]=P(s*400,z),sc=k*230/r[2];ctx.save();ctx.translate(x0,y0-r[3]*sc*.38);if(s>0)ctx.scale(-1,1);eDrawA(fr,0,0,sc);ctx.restore();}}
+  ctx.globalAlpha=1;
+  for(let i=0;i<7;i++){const z=((i*480-roadScroll*1.0)%3360+3360)%3360+60,[sx,sy,k]=P(Math.sin(i*2.1+t*.15)*300,z),w=900*k,h=60*k;ctx.globalAlpha=Math.min(.32,(3400-z)/3000);
+    const fg=ctx.createRadialGradient(sx,sy,0,sx,sy,w*.5);fg.addColorStop(0,'rgba(182,242,58,.55)');fg.addColorStop(1,'rgba(182,242,58,0)');ctx.fillStyle=fg;ctx.save();ctx.translate(sx,sy);ctx.scale(1,h/w);ctx.translate(-sx,-sy);ctx.fillRect(sx-w/2,sy-w/2,w,w);ctx.restore();}
+  ctx.globalAlpha=1;
+}
+/* survivors walking with the squad */
+function mkCivs(){const out=[];for(let i=0;i<CIV_N;i++){const side=i%2?1:-1,j=Math.floor(i/2);out.push({side,ox:side*(350+(j%2)*70+hash3(i)*30),oz:30+j*30+hash3(i+9)*16,x:0,z:0,hp:30,max:30,kind:i%6,ph:hash3(i*3)*4,flash:0,scare:0});}
+  for(const c of out){c.x=c.ox;c.z=c.oz;}return out;}
+function civsAlive(){return R.civ?R.civ.filter(c=>c.hp>0):[];}
+function civUpdate(dt){for(const c of R.civ){if(c.hp<=0)continue;c.ph+=dt;if(c.flash>0)c.flash-=dt;if(c.scare>0)c.scare-=dt;
+  const tx=c.ox+Math.sin(c.ph*.7)*14,tz=c.oz+Math.sin(c.ph*.45+1)*8;c.x+=(tx-c.x)*Math.min(1,dt*2);c.z+=(tz-c.z)*Math.min(1,dt*2);}}
+function hurtCiv(c,d){if(c.hp<=0||R.over)return;if(HORDE())d*=1.15;c.hp-=d;c.flash=.12;c.scare=1.2;burst(c.x,c.z,36,'#ff4d5e',5);
+  if(c.hp>0)return;burst(c.x,c.z,30,'#c9a46a',22);SND.heroDown();R.civLost=(R.civLost||0)+1;story('survivor_lost',{left:civsAlive().length});
+  const[px,py]=P(c.x,c.z,CHAR_H+10);R.tx.push({x:px,y:py,txt:'SURVIVOR LOST',col:'#ff4d5e',t:1.6});
+  for(const e of R.en)if(e.ctgt===c){e.ctgt=null;e.atk=undefined;}
+  if(!civsAlive().length){R.over=true;SND.gameOver();story('survivors_lost',{});legacyEnd('survivors_lost');persist();R.lostAll=1;state='over';ui();}
+  else{R.banner={txt:civsAlive().length+' SURVIVORS LEFT',t:2,col:'#ff4d5e'};}}
+function drawCiv(c){if(!envReady)return;const[sx,sy,k]=P(c.x,c.z);
+  ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(sx,sy,20*k,6*k,0,0,6.283);ctx.fill();
+  const set=c.scare>0?EM.scared[c.kind]:EM.ref[c.kind],fr=set[Math.floor(c.ph*(c.scare>0?8:5))%set.length],r=ER[fr];if(!r)return;
+  const sc=k*CHAR_H*.86/r[3];eDrawA(fr,sx,sy,sc,c.side>0);
+  if(c.flash>0){ctx.globalCompositeOperation='lighter';eDrawA(fr,sx,sy,sc,c.side>0,.6);ctx.globalCompositeOperation='source-over';}
+  if(c.hp<c.max){const bw=30*k,by=sy-CHAR_H*k-4;ctx.fillStyle='#000b';ctx.fillRect(sx-bw/2,by,bw,4);ctx.fillStyle='#ff9a5a';ctx.fillRect(sx-bw/2,by,bw*Math.max(0,c.hp/c.max),4);}}
+function startStage3(){
+  for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
+  roadScroll=0;
+  R={stage:3,wave:1,wall:0,wallMax:1,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[],civ:mkCivs(),civLost:0,
+    queue:[],kills:0,spawnLeft:0,spawnTotal:0,spawnT:2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
+  startWave3(1);
+}
+function startWave3(w){
+  R.wave=w;SND.alarm();const H2=HORDE()?2:1;const q=[];
+  if(w===3){for(let i=0;i<200;i++)q.push('grunt');}
+  else if(w===2){for(let i=0;i<15*H2;i++){q.push('runner');q.push('armored');}for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}}
+  else{for(let i=0;i<6*H2;i++)q.push('runner');for(let i=0;i<14*H2;i++)q.push('grunt');for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}}
+  R.queue=q;R.kills=0;R.spawnLeft=q.length;R.spawnTotal=q.length;R.spawnT=w===3?3.2:2.4;
+  R.banner=w===3?{txt:'THE HORDE IS COMING',t:3,col:'#ff4d5e'}:{txt:(w===1?'STAGE 3: THE EMPTY TOWN · ':'')+'WAVE '+w,t:2.4,col:'#ffc53d'};
+  state='play';ui();
+}
+function spawnPace3(){if(R.wave===3){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.22,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(R.wave===1?1.7:1.3)*(.65+Math.random()*.7);}
+function waveClear3(){SND.waveClear();healAll(.3);save.gold+=8+R.wave*4;persist();
+  if(R.wave>=S3_WAVES){const n=civsAlive().length;save.cleared=Math.max(save.cleared||0,3);save.townSaved=n;legacyStage(3);story('survivors_saved',{saved:n,of:CIV_N});legacyEnd('cleared_stage_3');save.gold+=60;persist();state='win3';ui();return;}
+  state='inter';ui();}
+
 function hitJail(d){const j=R.jail;if(!j)return;j.hp-=d;j.flash=.08;if(j.hp<=0)freeJail();}
 function freeJail(){
   const j=R.jail;R.jail=null;SND.freed();SND.explosion(.35);
@@ -829,14 +967,14 @@ function update(dt){
   if(R.cine)cineUpdate(dt);
   hud.style.opacity=R.cine?'0':'1';
   if(R.spawnLeft>0&&!R.cinePending&&!R.cine){R.spawnT-=dt;if(R.spawnT<=0){
-    R.spawnT=Math.max(.3,1.85-R.wave*.12)*(.7+Math.random()*.6);
-    const pack=Math.min(R.spawnLeft,1+Math.floor(Math.random()*(R.wave/3)));
+    R.spawnT=R.stage===3?spawnPace3():Math.max(.3,1.85-R.wave*.12)*(.7+Math.random()*.6);
+    const pack=R.stage===3?Math.min(R.spawnLeft,R.wave===3?1+Math.floor(Math.random()*2.6):1):Math.min(R.spawnLeft,1+Math.floor(Math.random()*(R.wave/3)));
     for(let k=0;k<pack;k++){const idx=R.spawnTotal-R.spawnLeft;
     if(R.crateAt.includes(idx))spawnCrate();
     if(idx===R.jeepAt){R.cinePending=true;R.jeepAt=-1;break;}
     if(R.bossPending&&idx>=Math.floor(R.spawnTotal*.6)){spawnBoss();R.bossPending=false;}
     spawnEnemy();if(R.stage===2&&HORDE())spawnEnemy();R.spawnLeft--;}}}
-  squadStep(dt);jeepUpdate(dt);SND.engineSet(!!(R.jeep&&R.jeep.phase==='drive'));SND.ambient(dt,R.en);SND.intensity=(R.wall/R.wallMax<.4||R.en.length>14)?1:0;
+  squadStep(dt);if(R.stage===3){civUpdate(dt);for(const d of R.dead)d.z-=WALK*dt;}jeepUpdate(dt);SND.engineSet(!!(R.jeep&&R.jeep.phase==='drive'));SND.ambient(dt,R.en);SND.intensity=R.stage===3?((R.en.length>14||civsAlive().length<5)?1:0):(R.wall/R.wallMax<.4||R.en.length>14)?1:0;
   const sq=squad();
   if(!R.cine)for(const s of sq){anim(s.id);R.cd[s.id]=(R.cd[s.id]||0)-dt;if(R.cd[s.id]<=0)R.cd[s.id]=s.id==='cmd'?fireCmd(s):fireHero(s);}
   for(const e of R.en){
@@ -844,10 +982,11 @@ function update(dt){
     if(e.flash>0)e.flash-=dt;if(e.hitT>0)e.hitT-=dt;
     if(e.burn>0){e.burn-=dt;e.hp-=e.bdps*dt;if(Math.random()<dt*14)R.pa.push({x:e.x+(Math.random()-.5)*e.r,z:e.z,h:e.r*(1+Math.random()*1.2),vx:0,vz:0,vh:90,t:.45,col:Math.random()<.5?'#ffb347':'#ff5a1f',ng:1});if(e.hp<=0){e.dead=1;kill(e,e.burnOwn||'blaze');continue;}}
     if(e.atk!==undefined){
-      if(!e.tgt&&R.wall<=0)e.atk=undefined;
+      if(e.ctgt){const c=e.ctgt;if(c.hp<=0||Math.hypot(c.x-e.x,c.z+12-e.z)>e.r+60){e.atk=undefined;e.ctgt=null;}}
+      else if(!e.tgt&&R.wall<=0)e.atk=undefined;
       else if(e.tgt){const m=squad().find(q=>q.id===e.tgt);if(!m||Math.hypot(m.x-e.x,m.z+16-e.z)>e.r+60){e.atk=undefined;e.tgt=null;}}
       if(e.atk!==undefined){e.atk+=dt;const c=Math.floor(e.atk/1.1),ph=e.atk-c*1.1;
-        if(ph>=.34&&e.hitC!==c){e.hitC=c;if(e.tgt)hurtMember(e.tgt,e.dmg);else{hitWall(e.dmg,e.x);burst(e.x,WALL_Z,e.r,'#c9a46a',6);}}
+        if(ph>=.34&&e.hitC!==c){e.hitC=c;if(e.ctgt)hurtCiv(e.ctgt,e.dmg);else if(e.tgt)hurtMember(e.tgt,e.dmg);else{hitWall(e.dmg,e.x);burst(e.x,WALL_Z,e.r,'#c9a46a',6);}}
         continue;}
     }
     if(e.type==='boss'){if(e.flash>0)e.flash-=dt;bossAI(e,dt);continue;}
@@ -870,10 +1009,11 @@ function update(dt){
     if(R.wall>0&&!e.onRoof){
       if(e.z<=WALL_Z+WALL_STOP+e.r*.5){e.z=WALL_Z+WALL_STOP+e.r*.5;e.atk=0;e.tgt=null;e.hitC=-1;}
     }else if(e.z<WALL_Z+260){
-      let best=null,bd=1e9;for(const m of squad()){const d=Math.hypot(m.x-e.x,m.z-e.z);if(d<bd){bd=d;best=m;}}
-      if(best){const tx=best.x+(e.x<best.x?-1:1)*e.r*.4,tz=best.z+16,dx=tx-e.x,dz=tz-e.z,dd=Math.hypot(dx,dz);
+      let best=null,bd=1e9,civ=false;for(const m of squad()){const d=Math.hypot(m.x-e.x,m.z-e.z);if(d<bd){bd=d;best=m;civ=false;}}
+      if(R.civ)for(const c of R.civ){if(c.hp<=0)continue;const d=Math.hypot(c.x-e.x,c.z-e.z)*.9;if(d<bd){bd=d;best=c;civ=true;}}
+      if(best){const tx=best.x+(e.x<best.x?-1:1)*e.r*.4,tz=best.z+(civ?12:16),dx=tx-e.x,dz=tz-e.z,dd=Math.hypot(dx,dz);
         e.z+=sp*dt;e.x-=Math.sin(t*1.6+e.wob)*18*dt;
-        if(dd>e.r+22){e.x+=dx/dd*sp*1.1*dt;e.z+=dz/dd*sp*1.1*dt;}else{e.atk=0;e.tgt=best.id;e.hitC=-1;}}
+        if(dd>e.r+22){e.x+=dx/dd*sp*1.1*dt;e.z+=dz/dd*sp*1.1*dt;}else{e.atk=0;e.hitC=-1;if(civ){e.ctgt=best;e.tgt=null;}else{e.tgt=best.id;e.ctgt=null;}}}
     }
   }
   for(const c of R.cr)c.z-=95*dt;
@@ -915,7 +1055,7 @@ function update(dt){
   R.en=R.en.filter(e=>!e.dead);R.bu=R.bu.filter(b=>b.life>0);R.cr=R.cr.filter(c=>!c.dead);
   R.pa=R.pa.filter(p=>p.t>0);R.bolts=R.bolts.filter(b=>b.life>0);R.tx=R.tx.filter(x=>x.t>0);
   if(R.over)return;
-  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);save.gold+=60;persist();startFork(()=>{legacyEnd('cleared_stage_2');persist();state='win2';ui();},true);return;}}
+  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);save.gold+=60;persist();startFork(()=>{persist();state='win2';ui();},true);return;}}
   R.scatter=R.wall<=0?R.scatter+dt:Math.max(0,R.scatter-dt*.4);
   if(R.mflash)for(const k in R.mflash)R.mflash[k]-=dt;
   if(R.spawnLeft<=0&&!R.bossPending&&R.en.length===0&&R.cr.length===0&&!R.cinePending&&!R.cine&&!(R.proj&&R.proj.length)&&!(R.jeep&&R.jeep.phase!=='lost'&&R.jeep.phase!=='freed'))waveClear();
@@ -926,6 +1066,7 @@ function update(dt){
 function drawWorld(){
   const dt=Math.max(0,Math.min(.1,t-SKY.lastT));SKY.lastT=t;
   ctx.fillStyle='#1a1026';ctx.fillRect(-20,-20,WW+40,WH+40);
+  if(R&&R.stage===3){drawTownWorld(dt);return;}
   if(R&&R.stage===2){}else if(plateReady){const pw=WW*1.06,ph=pw*PLATE.height/PLATE.width,px=WW/2-pw/2-camX*.04,py=HOR-PLATE_HZ*ph;ctx.drawImage(PLATE,px,py,pw,ph);}
   if(!(R&&R.stage===2)){const yb=HOR+CAMH*K(WALL_Z),gr=ctx.createLinearGradient(0,yb-6,0,WH);gr.addColorStop(0,'rgba(18,10,26,.55)');gr.addColorStop(1,'rgba(18,10,26,.35)');ctx.fillStyle=gr;ctx.fillRect(-20,yb-6,WW+40,WH-yb+30);}
   if(R&&R.stage===2){drawStage2World(dt);if(plate2Ready){const pw=WW*1.06,ph=pw*PLATE2.height/PLATE2.width,py=HOR-PLATE_HZ*ph;
@@ -945,6 +1086,7 @@ function heroFrame(id){
   }
   const lean=R?Math.min(3,Math.abs(R.vx)/170):0;
   if(lean>=1){const arr=R.vx<0?M.leanL:M.leanR;return arr[Math.min(arr.length-1,Math.floor(lean)-1)];}
+  if(R&&R.stage===3&&M.run)return M.run[Math.floor(st.t*9)%M.run.length];
   const n=M.idle.length,ki=Math.floor(st.t*6)%Math.max(1,2*n-2);return M.idle[ki<n?ki:2*n-2-ki];
 }
 const EBODY=120,EH=2.6;
@@ -1059,16 +1201,16 @@ function draw(){
   if(R.proj)for(const p of R.proj){items.push([p.z,6,p]);items.push([p.z1+.2,7,p]);}
   if(R.bfx)for(const f of R.bfx)items.push([f.z-.1,8,f]);
   items.sort((a,b)=>b[0]-a[0]);
-  const near=items.filter(i=>(i[1]===0||i[1]===4)&&i[0]<WALL_Z);
-  for(const[z,ty,o]of items){if((ty===0||ty===4)&&z<WALL_Z)continue;if(ty===0)drawEnemy(o);else if(ty===1)drawCrate(o);else if(ty===3)drawJail(o);else if(ty===4)drawCorpse(o);else if(ty===5)drawJeep(o);else if(ty===6)drawProj(o);else if(ty===7)drawWarn(o);else if(ty===8)drawBfx(o);else drawBullet(o);}
-  if(R.stage!==2)drawWall();else if(!plate2Ready)drawTruckRoof();
+  const NZ=R.stage===3?1e9:WALL_Z,near=items.filter(i=>(i[1]===0||i[1]===4)&&i[0]<NZ);
+  for(const[z,ty,o]of items){if((ty===0||ty===4)&&z<NZ)continue;if(ty===0)drawEnemy(o);else if(ty===1)drawCrate(o);else if(ty===3)drawJail(o);else if(ty===4)drawCorpse(o);else if(ty===5)drawJeep(o);else if(ty===6)drawProj(o);else if(ty===7)drawWarn(o);else if(ty===8)drawBfx(o);else drawBullet(o);}
+  if(R.stage===1||!R.stage)drawWall();else if(R.stage===2&&!plate2Ready)drawTruckRoof();
   for(const bo of R.bolts){if(bo.tr){const[a,b]=P(...bo.pts[0]),[c,d]=P(...bo.pts[1]);ctx.strokeStyle=bo.col;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(c,d);ctx.stroke();continue;}ctx.strokeStyle=bo.col;ctx.lineWidth=2.5;ctx.shadowColor='#6aa8ff';ctx.shadowBlur=10;ctx.beginPath();
     bo.pts.forEach((p,i)=>{const[x,y]=P(p[0],p[1],p[2]);if(!i)ctx.moveTo(x,y);else{const[qx,qy]=P(bo.pts[i-1][0],bo.pts[i-1][1],bo.pts[i-1][2]);ctx.lineTo((x+qx)/2+(Math.random()-.5)*18,(y+qy)/2+(Math.random()-.5)*18);ctx.lineTo(x,y);}});ctx.stroke();ctx.shadowBlur=0;}
   for(const p of R.pa){const[x,y,k]=P(p.x,p.z,p.h);ctx.globalAlpha=Math.max(0,p.t*2);ctx.fillStyle=p.col;const s=Math.max(1.5,5*k);ctx.fillRect(x-s/2,y-s/2,s,s);}ctx.globalAlpha=1;
-  const lay=near.map(i=>[i[0],i[1],i[2]]);for(const s of squad())lay.push([s.z+16,9,s]);
+  const lay=near.map(i=>[i[0],i[1],i[2]]);for(const s of squad())lay.push([s.z+16,9,s]);if(R.civ)for(const c of R.civ)if(c.hp>0)lay.push([c.z+12,10,c]);
   lay.sort((a,b)=>b[0]-a[0]);
   if(R.slashes)for(const s of R.slashes)drawSlash(s);
-  for(const[,ty,o]of lay){if(ty===9)drawSquadMember(o);else if(ty===0)drawEnemy(o);else drawCorpse(o);}
+  for(const[,ty,o]of lay){if(ty===10)drawCiv(o);else if(ty===9)drawSquadMember(o);else if(ty===0)drawEnemy(o);else drawCorpse(o);}
   for(const x of R.tx){ctx.globalAlpha=Math.min(1,x.t);ctx.fillStyle=x.col;ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText(x.txt,x.x,x.y);}ctx.globalAlpha=1;
   drawBossBar();
   if(R.cine)drawCine();
@@ -1106,8 +1248,8 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
-function hudUpdate(){hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
-function waveClear(){if(R.stage===2)return;SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healAll(.3);save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
+function hudUpdate(){if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
+function waveClear(){if(R.stage===2)return;if(R.stage===3){waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healAll(.3);save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
 function freshSave(){legacy();const LG=save.legacy;save={legacy:LG,mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
@@ -1160,7 +1302,7 @@ function ui(){
   ov.classList.toggle('title-mode',state==='menu'||state==='splash');
   if(state==='splash'){ov.innerHTML=`<div class="mscreen" data-act="begin"><div class="mbg"></div><div class="mglow"></div><div class="mgrain"></div><div class="mvig" style="background:rgba(11,8,14,.55)"></div>
     <div class="msplash"><div class="mlogo"></div><button class="mbtn play" data-act="begin">Tap to start</button><div class="mrot"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 14a9 9 0 0 0 6 6M21 10a9 9 0 0 0-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Rotate your phone sideways for widescreen</div><div class="mbest">Sound on for the full experience</div></div></div>`;return;}
-  ov.classList.toggle('paper',['inter','roster','load','options','credits','bye','over','win','win2','stat','modes','gallery'].includes(state));
+  ov.classList.toggle('paper',['inter','roster','load','options','credits','bye','over','win','win2','stat','modes','gallery','win3'].includes(state));
   if(state==='menu'){
     ov.innerHTML=`<div class="mscreen"><div class="mbg"></div><div class="mglow"></div>
       <div class="mgas g1"></div><div class="mgas g2"></div><div class="mgrain"></div><div class="mvig"></div>
@@ -1190,6 +1332,7 @@ function ui(){
     <div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 1 · The Outskirts<small>${STAGE_WAVES} waves</small></div><div class="lv">${save.best>=STAGE_WAVES?'CLEARED':save.best?'BEST: WAVE '+save.best:'NEW'}</div></div>
     <div class="btns"><button class="btn" data-act="retry">Play Stage 1 (skip intro)</button></div>
     ${(save.cleared||0)>=1?`<div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 2 · The Escape<small>Convoy chase</small></div><div class="lv">${(save.cleared||0)>=2?'CLEARED':'OPEN'}</div></div><div class="btns"><button class="btn" data-act="stage2">Play Stage 2</button></div>`:`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">Stage 2 · The Escape<small>Clear Stage 1 to unlock</small></div><div class="lv">LOCKED</div></div>`}
+    ${(save.cleared||0)>=2&&save.route==='highway'?`<div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 3 · The Empty Town<small>3 waves on foot</small></div><div class="lv">${(save.cleared||0)>=3?'CLEARED':'OPEN'}</div></div><div class="btns"><button class="btn" data-act="stage3">Play Stage 3</button></div>`:(save.cleared||0)>=2&&save.route?`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">Stage 3 · The Forest<small>Coming soon</small></div><div class="lv">SOON</div></div>`:`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">Stage 3<small>Clear Stage 2 to unlock</small></div><div class="lv">LOCKED</div></div>`}
     <button class="btn ghost" data-act="menu">Back</button>`;
   }else if(state==='options'){
     html=`<h2>Options</h2><div class="stripe"></div>
@@ -1233,8 +1376,8 @@ function ui(){
   }else if(state==='over'){
     html=`<h1 class="title" style="color:var(--blood)">OVERRUN</h1><div class="stripe"></div>
     <div class="row"><span class="sub">Reached wave</span><span class="big">${R.wave}</span></div>
-    <p class="sub">The Commander fell and the Outskirts are lost. Try again to retake the wall from wave 1.</p>
-    <div class="btns"><button class="btn" data-act="${R&&R.stage===2?'stage2':'retry'}">Try again</button><button class="btn ghost" data-act="menu">Menu</button></div>`;
+    <p class="sub">${R&&R.lostAll?'Every survivor is gone. The town swallowed them one by one.':R&&R.stage===3?'The Commander fell in the empty town.':'The Commander fell and the Outskirts are lost. Try again to retake the wall from wave 1.'}</p>
+    <div class="btns"><button class="btn" data-act="${R&&R.stage===3?'stage3':R&&R.stage===2?'stage2':'retry'}">Try again</button><button class="btn ghost" data-act="menu">Menu</button></div>`;
   }else if(state==='win'){
     const alive=['cmd',...save.active].length,lost=save.fallen.length;
     html=`<h1 class="title">STAGE 1<span>COMPLETE</span></h1><div class="stripe"></div>
@@ -1251,8 +1394,17 @@ function ui(){
     <div class="row"><span class="sub">Squad standing</span><span class="big">${['cmd',...save.active].length}</span></div>
     <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
     ${save.route?`<p class="sub">${save.route==='highway'?'The convoy stayed on the highway together.':(save.heroes.bruno?'The convoy took the backroad into the forest. Bruno went on alone toward Cyber Future.':'The convoy took the backroad into the forest.')}</p>`:''}
-    <p class="sub">Stage 3 is coming soon.</p>
-    <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="stage2">Play Stage 2 again</button></div>`;
+    ${save.route==='highway'?'':'<p class="sub">The forest is coming soon.</p>'}
+    <div class="btns">${save.route==='highway'?'<button class="btn" data-act="stage3">Continue to Stage 3</button>':''}<button class="btn ${save.route==='highway'?'ghost':''}" data-act="menu">Back to title</button><button class="btn ghost" data-act="stage2">Play Stage 2 again</button></div>`;
+  }else if(state==='win3'){
+    const alive=['cmd',...save.active].length;
+    html=`<h1 class="title">STAGE 3<span>COMPLETE</span></h1><div class="stripe"></div>
+    <p class="sub">The horde broke against the squad in the middle of main street. ${(save.townSaved||0)===CIV_N?'Every survivor made it through the town.':(save.townSaved||0)+' of '+CIV_N+' survivors made it through the town.'}</p>
+    <div class="row"><span class="sub">Survivors saved</span><span class="big">${(save.townSaved||0)} / ${CIV_N}</span></div>
+    <div class="row"><span class="sub">Squad standing</span><span class="big">${alive}</span></div>
+    <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
+    <p class="sub">Stage 4 is coming soon.</p>
+    <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="stage3">Play Stage 3 again</button></div>`;
   }
   if(state!=='play'){ov.innerHTML='<div class="wrap">'+html+'</div>';drawPortraits();}
   if(R)hudUpdate();
@@ -1266,6 +1418,7 @@ ov.addEventListener('click',e=>{
   if(a==='start'){const w=+b.dataset.w;const go=()=>{SX=0;camX=0;newRun(w);};if(w===1){freshSave();startIntro(go);}else go();}
   else if(a==='begin'){state='menu';ui();return;}
   else if(a==='retry'){freshSave();legacyStart(save.mode||'normal');SX=0;camX=0;newRun(1);}
+  else if(a==='stage3'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:3});}SX=0;camX=0;startStage3();}
   else if(a==='stage2'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:2});}SX=0;camX=0;startStage2();}
   else if(a==='gallery'){state='gallery';ui();return;}
   else if(a==='gal'){const k=b.dataset.k,back=()=>{CREW_VIEW=null;state='gallery';ui();};
@@ -1275,7 +1428,7 @@ ov.addEventListener('click',e=>{
   else if(a==='intro3'){startIntro(()=>{state='options';ui();},SHOTS3);}
   else if(a==='intro2'){startIntro(()=>{state='options';ui();},SHOTS2);}
   else if(a==='intro'){startIntro(()=>{state='options';ui();});}
-  else if(a==='next'){startWave_(R.wave+1);}
+  else if(a==='next'){if(R.stage===3)startWave3(R.wave+1);else startWave_(R.wave+1);}
   else if(a==='resume'){state='play';ui();last=performance.now();}
   else if(a==='quit'||a==='menu'){R=null;state='menu';ui();}
   else if(a==='roster'){R=null;state='roster';ui();}
