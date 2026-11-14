@@ -278,7 +278,7 @@ function startWave_(w){
   R.wave=w;SND.alarm();
   const boss=w%5===0;
   // Stage 1 lineups: [total, runners, armored]
-  const LU={1:[20,0,0],2:[30,10,0],3:[35,12,1],4:[40,13,3],5:[40,14,3]}[w]||[Math.max(20,4+w*4+Math.max(0,w-4)*2),Math.round(w*1.5),Math.round(w/2)];
+  const LU=(({1:[20,0,0],2:[30,10,0],3:[35,12,1],4:[40,13,3],5:[40,14,3]}[w]||[Math.max(20,4+w*4+Math.max(0,w-4)*2),Math.round(w*1.5),Math.round(w/2)])).map(n=>n*(HORDE()?2:1));
   const q=[];for(let i=0;i<LU[1];i++)q.push('runner');for(let i=0;i<LU[0]-LU[1]-LU[2];i++)q.push('grunt');
   for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}
   for(let i=0;i<LU[2];i++){const pos=Math.floor(q.length*(.3+.6*(i+1)/(LU[2]+1)));q.splice(pos,0,'armored');}
@@ -354,7 +354,7 @@ function jeepUpdate(dt){
     if(j.meter<1)j.meter=Math.max(0,j.meter-dt*.03);
     if(Math.random()<dt*10)R.pa.push({x:j.x+(Math.random()-.5)*60,z:j.z,h:30+Math.random()*20,vx:(Math.random()-.5)*20,vz:0,vh:70,t:.9,col:Math.random()<.3?'#ff8a3d':'#4a4450',ng:1});
     if(j.meter>=1)freeBruno(j);
-    else if(j.hp<=0){j.phase='lost';j.t=0;SND.explosion(1);if(!save.fallen.includes('bruno'))save.fallen.push('bruno');persist();R.shake=.5;burst(j.x,j.z,30,'#ff7a2e',40);burst(j.x,j.z,30,'#3a3440',30);
+    else if(j.hp<=0){j.phase='lost';j.t=0;SND.explosion(1);if(!save.fallen.includes('bruno'))save.fallen.push('bruno');if(!HORDE()){save.downed=save.downed||{};save.downed.bruno={lv:1,xp:0};}persist();R.shake=.5;burst(j.x,j.z,30,'#ff7a2e',40);burst(j.x,j.z,30,'#3a3440',30);
       R.banner={txt:'BRUNO IS DOWN',t:2.6,col:'#ff4d5e'};}
   }else{
     if(j.phase==='lost'&&Math.random()<dt*12)R.pa.push({x:j.x+(Math.random()-.5)*70,z:j.z,h:20,vx:0,vz:0,vh:80,t:1,col:Math.random()<.4?'#ff7a2e':'#3a3440',ng:1});
@@ -539,10 +539,10 @@ function mkEnemy(type,x,z){
   const w=R.wave,hs=hpScale(w),ss=spdScale(w);
   const T={
     grunt:{hp:26,spd:42,r:32,gold:1,xp:4,col:'#7fcf4a',dmg:10},
-    runner:{hp:12,spd:95,r:26,gold:1,xp:3,col:'#b46bff',dmg:7},
-    brute:{hp:120,spd:26,r:50,gold:5,xp:11,col:'#e2483d',dmg:24},
-    armored:{hp:55,spd:34,r:38,gold:3,xp:8,col:'#8a94a6',dmg:14,armor:5},
-    splitter:{hp:45,spd:36,r:39,gold:3,xp:7,col:'#3fd6c6',dmg:12,split:1},
+    runner:{hp:12,spd:95,r:26,gold:3,xp:3,col:'#b46bff',dmg:7},
+    brute:{hp:120,spd:26,r:50,gold:15,xp:11,col:'#e2483d',dmg:24},
+    armored:{hp:55,spd:34,r:38,gold:5,xp:8,col:'#8a94a6',dmg:14,armor:5},
+    splitter:{hp:45,spd:36,r:39,gold:10,xp:7,col:'#3fd6c6',dmg:12,split:1},
   }[type];
   const e=Object.assign({type},T);
   e.hp*=hs;e.spd*=ss*SPD;e.x=x;e.z=z;e.slow=0;e.burn=0;e.bdps=0;e.stun=0;e.wob=Math.random()*6;
@@ -610,7 +610,7 @@ function drawBossBar(){
 }
 function spawnBoss(){
   const hs=hpScale(R.wave);
-  R.en.push({type:'boss',hp:2900,max:2900,spd:15*SPD,r:100,gold:80,xp:150,col:'#ff2e63',x:0,z:ZFAR+80,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:100,armor:1});
+  R.en.push({type:'boss',hp:2900,max:2900,spd:15*SPD,r:100,gold:50,xp:150,col:'#ff2e63',x:0,z:ZFAR+80,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:100,armor:1});
 }
 function spawnCrate(){
   const rw=nextReward(),hp=80+R.wave*48,lim=sxLimit();
@@ -631,18 +631,21 @@ function addHero(id){
   const act=save.active.length<MAX_ACTIVE;if(act)save.active.push(id);
   return act;
 }
+const HORDE=()=>save.mode==='horde';
+const reviveCost=id=>20+30*((save.downed&&save.downed[id]&&save.downed[id].lv)||1);
 function hurtMember(id,d){
-  if(!R||R.over)return;
+  if(!R||R.over)return;if(HORDE())d*=1.15;
   const hp=getHp(id)-d;setHp(id,hp);SND.hurt(0);R.mflash=R.mflash||{};R.mflash[id]=.12;
   const m=squad().find(q=>q.id===id);if(m)burst(m.x,m.z,40,'#ff4d5e',6);
   if(hp>0)return;
   if(id==='cmd'){R.over=true;gameOver();return;}
   if(m){burst(m.x,m.z,40,HEROES[id].color,30);R.dead.push({hero:id,x:m.x,z:m.z,t:0,fr:heroFrame(id)});}
+  if(!HORDE()){save.downed=save.downed||{};save.downed[id]={lv:save.heroes[id].lv,xp:save.heroes[id].xp};}
   delete save.heroes[id];save.active=save.active.filter(h=>h!==id);if(!save.fallen.includes(id))save.fallen.push(id);
   for(const e of R.en)if(e.tgt===id){e.tgt=null;e.atk=undefined;}
-  SND.heroDown();R.banner={txt:HEROES[id].name.toUpperCase()+' HAS FALLEN',t:3,col:'#ff4d5e'};R.shake=.4;persist();
+  SND.heroDown();R.banner={txt:HEROES[id].name.toUpperCase()+(HORDE()?' HAS FALLEN':' IS DOWN'),t:3,col:'#ff4d5e'};R.shake=.4;persist();
 }
-function hitWall(d,x){if(R.wall<=0)return;R.wall=Math.max(0,R.wall-d);SND.wallHit((x||0)/600);if(R.wall<=0)SND.wallBreak();R.shake=Math.max(R.shake||0,.18);if(R.wall<=0){R.banner={txt:R.stage===2?'THEY ARE ON THE TRUCK!':'THE WALL IS DOWN!',t:2.6,col:'#ff4d5e'};R.shake=.6;
+function hitWall(d,x){if(R.wall<=0)return;if(HORDE())d*=1.15;R.wall=Math.max(0,R.wall-d);SND.wallHit((x||0)/600);if(R.wall<=0)SND.wallBreak();R.shake=Math.max(R.shake||0,.18);if(R.wall<=0){R.banner={txt:R.stage===2?'THEY ARE ON THE TRUCK!':'THE WALL IS DOWN!',t:2.6,col:'#ff4d5e'};R.shake=.6;
   const kW=WALL_Z;for(let i=0;i<5;i++)burst((Math.random()*2-1)*ROAD,kW,20,'#8d7c58',14);}}
 const OFFS=[-90,90,-180,180,-270,270,-360,360];
 function squadTargets(){
@@ -756,7 +759,7 @@ function drawEnemyThumbs(){
 function kill(e,own){addKill(own,e.type);
   save.gold+=e.gold;SND.die(e.type,e.x/600);
   if(R.jail)hitJail(R.jail.max*.035);
-  if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);if(e.elite){m.hp*=2;m.max=m.hp;}}}
+  if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
   if(own==='cmd'){cmdXp(e.xp);const hs=save.active.slice();hs.forEach(h=>giveXp(h,e.xp*.3/Math.max(1,hs.length)));}
   if(e.type!=='boss'||1){R.kills=(R.kills||0)+1;if(save.cmd>=3&&R.kills%10===0)rally();}
   else giveXp(own,e.xp);
@@ -810,7 +813,7 @@ function update(dt){
     if(R.crateAt.includes(idx))spawnCrate();
     if(idx===R.jeepAt){R.cinePending=true;R.jeepAt=-1;break;}
     if(R.bossPending&&idx>=Math.floor(R.spawnTotal*.6)){spawnBoss();R.bossPending=false;}
-    spawnEnemy();R.spawnLeft--;}}}
+    spawnEnemy();if(R.stage===2&&HORDE())spawnEnemy();R.spawnLeft--;}}}
   squadStep(dt);jeepUpdate(dt);SND.engineSet(!!(R.jeep&&R.jeep.phase==='drive'));SND.ambient(dt,R.en);SND.intensity=(R.wall/R.wallMax<.4||R.en.length>14)?1:0;
   const sq=squad();
   if(!R.cine)for(const s of sq){anim(s.id);R.cd[s.id]=(R.cd[s.id]||0)-dt;if(R.cd[s.id]<=0)R.cd[s.id]=s.id==='cmd'?fireCmd(s):fireHero(s);}
@@ -1085,7 +1088,7 @@ function hudUpdate(){hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl
 function waveClear(){if(R.stage===2)return;SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healAll(.3);save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){SND.gameOver();save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
-function freshSave(){save={heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
+function freshSave(){save={mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
 function rosterHTML(){
   let h='<h3>Commander</h3>';
   const cc=trainCost(save.cmd);
@@ -1097,7 +1100,7 @@ function rosterHTML(){
   h+=`<h3>Squad · ${save.active.length}/${MAX_ACTIVE} heroes deployed with you</h3><div class="cards">`;
   for(const id of HERO_ORDER){
     const H=HEROES[id],s=save.heroes[id];
-    if(!s&&save.fallen.includes(id)){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="fallen" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>Fallen</small></div><div class="lv">†</div><div class="xp"></div><div class="perks"><span class="perk">Lost in battle. Start over at wave 1 to bring them back.</span></div><button class="train" data-act="stat" data-id="${id}">Stats</button></div>`;continue;}
+    if(!s&&save.fallen.includes(id)){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="fallen" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${HORDE()?'Fallen':'Down'}</small></div><div class="lv">†</div><div class="xp"></div><div class="perks"><span class="perk">${HORDE()?'Lost for good. Horde mode has no revives.':'Revive for gold to bring them back at half health.'}</span></div>${!HORDE()&&save.downed&&save.downed[id]?`<button class="train" data-act="revive" data-id="${id}" ${save.gold<reviveCost(id)?'disabled':''}>Revive · ${reviveCost(id)}g</button>`:''}<button class="train" data-act="stat" data-id="${id}">Stats</button></div>`;continue;}
     if(!s){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="locked" data-por="${id}"></canvas></div><div class="cname">Unknown hero</div><div class="lv"></div><div class="xp"></div><div class="perks"><span class="perk">Joins later in the story</span></div></div>`;continue;}
     const need=xpNeed(s.lv),cost=trainCost(s.lv),mx=s.lv>=MAXLV,act=save.active.includes(id),hpf=Math.max(0,getHp(id)/maxHp(id));
     h+=`<div class="card" style="${act?'border-color:var(--hazard)':''}"><div class="badge" style="box-shadow:inset 0 0 0 2px ${H.color}"><canvas width="128" height="128" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${H.role}</small></div><div class="lv">LV ${s.lv}</div>
@@ -1135,13 +1138,13 @@ function ui(){
   ov.classList.toggle('title-mode',state==='menu'||state==='splash');
   if(state==='splash'){ov.innerHTML=`<div class="mscreen" data-act="begin"><div class="mbg"></div><div class="mglow"></div><div class="mgrain"></div><div class="mvig" style="background:rgba(11,8,14,.55)"></div>
     <div class="msplash"><div class="mlogo"></div><button class="mbtn play" data-act="begin">Tap to start</button><div class="mbest">Sound on for the full experience</div></div></div>`;return;}
-  ov.classList.toggle('paper',['inter','roster','load','options','credits','bye','over','win','win2','stat'].includes(state));
+  ov.classList.toggle('paper',['inter','roster','load','options','credits','bye','over','win','win2','stat','modes'].includes(state));
   if(state==='menu'){
     ov.innerHTML=`<div class="mscreen"><div class="mbg"></div><div class="mglow"></div>
       <div class="mgas g1"></div><div class="mgas g2"></div><div class="mgrain"></div><div class="mvig"></div>
       <div class="mside"><h1 class="mlogo"><span class="sr">Zombie Chronicles: Holdout Squad</span></h1>
         <nav class="mnav" aria-label="Main menu">
-          <button class="mbtn play" data-act="start" data-w="1">Play</button>
+          <button class="mbtn play" data-act="modes">Play</button>
           <button class="mbtn" data-act="load">Load</button>
           <button class="mbtn" data-act="options">Options</button>
           <button class="mbtn" data-act="credits">Credits</button>
@@ -1151,8 +1154,17 @@ function ui(){
       </div></div>`;
     if(R)hudUpdate();return;
   }
-  if(state==='load'){
-    html=`<h2>Stages</h2><div class="stripe"></div>
+  if(state==='modes'){
+    html=`<h2>Choose your mode</h2><div class="stripe"></div>
+    <div class="card" style="grid-template-columns:1fr"><div class="cname">Normal<small>For the story</small></div>
+      <div class="perks"><span class="perk on">Fallen heroes can be revived with gold</span><span class="perk">Standard enemy numbers and damage</span></div>
+      <button class="btn" data-act="pickmode" data-mode="normal">Play Normal</button></div>
+    <div class="card" style="grid-template-columns:1fr"><div class="cname">Horde<small>No second chances</small></div>
+      <div class="perks"><span class="perk" style="border-color:var(--blood);color:var(--blood)">Permadeath: fallen heroes are gone</span><span class="perk" style="border-color:var(--blood);color:var(--blood)">Enemies deal 15% more damage</span><span class="perk" style="border-color:var(--blood);color:var(--blood)">Twice as many enemies</span></div>
+      <button class="btn" data-act="pickmode" data-mode="horde">Play Horde</button></div>
+    <button class="btn ghost" data-act="menu">Back</button>`;
+  }else if(state==='load'){
+    html=`<h2>Stages</h2><div class="stripe"></div><p class="sub">Mode: ${HORDE()?'Horde':'Normal'}</p>
     <div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 1 · The Outskirts<small>${STAGE_WAVES} waves</small></div><div class="lv">${save.best>=STAGE_WAVES?'CLEARED':save.best?'BEST: WAVE '+save.best:'NEW'}</div></div>
     <div class="btns"><button class="btn" data-act="retry">Play Stage 1 (skip intro)</button></div>
     ${(save.cleared||0)>=1?`<div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 2 · The Escape<small>Convoy chase</small></div><div class="lv">${(save.cleared||0)>=2?'CLEARED':'OPEN'}</div></div><div class="btns"><button class="btn" data-act="stage2">Play Stage 2</button></div>`:`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">Stage 2 · The Escape<small>Clear Stage 1 to unlock</small></div><div class="lv">LOCKED</div></div>`}
@@ -1215,6 +1227,9 @@ function ui(){
 ov.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;SND.init();SND.click();
   if(a==='mus'||a==='sfx'){SND.toggle(a==='mus'?'music':'sfx');ui();return;}
+  if(a==='modes'){state='modes';ui();return;}
+  if(a==='pickmode'){freshSave();save.mode=b.dataset.mode;persist();SX=0;camX=0;startIntro(()=>{newRun(1);});return;}
+  if(a==='revive'){const id=b.dataset.id,c=reviveCost(id),rec=save.downed&&save.downed[id];if(rec&&save.gold>=c){save.gold-=c;save.heroes[id]={lv:rec.lv,xp:rec.xp};setHp(id,maxHp(id)*.5);delete save.downed[id];save.fallen=save.fallen.filter(h=>h!==id);if(save.active.length<MAX_ACTIVE)save.active.push(id);persist();SND.freed();ui();}return;}
   if(a==='start'){const w=+b.dataset.w;const go=()=>{SX=0;camX=0;newRun(w);};if(w===1){freshSave();startIntro(go);}else go();}
   else if(a==='begin'){state='menu';ui();return;}
   else if(a==='retry'){freshSave();SX=0;camX=0;newRun(1);}
