@@ -17,9 +17,9 @@
 <style>
 /* Layout: sideways battlefield canvas letterboxed into the screen, HTML overlays for menus. Single dark arcade look by choice. */
 :root{
-  --titleimg:url(assets/title.webp);
-  --logoimg:url(assets/logo.webp);
-  --tentimg:url(assets/tent.webp);
+  --titleimg:url(assets/title.webp?v=dab4785382);
+  --logoimg:url(assets/logo.webp?v=7c90274373);
+  --tentimg:url(assets/tent.webp?v=4062efcb24);
   --night:#0d1016;
   --panel:#1b212c;
   --line:#2c3442;
@@ -201,6 +201,13 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
   <div class="overlay" id="ov"></div>
 </div>
 
-<script src="game.js"></script>
+<script>window.__VER='d255d1c147';
+if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
+// when the app comes back from the background, check for a newer version and reload if the player is on a menu
+document.addEventListener('visibilitychange',()=>{if(document.hidden)return;
+  fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(d=>{
+    if(d.v&&d.v!==window.__VER&&window.__canReload&&window.__canReload())location.reload();}).catch(()=>{});});
+</script>
+<script src="game.js?v=d255d1c147"></script>
 </body>
 </html>
