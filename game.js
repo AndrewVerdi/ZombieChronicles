@@ -1114,6 +1114,14 @@ function heroFrame(id){
   if(R&&R.stage===3&&M.run)return M.run[Math.floor(st.t*9)%M.run.length];
   const n=M.idle.length,ki=Math.floor(st.t*6)%Math.max(1,2*n-2);return M.idle[ki<n?ki:2*n-2-ki];
 }
+/* waist line for walk+shoot compositing: where each frame's body centre sits at hip height */
+const WAIST_PX=68,WX={};let WXD=null;
+function waistX(fr){if(fr in WX)return WX[fr];const r=RECTS[fr];let v=0;
+  try{if(!WXD){const c=document.createElement('canvas');c.width=ATL.naturalWidth;c.height=ATL.naturalHeight;const x=c.getContext('2d');x.drawImage(ATL,0,0);WXD=x.getImageData(0,0,c.width,c.height);}
+    const y0=Math.round(r[1]+r[5]-WAIST_PX-6),y1=y0+12;let sum=0,n=0;
+    for(let y=Math.max(r[1],y0);y<Math.min(r[1]+r[3],y1);y++)for(let x=r[0];x<r[0]+r[2];x++){if(WXD.data[(y*WXD.width+x)*4+3]>128){sum+=x;n++;}}
+    v=n?sum/n-(r[0]+r[4]):0;}catch(e){v=0;}
+  return WX[fr]=v;}
 const EBODY=120,EH=2.6;
 function drawCorpse(d){
   if(d.hero){const[sx,sy,k]=P(d.x,d.z);drawFrame(d.fr,sx,sy,k*CHAR_H/BODY_PX,Math.max(0,1-d.t/1.6));return;}
@@ -1196,10 +1204,11 @@ function drawSquadMember(s){
   const[sx,sy,k]=P(s.x,s.z);
   ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.ellipse(sx,sy,24*k,7*k,0,0,6.283);ctx.fill();
   if(s.id==='cmd'){ctx.strokeStyle='#ffc53d';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(sx,sy,30*k,9*k,0,0,6.283);ctx.stroke();}
-  if(atlasReady&&R&&R.stage===3&&anim(s.id).a==='shoot'&&META[s.id].run){const sc=k*CHAR_H/BODY_PX,fr=heroFrame(s.id),M=META[s.id],rf=M.run[Math.floor(t*9+(s.id.length))%M.run.length],cut=sy-CHAR_H*k*.47;
-    ctx.save();ctx.beginPath();ctx.rect(sx-200*k,cut,400*k,200*k);ctx.clip();drawFrame(rf,sx,sy,sc);ctx.restore();
-    ctx.save();ctx.beginPath();ctx.rect(sx-200*k,cut-300*k,400*k,300*k+1);ctx.clip();drawFrame(fr,sx,sy,sc);ctx.restore();
-    if(R.mflash&&R.mflash[s.id]>0){ctx.globalCompositeOperation='lighter';drawFrame(fr,sx,sy,sc,.6);ctx.globalCompositeOperation='source-over';}}
+  if(atlasReady&&R&&R.stage===3&&anim(s.id).a==='shoot'&&META[s.id].run){const sc=k*CHAR_H/BODY_PX,fr=heroFrame(s.id),M=META[s.id],rf=M.run[Math.floor(t*9+(s.id.length))%M.run.length],cut=sy-WAIST_PX*sc;
+    const dx=(waistX(fr)-waistX(rf))*sc;
+    ctx.save();ctx.beginPath();ctx.rect(sx-200*k,cut-2*sc,400*k,300*k);ctx.clip();drawFrame(rf,sx+dx,sy,sc);ctx.restore();
+    ctx.save();ctx.beginPath();ctx.rect(sx-200*k,cut-400*k,400*k,400*k+3*sc);ctx.clip();drawFrame(fr,sx,sy,sc);
+    if(R.mflash&&R.mflash[s.id]>0){ctx.globalCompositeOperation='lighter';drawFrame(fr,sx,sy,sc,.6);ctx.globalCompositeOperation='source-over';}ctx.restore();}
   else if(atlasReady){const sc=k*CHAR_H/BODY_PX,fr=heroFrame(s.id);drawFrame(fr,sx,sy,sc);if(R&&R.mflash&&R.mflash[s.id]>0){ctx.globalCompositeOperation='lighter';drawFrame(fr,sx,sy,sc,.6);ctx.globalCompositeOperation='source-over';}}
   if(R){const f=Math.max(0,getHp(s.id)/maxHp(s.id)),bw=46*k,by=sy-CHAR_H*k-10;ctx.fillStyle='#000b';ctx.fillRect(sx-bw/2-1,by-1,bw+2,7);ctx.fillStyle=f<.3?'#ff4d5e':f<.6?'#ffc53d':'#5ee08a';ctx.fillRect(sx-bw/2,by,bw*f,5);}
   if(s.id!=='cmd'){ctx.fillStyle='#0d1016cc';ctx.fillRect(sx-9,sy+3,18,12);ctx.fillStyle='#ffc53d';ctx.font='700 10px "Chakra Petch", sans-serif';ctx.textAlign='center';ctx.fillText(save.heroes[s.id].lv,sx,sy+13);}
