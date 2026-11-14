@@ -1196,7 +1196,11 @@ function drawSquadMember(s){
   const[sx,sy,k]=P(s.x,s.z);
   ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.ellipse(sx,sy,24*k,7*k,0,0,6.283);ctx.fill();
   if(s.id==='cmd'){ctx.strokeStyle='#ffc53d';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(sx,sy,30*k,9*k,0,0,6.283);ctx.stroke();}
-  if(atlasReady){const sc=k*CHAR_H/BODY_PX,fr=heroFrame(s.id);drawFrame(fr,sx,sy,sc);if(R&&R.mflash&&R.mflash[s.id]>0){ctx.globalCompositeOperation='lighter';drawFrame(fr,sx,sy,sc,.6);ctx.globalCompositeOperation='source-over';}}
+  if(atlasReady&&R&&R.stage===3&&anim(s.id).a==='shoot'&&META[s.id].run){const sc=k*CHAR_H/BODY_PX,fr=heroFrame(s.id),M=META[s.id],rf=M.run[Math.floor(t*9+(s.id.length))%M.run.length],cut=sy-CHAR_H*k*.47;
+    ctx.save();ctx.beginPath();ctx.rect(sx-200*k,cut,400*k,200*k);ctx.clip();drawFrame(rf,sx,sy,sc);ctx.restore();
+    ctx.save();ctx.beginPath();ctx.rect(sx-200*k,cut-300*k,400*k,300*k+1);ctx.clip();drawFrame(fr,sx,sy,sc);ctx.restore();
+    if(R.mflash&&R.mflash[s.id]>0){ctx.globalCompositeOperation='lighter';drawFrame(fr,sx,sy,sc,.6);ctx.globalCompositeOperation='source-over';}}
+  else if(atlasReady){const sc=k*CHAR_H/BODY_PX,fr=heroFrame(s.id);drawFrame(fr,sx,sy,sc);if(R&&R.mflash&&R.mflash[s.id]>0){ctx.globalCompositeOperation='lighter';drawFrame(fr,sx,sy,sc,.6);ctx.globalCompositeOperation='source-over';}}
   if(R){const f=Math.max(0,getHp(s.id)/maxHp(s.id)),bw=46*k,by=sy-CHAR_H*k-10;ctx.fillStyle='#000b';ctx.fillRect(sx-bw/2-1,by-1,bw+2,7);ctx.fillStyle=f<.3?'#ff4d5e':f<.6?'#ffc53d':'#5ee08a';ctx.fillRect(sx-bw/2,by,bw*f,5);}
   if(s.id!=='cmd'){ctx.fillStyle='#0d1016cc';ctx.fillRect(sx-9,sy+3,18,12);ctx.fillStyle='#ffc53d';ctx.font='700 10px "Chakra Petch", sans-serif';ctx.textAlign='center';ctx.fillText(save.heroes[s.id].lv,sx,sy+13);}
 }
