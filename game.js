@@ -267,7 +267,7 @@ function persist(){try{localStorage.setItem(KEY,JSON.stringify(save));}catch(e){
 let R=null,state='splash',SX=0,t=0;
 const LANE_E=300;
 function sxLimit(){return LANE_E;}
-function newRun(startWave){
+function newRun(startWave){setTimeout(()=>cineLoad(SHOTS2),20000);
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   R={wave:startWave,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[]};
   startWave_(startWave);
@@ -416,7 +416,7 @@ function drawJeep(j){
 }
 
 /* ---------- STAGE 2: THE ESCAPE (truck roof, runners + The Ward) ---------- */
-function startStage2(){
+function startStage2(){setTimeout(()=>cineLoad(SHOTS3),8000);
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   R={stage:2,wave:5,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:{txt:'STAGE 2: THE ESCAPE',t:2.6,col:'#ffc53d'},vx:0,prevSX:SX,dead:[],
     queue:[],kills:0,spawnLeft:99999,spawnTotal:99999,spawnT:2.2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
@@ -1242,7 +1242,9 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='p
 const CINE_META={"gas": {"n": 6, "fw": 330.4, "fh": 248.49999999999997}, "crowd": {"n": 6, "fw": 237.99999999999997, "fh": 239.39999999999998}, "arm": {"n": 6, "fw": 209.4, "fh": 288.0}, "shadow": {"n": 6, "fw": 268, "fh": 102.0}, "wave": {"n": 4, "fw": 411, "fh": 117.0}, "lift": {"n": 4, "fw": 402.0, "fh": 492.0}, "bike": {"n": 4, "fw": 332.0, "fh": 300.8}, "leap": {"n": 4, "fw": 247.20000000000002, "fh": 326.40000000000003}, "bikef": {"n": 4, "fw": 350.40000000000003, "fh": 324.0}};
 const CINE_SRC={"s1": "assets/cine/s1.webp", "s2": "assets/cine/s2.webp", "s3": "assets/cine/s3.webp", "s4": "assets/cine/s4.webp", "s5": "assets/cine/s5.webp", "s6": "assets/cine/s6.webp", "s7": "assets/cine/s7.webp", "s8": "assets/cine/s8.webp", "gas": "assets/cine/gas.webp", "crowd": "assets/cine/crowd.webp", "arm": "assets/cine/arm.webp", "shadow": "assets/cine/shadow.webp", "wave": "assets/cine/wave.webp", "w1": "assets/cine/w1.webp", "w2": "assets/cine/w2.webp", "w3": "assets/cine/w3.webp", "w4": "assets/cine/w4.webp", "w5": "assets/cine/w5.webp", "w6": "assets/cine/w6.webp", "w7": "assets/cine/w7.webp", "w8": "assets/cine/w8.webp", "lift": "assets/cine/lift.webp", "r1": "assets/cine/r1.webp", "r2": "assets/cine/r2.webp", "r3": "assets/cine/r3.webp", "r4": "assets/cine/r4.webp", "r5": "assets/cine/r5.webp", "r6": "assets/cine/r6.webp", "bike": "assets/cine/bike.webp", "leap": "assets/cine/leap.webp", "bikef": "assets/cine/bikef.webp", "b1": "assets/cine/b1.webp", "b2": "assets/cine/b2.webp", "b6": "assets/cine/b6.webp", "b7": "assets/cine/b7.webp", "b8": "assets/cine/b8.webp", "br1": "assets/cine/br1.webp"};
 const CI={};const CINE_FILES=['s1','s2','s3','s4','s5','s6','s7','s8','gas','crowd','arm','shadow','wave','w1','w2','w3','w4','w5','w6','w7','w8','lift','r1','r2','r3','r4','r5','r6','bike','leap','bikef','b1','b2','b6','b7','b8','br1'];
-function cineLoad(){for(const k of CINE_FILES){if(CI[k])continue;const im=new Image();im.decoding='async';im.src=CINE_SRC[k];CI[k]=im;}}
+const CINE_SHEETS=['gas','crowd','arm','shadow','wave','lift','bike','leap','bikef'];
+function cineLoadKeys(keys){for(const k of keys){if(CI[k]||!CINE_SRC[k])continue;const im=new Image();im.decoding='async';im.src=CINE_SRC[k];CI[k]=im;}}
+function cineLoad(list){if(!list){cineLoadKeys(CINE_SHEETS);return;}const ks=[];for(const s of list){ks.push(s.bg);if(typeof NOBRUNO!=='undefined'&&NOBRUNO[s.bg])ks.push(NOBRUNO[s.bg].bg);}cineLoadKeys(ks);}
 const IW=1440,IH=810;
 const ease=p=>p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
 const lerp=(a,b,p)=>a+(b-a)*p;
@@ -1376,7 +1378,7 @@ function cineEl(){
   GRAIN=document.createElement('canvas');GRAIN.width=GRAIN.height=180;const g=GRAIN.getContext('2d'),id=g.createImageData(180,180);
   for(let i=0;i<id.data.length;i+=4){const v=Math.random()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=Math.random()<.5?40:0;}g.putImageData(id,0,0);
 }
-function startIntro(done,list){cineEl();cineLoad();cine={i:0,tt:0,done,last:performance.now(),list:storyCut(list||SHOTS)};state='intro';ui();clayer.hidden=false;requestAnimationFrame(cineFrame);}
+function startIntro(done,list){cineEl();cineLoad();cineLoad(list||SHOTS);cine={i:0,tt:0,done,last:performance.now(),list:storyCut(list||SHOTS)};state='intro';ui();clayer.hidden=false;requestAnimationFrame(cineFrame);}
 function endIntro(){if(!cine)return;const d=cine.done;cine=null;clayer.hidden=true;d&&d();}
 function cineFrame(now){
   if(!cine)return;
@@ -1416,5 +1418,5 @@ function cineFrame(now){
 (()=>{try{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),d=x.createImageData(160,160);
 for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=Math.random()<.5?46:0;}x.putImageData(d,0,0);
 document.documentElement.style.setProperty('--grain','url('+c.toDataURL()+')');document.documentElement.style.setProperty('--gasimg','url('+CINE_SRC.gas+')');}catch(e){}})();
-ui();requestAnimationFrame(loop);setTimeout(cineLoad,1500);
+ui();requestAnimationFrame(loop);setTimeout(()=>{cineLoad(SHOTS);cineLoad();},800);
 })();
