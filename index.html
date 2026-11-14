@@ -113,6 +113,11 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
 .msplash .mbtn{animation:mpulse 1.4s ease-in-out infinite;text-align:center}
 @keyframes mpulse{50%{transform:scale(1.05) rotate(-1deg)}}
 @media (prefers-reduced-motion:reduce){.msplash .mbtn{animation:none}}
+.mrot{display:flex;align-items:center;gap:10px;font-family:"Bungee","Arial Black",Impact,sans-serif;font-size:clamp(12px,2.8vh,16px);color:#b6f23a;text-shadow:2px 2px 0 #0b080e;letter-spacing:.03em;text-align:center}
+.mrot svg{width:clamp(22px,5vh,30px);height:clamp(22px,5vh,30px);flex:none;animation:mspin 2.4s ease-in-out infinite}
+@keyframes mspin{0%,30%{transform:rotate(0)}55%,85%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
+@media (orientation:landscape){.mrot{color:#cdbfd1;font-size:clamp(11px,2.4vh,14px)}.mrot svg{animation:none;transform:rotate(-90deg)}}
+@media (prefers-reduced-motion:reduce){.mrot svg{animation:none}}
 .mbest{font-family:"Special Elite","Courier New",monospace;color:#efe6dc;font-size:clamp(12px,2.6vh,16px);text-shadow:1px 1px 0 #ff6a2b}
 @media (max-aspect-ratio:1/1){.mside{width:100%;justify-content:flex-end;align-items:center;padding-bottom:max(28px,env(safe-area-inset-bottom,0px));padding-right:max(18px,env(safe-area-inset-right,0px))}
   .mnav{align-items:center}.mlogo{background-position:center}.mvig{background:linear-gradient(0deg,rgba(11,8,14,.85) 0%,rgba(11,8,14,.3) 55%,rgba(11,8,14,0) 75%)}}

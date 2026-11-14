@@ -1137,7 +1137,7 @@ function ui(){
   let html='';
   ov.classList.toggle('title-mode',state==='menu'||state==='splash');
   if(state==='splash'){ov.innerHTML=`<div class="mscreen" data-act="begin"><div class="mbg"></div><div class="mglow"></div><div class="mgrain"></div><div class="mvig" style="background:rgba(11,8,14,.55)"></div>
-    <div class="msplash"><div class="mlogo"></div><button class="mbtn play" data-act="begin">Tap to start</button><div class="mbest">Sound on for the full experience</div></div></div>`;return;}
+    <div class="msplash"><div class="mlogo"></div><button class="mbtn play" data-act="begin">Tap to start</button><div class="mrot"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 14a9 9 0 0 0 6 6M21 10a9 9 0 0 0-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Rotate your phone sideways for widescreen</div><div class="mbest">Sound on for the full experience</div></div></div>`;return;}
   ov.classList.toggle('paper',['inter','roster','load','options','credits','bye','over','win','win2','stat','modes'].includes(state));
   if(state==='menu'){
     ov.innerHTML=`<div class="mscreen"><div class="mbg"></div><div class="mglow"></div>
