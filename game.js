@@ -416,7 +416,7 @@ function drawJeep(j){
 }
 
 /* ---------- STAGE 2: THE ESCAPE (truck roof, runners + The Ward) ---------- */
-function startStage2(){setTimeout(()=>cineLoad(SHOTS3),8000);
+function startStage2(){setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   R={stage:2,wave:5,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:{txt:'STAGE 2: THE ESCAPE',t:2.6,col:'#ffc53d'},vx:0,prevSX:SX,dead:[],
     queue:[],kills:0,spawnLeft:99999,spawnTotal:99999,spawnT:2.2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
@@ -915,7 +915,7 @@ function update(dt){
   R.en=R.en.filter(e=>!e.dead);R.bu=R.bu.filter(b=>b.life>0);R.cr=R.cr.filter(c=>!c.dead);
   R.pa=R.pa.filter(p=>p.t>0);R.bolts=R.bolts.filter(b=>b.life>0);R.tx=R.tx.filter(x=>x.t>0);
   if(R.over)return;
-  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);legacyEnd('cleared_stage_2');save.gold+=60;persist();state='win2';ui();return;}}
+  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);save.gold+=60;persist();startFork(()=>{legacyEnd('cleared_stage_2');persist();state='win2';ui();},true);return;}}
   R.scatter=R.wall<=0?R.scatter+dt:Math.max(0,R.scatter-dt*.4);
   if(R.mflash)for(const k in R.mflash)R.mflash[k]-=dt;
   if(R.spawnLeft<=0&&!R.bossPending&&R.en.length===0&&R.cr.length===0&&!R.cinePending&&!R.cine&&!(R.proj&&R.proj.length)&&!(R.jeep&&R.jeep.phase!=='lost'&&R.jeep.phase!=='freed'))waveClear();
@@ -1198,7 +1198,7 @@ function ui(){
     <h3>Sound</h3>
     <div class="btns"><button class="btn ghost" data-act="mus">Music: ${SND.pref.music?'On':'Off'}</button><button class="btn ghost" data-act="sfx">Sound effects: ${SND.pref.sfx?'On':'Off'}</button></div>
     <h3>Story</h3>
-    <div class="btns"><button class="btn ghost" data-act="intro">Watch the intro</button><button class="btn ghost" data-act="intro2">Watch Stage 1 ending</button>${(save.cleared||0)>=2?'<button class="btn ghost" data-act="intro3">Watch Rook arrives</button>':''}</div>
+    <div class="btns"><button class="btn ghost" data-act="intro">Watch the intro</button><button class="btn ghost" data-act="intro2">Watch Stage 1 ending</button>${(save.cleared||0)>=2?'<button class="btn ghost" data-act="intro3">Watch Rook arrives</button><button class="btn ghost" data-act="intro4">'+(save.route?'Watch the fork in the road':'Choose the road')+'</button>':''}</div>
     <h3>Progress</h3>
     <div class="btns"><button class="btn ghost" data-act="reset">Reset progress</button></div>
     <button class="btn ghost" data-act="menu">Back</button>`;
@@ -1240,6 +1240,7 @@ function ui(){
     <p class="sub">The Ward went down in the road behind them. The convoy floors it into the night, with ${['cmd',...save.active].length===1?'the Commander alone':['cmd',...save.active].length+' fighters'} on the roof of the last truck.</p>
     <div class="row"><span class="sub">Squad standing</span><span class="big">${['cmd',...save.active].length}</span></div>
     <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
+    ${save.route?`<p class="sub">${save.route==='highway'?'The convoy stayed on the highway together.':(save.heroes.bruno?'The convoy took the backroad into the forest. Bruno went on alone toward Cyber Future.':'The convoy took the backroad into the forest.')}</p>`:''}
     <p class="sub">Stage 3 is coming soon.</p>
     <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="stage2">Play Stage 2 again</button></div>`;
   }
@@ -1256,6 +1257,7 @@ ov.addEventListener('click',e=>{
   else if(a==='begin'){state='menu';ui();return;}
   else if(a==='retry'){freshSave();legacyStart(save.mode||'normal');SX=0;camX=0;newRun(1);}
   else if(a==='stage2'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:2});}SX=0;camX=0;startStage2();}
+  else if(a==='intro4'){const rec=!save.route;startFork(()=>{state='options';ui();},rec);}
   else if(a==='intro3'){startIntro(()=>{state='options';ui();},SHOTS3);}
   else if(a==='intro2'){startIntro(()=>{state='options';ui();},SHOTS2);}
   else if(a==='intro'){startIntro(()=>{state='options';ui();});}
@@ -1276,8 +1278,8 @@ ov.addEventListener('click',e=>{
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){state='pause';ui();}});
 
 /* ---------- INTRO CUTSCENE: riso-print panels with partial animation ---------- */
-const CINE_META={"gas": {"n": 6, "fw": 330.4, "fh": 248.49999999999997}, "crowd": {"n": 6, "fw": 237.99999999999997, "fh": 239.39999999999998}, "arm": {"n": 6, "fw": 209.4, "fh": 288.0}, "shadow": {"n": 6, "fw": 268, "fh": 102.0}, "wave": {"n": 4, "fw": 411, "fh": 117.0}, "lift": {"n": 4, "fw": 402.0, "fh": 492.0}, "bike": {"n": 4, "fw": 332.0, "fh": 300.8}, "leap": {"n": 4, "fw": 247.20000000000002, "fh": 326.40000000000003}, "bikef": {"n": 4, "fw": 350.40000000000003, "fh": 324.0}};
-const CINE_SRC={"s1": "assets/cine/s1.webp?v=243c333768", "s2": "assets/cine/s2.webp?v=550e74da9a", "s3": "assets/cine/s3.webp?v=70cc779e19", "s4": "assets/cine/s4.webp?v=a7032a396c", "s5": "assets/cine/s5.webp?v=d9c16aae06", "s6": "assets/cine/s6.webp?v=7be0ebed55", "s7": "assets/cine/s7.webp?v=fc9f6ba24a", "s8": "assets/cine/s8.webp?v=1621073ea0", "gas": "assets/cine/gas.webp?v=315d27fe85", "crowd": "assets/cine/crowd.webp?v=63ce1e7073", "arm": "assets/cine/arm.webp?v=6bf76ce38f", "shadow": "assets/cine/shadow.webp?v=d6f37fc102", "wave": "assets/cine/wave.webp?v=23e8a4a53d", "w1": "assets/cine/w1.webp?v=c8f04b9c22", "w2": "assets/cine/w2.webp?v=0ed40fe71c", "w3": "assets/cine/w3.webp?v=70c8685020", "w4": "assets/cine/w4.webp?v=dbcff62397", "w5": "assets/cine/w5.webp?v=b5b30b1db7", "w6": "assets/cine/w6.webp?v=af200e06c2", "w7": "assets/cine/w7.webp?v=3950081f16", "w8": "assets/cine/w8.webp?v=f8d626832c", "lift": "assets/cine/lift.webp?v=370ce17c98", "r1": "assets/cine/r1.webp?v=3e4ef51c5c", "r2": "assets/cine/r2.webp?v=897e15e59c", "r3": "assets/cine/r3.webp?v=a15a18c818", "r4": "assets/cine/r4.webp?v=77c15a6004", "r5": "assets/cine/r5.webp?v=97fb173298", "r6": "assets/cine/r6.webp?v=3ac4fdbb0d", "bike": "assets/cine/bike.webp?v=c67a4ad3e0", "leap": "assets/cine/leap.webp?v=970a293fe8", "bikef": "assets/cine/bikef.webp?v=ee94861b81", "b1": "assets/cine/b1.webp?v=ec2cd2723f", "b2": "assets/cine/b2.webp?v=01cf7f9c7b", "b6": "assets/cine/b6.webp?v=b63e26f414", "b7": "assets/cine/b7.webp?v=b6c3b43136", "b8": "assets/cine/b8.webp?v=f269e85dc3", "br1": "assets/cine/br1.webp?v=26cde8d39b"};
+const CINE_META={"gas": {"n": 6, "fw": 330.4, "fh": 248.49999999999997}, "crowd": {"n": 6, "fw": 237.99999999999997, "fh": 239.39999999999998}, "arm": {"n": 6, "fw": 209.4, "fh": 288.0}, "shadow": {"n": 6, "fw": 268, "fh": 102.0}, "wave": {"n": 4, "fw": 411, "fh": 117.0}, "lift": {"n": 4, "fw": 402.0, "fh": 492.0}, "bike": {"n": 4, "fw": 332.0, "fh": 300.8}, "leap": {"n": 4, "fw": 247.20000000000002, "fh": 326.40000000000003}, "bikef": {"n": 4, "fw": 350.40000000000003, "fh": 324.0}, "c3horde": {"n": 8, "fw": 320.4, "fh": 175.79999999999998}, "c3truck": {"n": 8, "fw": 137.5, "fh": 128.0}, "c3smoke": {"n": 8, "fw": 164.4, "fh": 103.2}, "c3peek": {"n": 8, "fw": 164.4, "fh": 121.8}, "c3beam": {"n": 8, "fw": 191.79999999999998, "fh": 72.8}, "c3fog": {"n": 8, "fw": 411.20000000000005, "fh": 192.8}, "c3spark": {"n": 8, "fw": 306.0, "fh": 162.0}, "c3fire": {"n": 8, "fw": 175.5, "fh": 210.6}, "c3ember": {"n": 8, "fw": 156.0, "fh": 160.0}, "c3flash": {"n": 8, "fw": 175.5, "fh": 176.4}};
+const CINE_SRC={"s1": "assets/cine/s1.webp?v=243c333768", "s2": "assets/cine/s2.webp?v=550e74da9a", "s3": "assets/cine/s3.webp?v=70cc779e19", "s4": "assets/cine/s4.webp?v=a7032a396c", "s5": "assets/cine/s5.webp?v=d9c16aae06", "s6": "assets/cine/s6.webp?v=7be0ebed55", "s7": "assets/cine/s7.webp?v=fc9f6ba24a", "s8": "assets/cine/s8.webp?v=1621073ea0", "gas": "assets/cine/gas.webp?v=315d27fe85", "crowd": "assets/cine/crowd.webp?v=63ce1e7073", "arm": "assets/cine/arm.webp?v=6bf76ce38f", "shadow": "assets/cine/shadow.webp?v=d6f37fc102", "wave": "assets/cine/wave.webp?v=23e8a4a53d", "w1": "assets/cine/w1.webp?v=c8f04b9c22", "w2": "assets/cine/w2.webp?v=0ed40fe71c", "w3": "assets/cine/w3.webp?v=70c8685020", "w4": "assets/cine/w4.webp?v=dbcff62397", "w5": "assets/cine/w5.webp?v=b5b30b1db7", "w6": "assets/cine/w6.webp?v=af200e06c2", "w7": "assets/cine/w7.webp?v=3950081f16", "w8": "assets/cine/w8.webp?v=f8d626832c", "lift": "assets/cine/lift.webp?v=370ce17c98", "r1": "assets/cine/r1.webp?v=3e4ef51c5c", "r2": "assets/cine/r2.webp?v=897e15e59c", "r3": "assets/cine/r3.webp?v=a15a18c818", "r4": "assets/cine/r4.webp?v=77c15a6004", "r5": "assets/cine/r5.webp?v=97fb173298", "r6": "assets/cine/r6.webp?v=3ac4fdbb0d", "bike": "assets/cine/bike.webp?v=c67a4ad3e0", "leap": "assets/cine/leap.webp?v=970a293fe8", "bikef": "assets/cine/bikef.webp?v=ee94861b81", "b1": "assets/cine/b1.webp?v=ec2cd2723f", "b2": "assets/cine/b2.webp?v=01cf7f9c7b", "b6": "assets/cine/b6.webp?v=b63e26f414", "b7": "assets/cine/b7.webp?v=b6c3b43136", "b8": "assets/cine/b8.webp?v=f269e85dc3", "br1": "assets/cine/br1.webp?v=26cde8d39b", "x01": "assets/cine/x01.webp?v=57c1a8b59a", "x02": "assets/cine/x02.webp?v=278ed750fd", "xa3": "assets/cine/xa3.webp?v=63f1e488b3", "xa4": "assets/cine/xa4.webp?v=e283c3e464", "xa5": "assets/cine/xa5.webp?v=c231911ed0", "xa6": "assets/cine/xa6.webp?v=5d44e267c6", "xa7": "assets/cine/xa7.webp?v=b3f5f31b96", "xb3": "assets/cine/xb3.webp?v=759b78c0b1", "xb4": "assets/cine/xb4.webp?v=df36359644", "xb5": "assets/cine/xb5.webp?v=319fbf1c6f", "xb6": "assets/cine/xb6.webp?v=dc55f12004", "xb7": "assets/cine/xb7.webp?v=2603ef086d", "xb8": "assets/cine/xb8.webp?v=213337a3cb", "xv1": "assets/cine/xv1.webp?v=f0b1f7bc58", "xv2": "assets/cine/xv2.webp?v=f08c546b7d", "xv3": "assets/cine/xv3.webp?v=8dfbfd654f", "xv4": "assets/cine/xv4.webp?v=0519294f79", "xv5": "assets/cine/xv5.webp?v=2de26c5075", "xv6": "assets/cine/xv6.webp?v=8bdeb41aa8", "c3horde": "assets/cine/c3horde.webp?v=51a1bcd882", "c3truck": "assets/cine/c3truck.webp?v=c3d079edb1", "c3smoke": "assets/cine/c3smoke.webp?v=104b4fcda5", "c3peek": "assets/cine/c3peek.webp?v=f5ee9d072a", "c3beam": "assets/cine/c3beam.webp?v=cf0d9e068c", "c3fog": "assets/cine/c3fog.webp?v=e27d3109d8", "c3spark": "assets/cine/c3spark.webp?v=8ec95a2788", "c3ember": "assets/cine/c3ember.webp?v=386f756069", "c3flash": "assets/cine/c3flash.webp?v=d9e65b2ea5"};
 const CI={};const CINE_FILES=['s1','s2','s3','s4','s5','s6','s7','s8','gas','crowd','arm','shadow','wave','w1','w2','w3','w4','w5','w6','w7','w8','lift','r1','r2','r3','r4','r5','r6','bike','leap','bikef','b1','b2','b6','b7','b8','br1'];
 const CINE_SHEETS=['gas','crowd','arm','shadow','wave','lift','bike','leap','bikef'];
 function cineLoadKeys(keys){for(const k of keys){if(CI[k]||!CINE_SRC[k])continue;const im=new Image();im.decoding='async';im.src=CINE_SRC[k];CI[k]=im;}}
@@ -1375,24 +1377,104 @@ const NOBRUNO={
   r1:{bg:'br1',fx(c,tt){if((tt%.55)<.06)c.glow(.63,.72,.1,.8);c.embers(tt);}},
 };
 function storyCut(list){const brunoGone=!save.heroes.bruno;return list.map(s=>brunoGone&&NOBRUNO[s.bg]&&!(s.vo||'').startsWith('It tore')?Object.assign({},s,NOBRUNO[s.bg]):s);}
+
+/* ---------- CUTSCENE 3: THE FORK IN THE ROAD (first major choice, after Stage 2) ---------- */
+const RED='255,50,40',ACID='190,245,60';
+const smokeDrift=(c,tt,v,a)=>{for(let k=0;k<2;k++){const q=((tt*.035+k*.5)%1);c.sheet('c3smoke',Math.floor(tt*2+k*3)%8,lerp(-.15,1.15,q),v+k*.05,.45,'mid',a*Math.sin(Math.PI*q));}};
+const fogLow=(c,tt,v,a,w)=>{for(let k=0;k<2;k++){const q=((tt*.03+k*.5)%1);c.sheet('c3fog',Math.floor(tt*1.5+k*4)%8,lerp(-.2,1.2,q),v,w||.7,'bottom',a*Math.sin(Math.PI*q));}};
+const blinkEyes=(c,tt,pts,sz)=>pts.forEach(([u,v,st],i)=>{if(tt<st)return;const ph=(tt*1.3+i*.37)%3,a=ph<.12?0:Math.min(1,(tt-st)*2)*(.6+.3*Math.sin(tt*4+i)),r=sz||.007;c.glow(u,v,r*2.4,a*.5,ACID);c.glow(u,v,r*.6,a,'240,255,200');c.glow(u+r*1.7,v,r*2.4,a*.5,ACID);c.glow(u+r*1.7,v,r*.6,a,'240,255,200');});
+const FORK={
+ x01:{bg:'x01',d:7,vo:"Dawn never came. The convoy rolled to a stop where the highway split.",cam:p=>({cx:.5,cy:lerp(.46,.36,ease(p)),z:lerp(1.02,1.16,ease(p))}),snd:()=>SND.engineSet(false),
+  fx(c,tt){smokeDrift(c,tt,.48,.55);for(const[u,v]of[[.03,.93],[.13,.93],[.33,.75],[.39,.75]])c.glow(u,v,.035,.5+.25*Math.sin(tt*6+u*20),RED);c.dim(Math.min(.3,tt*.04));}},
+ xv1:{bg:'xv1',d:7,vo:"Dawn never came. The convoy rolled to a stop where the highway split.",cam:p=>({cx:.5,cy:lerp(.46,.38,ease(p)),z:lerp(1.02,1.14,ease(p))}),snd:()=>SND.groan(-.6,.4),
+  fx(c,tt){smokeDrift(c,tt,.5,.45);blinkEyes(c,tt,[[.1,.5,1],[.2,.53,1.6],[.28,.49,2.3],[.16,.6,3],[.34,.57,3.6],[.06,.64,4.2],[.24,.66,4.6]],.005);c.dim(Math.min(.3,tt*.04));}},
+ x02:{bg:'x02',d:9,choiceAt:5.3,vo:"Commander: \"Highway's faster, but it's crawling. The backroad's clear, but we'd lose the light. Your call.\"",cam:p=>({cx:.48,cy:lerp(.5,.6,ease(p)),z:lerp(1.02,1.12,ease(p))}),
+  fx(c,tt){c.glow(.42,.6,.14,.22+.06*Math.sin(Date.now()/160),ACID);}},
+ xv4:{bg:'xv4',d:9,choiceAt:5.3,vo:"Commander: \"Highway's faster, but it's crawling. The backroad's clear, but we'd lose the light. Your call.\"",cam:p=>({cx:.45,cy:lerp(.5,.6,ease(p)),z:lerp(1.02,1.12,ease(p))}),
+  fx(c,tt){c.glow(.2,.88,.14,.25+.06*Math.sin(Date.now()/160),ACID);}},
+ xv2:{bg:'xv2',d:7,vo:"Commander: \"Highway's dead. We take the backroad.\"",cam:p=>({cx:.45,cy:lerp(.5,.6,ease(p)),z:lerp(1.02,1.12,ease(p))}),
+  fx(c,tt){c.glow(.33,.62,.14,.22+.06*Math.sin(tt*9),ACID);}},
+ xv3:{bg:'xv3',d:7,vo:"Commander: \"Highway's dead. We take the backroad.\"",cam:p=>({cx:.45,cy:lerp(.5,.6,ease(p)),z:lerp(1.02,1.12,ease(p))}),
+  fx(c,tt){c.glow(.1,.86,.12,.25+.06*Math.sin(tt*9),ACID);}},
+ xa3:{bg:'xa3',d:6,vo:"They stayed on the highway.",cam:p=>({cx:lerp(.48,.56,ease(p)),cy:.5,z:lerp(1.04,1.14,p)}),snd:()=>SND.engineSet(true),
+  fx(c,tt){smokeDrift(c,tt,.3,.5);for(const[u,v]of[[.6,.86],[.92,.86],[.49,.6],[.55,.6]])c.glow(u,v,.03,.55+.25*Math.sin(tt*8+u*30),RED);
+    c.sheet('c3peek',Math.floor(tt*5)%8,.09,1.04,.26,'bottom',Math.min(1,tt*.8));}},
+ xa4:{bg:'xa4',d:8,vo:"The dead were waiting. They poured over the lead trucks by the hundreds.",cam:p=>({cx:.5,cy:.5,z:lerp(1.16,1.0,ease(p))}),snd:()=>{SND.engineSet(false);SND.groan(0,.8);SND.groan(-.5,.6);setTimeout(()=>SND.groan(.5,.7),1200);},
+  fx(c,tt){const st=(tt*7)%1<.5;c.glow(.25,.41,.06,st?.8:.2,'255,230,140');c.glow(.4,.41,.06,st?.25:.8,'255,230,140');
+    const q=Math.min(1,tt/7.5);c.sheet('c3horde',Math.min(7,Math.floor(q*8)),lerp(.3,.22,q),lerp(.92,1.12,q),lerp(.3,.62,q),'bottom',Math.min(1,tt*.7));
+    c.shake=3+4*Math.sin(tt*3)**2;}},
+ xa5:{bg:'xa5',d:6,vo:"Only the last trucks broke free, swerving off toward the nearest town.",cam:p=>({cx:lerp(.44,.6,ease(p)),cy:.52,z:1.12}),snd:()=>SND.engineSet(true),
+  fx(c,tt){const f=Math.floor(tt*14)%8;for(let k=0;k<2;k++){c.sheet('c3spark',f,.8,.64,.22,'mid',1,1,'lighter');c.sheet('c3spark',(f+4)%8,.76,.6,.15,'mid',1,1,'lighter');}c.glow(.8,.64,.05,(f>2&&f<6)?.7:.25,'255,220,120');{const q=Math.max(0,Math.min(1,(tt-1.2)/4.6)),e=q*q;if(q>0){const u=lerp(.19,.06,e),v=lerp(.6,1.18,e),w=lerp(.06,.3,e);c.sheet('c3truck',Math.floor(tt*10)%8,u,v,w,'bottom',Math.min(1,q*6));const hv=v-w*.62;c.glow(u-w*.25,hv,w*.22,.55,'255,230,140');c.glow(u+w*.25,hv,w*.22,.55,'255,230,140');}}
+    for(const[u,v]of[[.2,.54],[.27,.54],[.36,.6],[.43,.6]])c.glow(u,v,.04,.6+.2*Math.sin(tt*11+u*9),'255,230,140');if(tt<.6)c.shake=5;}},
+ xa6:{bg:'xa6',d:7,vo:"Commander: \"Road's blocked. Everybody out. We go on foot from here.\"",cam:p=>({cx:lerp(.42,.5,ease(p)),cy:.5,z:1.1}),snd:()=>{SND.engineSet(false);},
+  fx(c,tt){const a=Math.max(.15,1-tt/6);c.sheet('c3beam',Math.floor(tt*3)%8,.6,.6,.36,'mid',a*.8,1,'lighter');c.sheet('c3beam',Math.floor(tt*3+3)%8,.68,.6,.3,'mid',a*.6,1,'lighter');
+    fogLow(c,tt,.72,.45,.5);}},
+ xa7:{bg:'xa7',d:9,vo:"The town was empty. Too empty.",cam:p=>({cx:.52,cy:lerp(.52,.44,p),z:lerp(1.02,1.18,p)}),snd:()=>setTimeout(()=>SND.groan(.7,.35),5400),
+  fx(c,tt){const on=!(((tt%2.3)>1.9&&(tt%2.3)<2.0)||((tt%2.3)>2.1&&(tt%2.3)<2.15));c.glow(.3,.11,.08,on?.55:.05);fogLow(c,tt,.72,.6,.55);
+    if(tt>5.2&&tt<5.9){const q=(tt-5.2)/.7;c.sheet('shadow',3,lerp(.82,.98,q),.66,.07,'bottom',.75*Math.sin(Math.PI*q));}}},
+ xb3:{bg:'xb3',d:8,vo:"Bruno: \"Cyber Future is twelve miles up that road. My wife is in there. I'm not taking the long way.\"",cam:p=>({cx:lerp(.5,.42,ease(p)),cy:lerp(.5,.36,ease(p)),z:lerp(1.02,1.2,ease(p))}),snd:()=>SND.engineSet(false),
+  fx(c,tt){c.glow(.6,.5,.07,.5+.2*Math.sin(tt*5),'255,230,140');c.glow(.645,.5,.07,.5+.2*Math.sin(tt*5+1),'255,230,140');}},
+ xb4:{bg:'xb4',d:7,vo:"He took one truck and two volunteers. Everyone else moved to the others.",cam:p=>({cx:lerp(.44,.56,ease(p)),cy:.5,z:1.1}),snd:()=>{setTimeout(()=>SND.wallHit&&SND.wallHit(),3800);},
+  fx(c,tt){for(const[u,v]of[[.02,.42],[.07,.43],[.33,.46],[.44,.46]])c.glow(u,v,.03,.5+.15*Math.sin(tt*7+u*13),'255,230,140');if(tt>3.8&&tt<4)c.shake=4;}},
+ xb5:{bg:'xb5',d:8,vo:"Rook: \"Give her our best, big man.\" Commander: \"We'll see you there. Don't make me come find you.\"",cam:p=>({cx:.5,cy:.5,z:lerp(1.02,1.1,p)}),snd:()=>{SND.engineSet(true);setTimeout(()=>SND.engineSet(false),3000);},
+  fx(c,tt){const q=Math.min(1,tt/7);c.glow(.73,.53,lerp(.05,.012,q),.8*(1-q*.7),RED);c.glow(.77,.53,lerp(.05,.012,q),.8*(1-q*.7),RED);}},
+ xv5:{bg:'xv5',d:7,vo:"Commander: \"We'll see you there. Don't make me come find you.\"",cam:p=>({cx:.5,cy:.5,z:lerp(1.02,1.1,p)}),snd:()=>{SND.engineSet(true);setTimeout(()=>SND.engineSet(false),3000);},
+  fx(c,tt){const q=Math.min(1,tt/6);c.glow(.727,.55,lerp(.04,.01,q),.8*(1-q*.7),RED);c.glow(.753,.55,lerp(.04,.01,q),.8*(1-q*.7),RED);}},
+ xb6:{bg:'xb6',d:6,vo:"The rest of the convoy took the backroad, into the trees.",cam:p=>({cx:lerp(.5,.58,ease(p)),cy:.52,z:lerp(1.04,1.16,p)}),snd:()=>SND.engineSet(true),
+  fx(c,tt){for(const[u,v]of[[.02,.6],[.27,.67],[.36,.67],[.5,.64],[.58,.6]])c.glow(u,v,.03,.55+.2*Math.sin(tt*8+u*17),RED);fogLow(c,tt,.62,.45,.4);c.dim(Math.min(.35,tt*.06));}},
+ xb7:{bg:'xb7',d:7,vo:"Half a mile in, the road was gone.",cam:p=>({cx:.52,cy:lerp(.5,.45,p),z:lerp(1.04,1.12,p)}),snd:()=>{SND.engineSet(false);setTimeout(()=>SND.explosion(.6),4400);},
+  fx(c,tt){c.sheet('c3ember',Math.floor(tt*8)%8,.62,.5,.22,'bottom',.7,1,'lighter');c.sheet('c3ember',Math.floor(tt*8+4)%8,.36,.52,.18,'bottom',.6,1,'lighter');
+    c.glow(.55,.4,.25,.18+.1*Math.sin(tt*13)+.06*Math.sin(tt*29));if(tt>4.4&&tt<4.7)c.flash(.35*(1-(tt-4.4)/.3));if(tt>4.4&&tt<5.2)c.shake=9*(1-(tt-4.4)/.8);c.embers(tt);}},
+ xb8:{bg:'xb8',d:9,vo:"Commander: \"Grab what you can carry. We walk through the forest.\"",cam:p=>({cx:lerp(.5,.56,ease(p)),cy:.5,z:lerp(1.02,1.14,p)}),snd:()=>setTimeout(()=>SND.groan(.8,.3),6200),
+  fx(c,tt){c.beam('c3flash',Math.floor(tt*4)%8,.785,.51,.2,.2+.16*Math.sin(tt*1.4),.45);fogLow(c,tt,1.02,.55,.8);c.sheet('c3ember',Math.floor(tt*6)%8,.12,.4,.2,'bottom',.6);
+    blinkEyes(c,tt,[[.94,.33,6.2]],.005);}},
+ xv6:{bg:'xv6',d:9,vo:"Commander: \"Grab what you can carry. We walk through the forest.\"",cam:p=>({cx:lerp(.5,.56,ease(p)),cy:.5,z:lerp(1.02,1.14,p)}),snd:()=>setTimeout(()=>SND.groan(.8,.3),6200),
+  fx(c,tt){c.beam('c3flash',Math.floor(tt*4)%8,.855,.47,.18,.25+.16*Math.sin(tt*1.4),.45);fogLow(c,tt,1.02,.55,.8);c.sheet('c3ember',Math.floor(tt*6)%8,.12,.38,.18,'bottom',.6);
+    blinkEyes(c,tt,[[.42,.3,6.2]],.005);}},
+};
+const FORK_SHEETS=['c3horde','c3truck','c3smoke','c3peek','c3beam','c3fog','c3spark','c3ember','c3flash'];
+const FORK_KEYS=Object.keys(FORK).concat(FORK_SHEETS);
+function forkCrew(){return{bruno:!!save.heroes.bruno,rook:!!save.heroes.rook};}
+function forkBranch(route){const{rook}=forkCrew(),F=FORK;
+  if(route==='highway')return[F.xa3,F.xa4,F.xa5,F.xa6,F.xa7];
+  return[F.xb3,F.xb4,rook?F.xb5:F.xv5,F.xb6,F.xb7,rook?F.xb8:F.xv6];}
+function forkList(){const{bruno,rook}=forkCrew(),F=FORK;
+  if(!bruno){const B=forkBranch('backroad');return[F.xv1,rook?F.xv2:F.xv3,B[3],B[4],B[5]];}
+  return[F.x01,rook?F.x02:F.xv4];}
+/* record=true on the real run: saves the pick and logs it to the story record */
+function startFork(done,record){cineLoadKeys(FORK_KEYS);const forced=!forkCrew().bruno;
+  startIntro(()=>{const route=cine0pick||'backroad';cine0pick=null;
+    if(record){const crew=forkCrew();save.route=route;story('choice',{id:'fork_road',pick:route,forced,crew});
+      if(route==='backroad'&&crew.bruno)story('hero_split',{hero:'bruno',to:'cyber_future_lab'});persist();}
+    done&&done(route);},forkList());
+  if(forced)cine0pick='backroad';}
+let cine0pick=null;
+function forkPick(route){if(!cine||cine0pick)return;cine0pick=route;SND.click();
+  cine.list=cine.list.slice(0,cine.i+1).concat(forkBranch(route));const el=clayer.querySelector('.cchoice');if(el)el.remove();}
+function forkShowChoice(){if(clayer.querySelector('.cchoice'))return;const d=document.createElement('div');d.className='cchoice';
+  d.innerHTML='<button type="button" data-r="highway"><b>Stay on the highway</b></button><button type="button" data-r="backroad"><b>Take the backroad</b></button>';
+  d.addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;e.stopPropagation();forkPick(b.dataset.r);});
+  d.addEventListener('pointerdown',e=>e.stopPropagation());clayer.appendChild(d);}
 let cine=null;
 function cineCtl(W,H,s,cam){
   const m=(u,v)=>[W/2+(u-cam.cx)*IW*s,H/2+(v-cam.cy)*IH*s];
   return{shake:0,
-    sheet(k,f,u,v,w,anchor,alpha,clip){const im=CI[k],M=CINE_META[k];if(!im||!im.complete||!im.naturalWidth)return;
-      const fw=M.fw,fh=M.fh*(clip||1),dw=w*IW*s,dh=dw*fh/fw,[x,y]=m(u,v);
-      cctx.globalAlpha=alpha==null?1:Math.max(0,alpha);
-      cctx.drawImage(im,f*fw,0,fw,fh,x-dw/2,anchor==='bottom'?y-dh:y-dh/2,dw,dh);cctx.globalAlpha=1;},
+    sheet(k,f,u,v,w,anchor,alpha,clip,op){const im=CI[k],M=CINE_META[k];if(!im||!im.complete||!im.naturalWidth)return;
+      const fw=im.naturalWidth/M.n,fh=im.naturalHeight*(clip||1),dw=w*IW*s,dh=dw*fh/fw,[x,y]=m(u,v);
+      cctx.globalAlpha=alpha==null?1:Math.max(0,Math.min(1,alpha));if(op)cctx.globalCompositeOperation=op;
+      cctx.drawImage(im,(f%M.n)*fw,0,fw,fh,x-dw/2,anchor==='bottom'?y-dh:y-dh/2,dw,dh);cctx.globalAlpha=1;cctx.globalCompositeOperation='source-over';},
+    beam(k,f,u,v,w,rot,alpha){const im=CI[k],M=CINE_META[k];if(!im||!im.complete||!im.naturalWidth)return;const fw=im.naturalWidth/M.n,fh=im.naturalHeight,dw=w*IW*s,dh=dw*fh/fw,[x,y]=m(u,v);
+      cctx.save();cctx.translate(x,y);cctx.rotate(rot||0);cctx.globalAlpha=Math.max(0,Math.min(1,alpha==null?1:alpha));cctx.globalCompositeOperation='lighter';cctx.drawImage(im,(f%M.n)*fw,0,fw,fh,-dw*.04,-dh/2,dw,dh);cctx.restore();},
     flicker(tt,amt,every){const ph=(tt%every)/every;const off=(ph>.82&&ph<.86)||(ph>.9&&ph<.93)||Math.random()<.02;
       cctx.fillStyle='rgba(8,4,12,'+(off?amt+.35:amt*.25*(.5+.5*Math.sin(tt*9)))+')';cctx.fillRect(0,0,W,H);},
-    glow(u,v,r,a){const[x,y]=m(u,v),R=r*IW*s,g=cctx.createRadialGradient(x,y,0,x,y,R);g.addColorStop(0,'rgba(255,140,60,'+a+')');g.addColorStop(1,'rgba(255,140,60,0)');
+    glow(u,v,r,a,rgb){rgb=rgb||'255,140,60';const[x,y]=m(u,v),R=r*IW*s,g=cctx.createRadialGradient(x,y,0,x,y,R);g.addColorStop(0,'rgba('+rgb+','+Math.max(0,a)+')');g.addColorStop(1,'rgba('+rgb+',0)');
       cctx.globalCompositeOperation='lighter';cctx.fillStyle=g;cctx.fillRect(x-R,y-R,R*2,R*2);cctx.globalCompositeOperation='source-over';},
     rain(tt){cctx.strokeStyle='rgba(205,245,140,.28)';cctx.lineWidth=Math.max(1,W/700);cctx.beginPath();
       for(let i=0;i<90;i++){const sx=((i*137.5)%1)*W*1.2-W*.1,sp=(i%7)/7,y=((tt*(900+sp*500)+i*97)%(H+80))-40,x=sx+((tt*120+i*31)%40);cctx.moveTo(x,y);cctx.lineTo(x-H*.012,y+H*.05);}
       cctx.stroke();},
     portrait(id,u,v,h){const im=typeof POR!=='undefined'&&POR[id];if(!im||!im.complete)return;const[x,y]=m(u,v),S_=h*H;cctx.drawImage(im,x-S_/2,y-S_/2,S_,S_);cctx.strokeStyle='#0b080e';cctx.lineWidth=S_*.02;cctx.strokeRect(x-S_/2,y-S_/2,S_,S_);},
     atlas(fr,u,v,hFrac,alpha){if(!atlasReady)return;const r=RECTS[fr];if(!r)return;const[x,y]=m(u,v),sc=hFrac*IH*s/120;cctx.globalAlpha=alpha==null?1:alpha;cctx.drawImage(ATL,r[0],r[1],r[2],r[3],x-r[4]*sc,y-r[5]*sc,r[2]*sc,r[3]*sc);cctx.globalAlpha=1;},
-    sheetR(k,f,u,v,w,rot,alpha){const im=CI[k],M=CINE_META[k];if(!im||!im.complete||!im.naturalWidth)return;const fw=M.fw,fh=M.fh,dw=w*IW*s,dh=dw*fh/fw,[x,y]=m(u,v);
+    sheetR(k,f,u,v,w,rot,alpha){const im=CI[k],M=CINE_META[k];if(!im||!im.complete||!im.naturalWidth)return;const fw=im.naturalWidth/M.n,fh=im.naturalHeight,dw=w*IW*s,dh=dw*fh/fw,[x,y]=m(u,v);
       cctx.save();cctx.translate(x,y);cctx.rotate(rot||0);cctx.globalAlpha=alpha==null?1:alpha;cctx.drawImage(im,f*fw,0,fw,fh,-dw/2,-dh,dw,dh);cctx.restore();cctx.globalAlpha=1;},
     eye(u,v,a){const[x,y]=m(u,v),R=IW*s*.012;cctx.globalCompositeOperation='lighter';const g=cctx.createRadialGradient(x,y,0,x,y,R*4);g.addColorStop(0,'rgba(182,242,58,'+a+')');g.addColorStop(1,'rgba(182,242,58,0)');cctx.fillStyle=g;cctx.fillRect(x-R*4,y-R*4,R*8,R*8);cctx.globalCompositeOperation='source-over';cctx.fillStyle='rgba(240,255,200,'+a+')';cctx.beginPath();cctx.ellipse(x,y,R,R*.55,0,0,6.283);cctx.fill();},
     pulse(col,a){cctx.globalCompositeOperation='lighter';cctx.globalAlpha=Math.max(0,a);cctx.fillStyle=col;cctx.fillRect(0,0,W,H);cctx.globalAlpha=1;cctx.globalCompositeOperation='source-over';},
@@ -1410,17 +1492,17 @@ function cineEl(){
   clayer=document.createElement('div');clayer.id='intro';clayer.hidden=true;
   clayer.innerHTML='<canvas></canvas><button type="button" class="cskip">Skip</button>';
   stage.appendChild(clayer);ccv=clayer.querySelector('canvas');cctx=ccv.getContext('2d');
-  clayer.querySelector('.cskip').addEventListener('click',e=>{e.stopPropagation();endIntro();});
-  ccv.addEventListener('pointerdown',()=>{if(!cine)return;const sh=cine.list[cine.i];if(cine.tt<sh.d-.8)cine.tt=sh.d-.8;});
+  clayer.querySelector('.cskip').addEventListener('click',e=>{e.stopPropagation();if(cine&&!cine0pick){const j=cine.list.findIndex((q,k)=>k>=cine.i&&q.choiceAt!=null);if(j>=0){if(j!==cine.i){cine.i=j;cine.lc=0;SND.whoosh();}cine.tt=Math.max(cine.tt,cine.list[j].choiceAt);return;}}endIntro();});
+  ccv.addEventListener('pointerdown',()=>{if(!cine)return;const sh=cine.list[cine.i];if(sh.choiceAt!=null&&!cine0pick){cine.tt=Math.max(cine.tt,sh.choiceAt);return;}if(cine.tt<sh.d-.8)cine.tt=sh.d-.8;});
   GRAIN=document.createElement('canvas');GRAIN.width=GRAIN.height=180;const g=GRAIN.getContext('2d'),id=g.createImageData(180,180);
   for(let i=0;i<id.data.length;i+=4){const v=Math.random()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=Math.random()<.5?40:0;}g.putImageData(id,0,0);
 }
 function startIntro(done,list){cineEl();cineLoad();cineLoad(list||SHOTS);cine={i:0,tt:0,done,last:performance.now(),list:storyCut(list||SHOTS)};state='intro';ui();clayer.hidden=false;requestAnimationFrame(cineFrame);}
-function endIntro(){if(!cine)return;const d=cine.done;cine=null;clayer.hidden=true;d&&d();}
+function endIntro(){if(!cine)return;const d=cine.done;cine=null;clayer.hidden=true;const ch=clayer.querySelector('.cchoice');if(ch)ch.remove();SND.engineSet(false);d&&d();}
 function cineFrame(now){
   if(!cine)return;
   const dt=Math.min(.05,(now-cine.last)/1000);cine.last=now;cine.tt+=dt;
-  const L=cine.list,sh=L[cine.i];if(!cine.snd){cine.snd=1;SND.whoosh();sh.snd&&sh.snd();}if(cine.tt>=sh.d){cine.i++;cine.tt=0;if(cine.i>=L.length){endIntro();return;}SND.whoosh();L[cine.i].snd&&L[cine.i].snd();const k=L===SHOTS?cine.i:-1;if(k===2)SND.hiss();if(k===3)SND.thunder();if(k===4)SND.buzz();if(k===5)SND.explosion(.4);}
+  const L=cine.list,sh=L[cine.i];if(sh.choiceAt!=null&&!cine0pick&&cine.tt>=sh.choiceAt){cine.tt=sh.choiceAt;forkShowChoice();}if(!cine.snd){cine.snd=1;SND.whoosh();sh.snd&&sh.snd();}if(cine.tt>=sh.d){cine.i++;cine.tt=0;if(cine.i>=L.length){endIntro();return;}SND.whoosh();L[cine.i].snd&&L[cine.i].snd();const k=L===SHOTS?cine.i:-1;if(k===2)SND.hiss();if(k===3)SND.thunder();if(k===4)SND.buzz();if(k===5)SND.explosion(.4);}
   const S=cine.list[cine.i],r=clayer.getBoundingClientRect(),dpr=Math.min(2,window.devicePixelRatio||1);
   if(ccv.width!==Math.round(r.width*dpr)||ccv.height!==Math.round(r.height*dpr)){ccv.width=Math.round(r.width*dpr);ccv.height=Math.round(r.height*dpr);}
   const W=ccv.width,H=ccv.height,tt=cine.tt,p=tt/S.d,cam=S.cam(p),s=Math.max(W/IW,H/IH)*cam.z;

@@ -85,6 +85,12 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
 #intro canvas{width:100%;height:100%;display:block}
 .cskip{position:absolute;top:max(12px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));font:700 13px var(--ui);letter-spacing:.1em;text-transform:uppercase;color:#efe6dc;background:rgba(11,8,14,.6);border:1px solid rgba(239,230,220,.35);border-radius:8px;padding:9px 14px;cursor:pointer}
 .cskip:focus-visible{outline:2px solid #ff6a2b;outline-offset:2px}
+.cchoice{position:absolute;left:0;right:0;bottom:calc(24% + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:clamp(12px,3vw,28px);flex-wrap:wrap;padding:0 16px;pointer-events:auto;animation:cIn .45s cubic-bezier(.2,1.4,.4,1) both}
+.cchoice button{font:400 clamp(15px,2.6vw,22px)/1 var(--display,"Bungee"),sans-serif;letter-spacing:.04em;text-transform:uppercase;padding:16px 22px;min-width:min(42vw,260px);border:3px solid #0b080e;border-radius:4px;cursor:pointer;color:#0b080e;background:#ff6a2b;box-shadow:5px 5px 0 #6b2fa6,-2px -2px 0 #b6f23a;transform:rotate(-1.2deg);transition:transform .12s}
+.cchoice button+button{background:#b6f23a;box-shadow:5px 5px 0 #6b2fa6,-2px -2px 0 #ff6a2b;transform:rotate(1.2deg);animation-delay:.12s}
+.cchoice button:hover,.cchoice button:focus-visible{transform:rotate(0) scale(1.04);outline:none}
+.cchoice button:active{transform:translate(3px,3px);box-shadow:2px 2px 0 #6b2fa6}
+@keyframes cIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 
 /* Title menu: riso key art, printed ink buttons */
 .mscreen{position:absolute;inset:0;overflow:hidden;background:#0b080e}
@@ -201,13 +207,13 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
   <div class="overlay" id="ov"></div>
 </div>
 
-<script>window.__VER='60aa042907';
+<script>window.__VER='33ab4f085a';
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 // when the app comes back from the background, check for a newer version and reload if the player is on a menu
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;
   fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(d=>{
     if(d.v&&d.v!==window.__VER&&window.__canReload&&window.__canReload())location.reload();}).catch(()=>{});});
 </script>
-<script src="game.js?v=60aa042907"></script>
+<script src="game.js?v=33ab4f085a"></script>
 </body>
 </html>
