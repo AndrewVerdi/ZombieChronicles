@@ -652,7 +652,7 @@ function startStage3(){
 }
 function startWave3(w){
   R.wave=w;SND.alarm();const H2=HORDE()?2:1;const q=[];
-  if(w===3){for(let i=0;i<200;i++)q.push('grunt');}
+  if(w===3){for(let i=0;i<200*H2;i++)q.push('grunt');}
   else if(w===2){for(let i=0;i<15*H2;i++){q.push('runner');q.push('armored');}for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}}
   else{for(let i=0;i<6*H2;i++)q.push('runner');for(let i=0;i<14*H2;i++)q.push('grunt');for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}}
   R.queue=q;R.kills=0;R.spawnLeft=q.length;R.spawnTotal=q.length;R.spawnT=w===3?3.2:2.4;
