@@ -1160,7 +1160,7 @@ function ui(){
   ov.classList.toggle('title-mode',state==='menu'||state==='splash');
   if(state==='splash'){ov.innerHTML=`<div class="mscreen" data-act="begin"><div class="mbg"></div><div class="mglow"></div><div class="mgrain"></div><div class="mvig" style="background:rgba(11,8,14,.55)"></div>
     <div class="msplash"><div class="mlogo"></div><button class="mbtn play" data-act="begin">Tap to start</button><div class="mrot"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 14a9 9 0 0 0 6 6M21 10a9 9 0 0 0-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Rotate your phone sideways for widescreen</div><div class="mbest">Sound on for the full experience</div></div></div>`;return;}
-  ov.classList.toggle('paper',['inter','roster','load','options','credits','bye','over','win','win2','stat','modes'].includes(state));
+  ov.classList.toggle('paper',['inter','roster','load','options','credits','bye','over','win','win2','stat','modes','gallery'].includes(state));
   if(state==='menu'){
     ov.innerHTML=`<div class="mscreen"><div class="mbg"></div><div class="mglow"></div>
       <div class="mgas g1"></div><div class="mgas g2"></div><div class="mgrain"></div><div class="mvig"></div>
@@ -1199,9 +1199,19 @@ function ui(){
     <div class="btns"><button class="btn ghost" data-act="mus">Music: ${SND.pref.music?'On':'Off'}</button><button class="btn ghost" data-act="sfx">Sound effects: ${SND.pref.sfx?'On':'Off'}</button></div>
     <h3>Story</h3>
     <div class="btns"><button class="btn ghost" data-act="intro">Watch the intro</button><button class="btn ghost" data-act="intro2">Watch Stage 1 ending</button>${(save.cleared||0)>=2?'<button class="btn ghost" data-act="intro3">Watch Rook arrives</button><button class="btn ghost" data-act="intro4">'+(save.route?'Watch the fork in the road':'Choose the road')+'</button>':''}</div>
+    <div class="btns"><button class="btn ghost" data-act="gallery">Cutscene gallery</button></div>
     <h3>Progress</h3>
     <div class="btns"><button class="btn ghost" data-act="reset">Reset progress</button></div>
     <button class="btn ghost" data-act="menu">Back</button>`;
+  }else if(state==='gallery'){
+    const G=(k,t)=>`<button class="btn ghost" data-act="gal" data-k="${k}">${t}</button>`;
+    html=`<h2>Cutscene gallery</h2><div class="stripe"></div>
+    <p class="sub">Every cutscene and every version of it. Watching here never changes your save.</p>
+    <h3>Opening</h3><div class="btns">${G('intro','The intro')}</div>
+    <h3>Stage 1 ending</h3><div class="btns">${G('s1','Whole squad')}${G('s1b','Bruno fallen')}</div>
+    <h3>Rook arrives</h3><div class="btns">${G('s2','Whole squad')}${G('s2b','Bruno fallen')}</div>
+    <h3>The fork in the road</h3><p class="sub">The first two pick a road at the choice.</p><div class="btns">${G('f','Whole squad')}${G('fr','Rook fallen')}${G('fb','Bruno fallen')}${G('fbr','Bruno and Rook fallen')}</div>
+    <button class="btn ghost" data-act="options">Back</button>`;
   }else if(state==='credits'){
     html=`<h2>Credits</h2><div class="stripe"></div>
     <div class="credits"><b>HOLDOUT SQUAD: THE ZOMBIE CHRONICLES</b></div>
@@ -1257,6 +1267,10 @@ ov.addEventListener('click',e=>{
   else if(a==='begin'){state='menu';ui();return;}
   else if(a==='retry'){freshSave();legacyStart(save.mode||'normal');SX=0;camX=0;newRun(1);}
   else if(a==='stage2'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:2});}SX=0;camX=0;startStage2();}
+  else if(a==='gallery'){state='gallery';ui();return;}
+  else if(a==='gal'){const k=b.dataset.k,back=()=>{CREW_VIEW=null;state='gallery';ui();};
+    CREW_VIEW={bruno:!/b/.test(k.slice(1)),rook:!/r/.test(k.slice(1))};
+    if(k==='intro')startIntro(back);else if(k[0]==='s'&&k[1]==='1')startIntro(back,SHOTS2);else if(k[0]==='s')startIntro(back,SHOTS3);else startFork(back,false);return;}
   else if(a==='intro4'){const rec=!save.route;startFork(()=>{state='options';ui();},rec);}
   else if(a==='intro3'){startIntro(()=>{state='options';ui();},SHOTS3);}
   else if(a==='intro2'){startIntro(()=>{state='options';ui();},SHOTS2);}
@@ -1376,7 +1390,8 @@ const NOBRUNO={
   w8:{bg:'b8',vo:"The convoy rolled out. The Commander would hold the road alone until the last truck was clear.",fx(c,tt){if((tt%.6)<.06)c.glow(.96,.6,.09,.8);c.embers(tt);}},
   r1:{bg:'br1',fx(c,tt){if((tt%.55)<.06)c.glow(.63,.72,.1,.8);c.embers(tt);}},
 };
-function storyCut(list){const brunoGone=!save.heroes.bruno;return list.map(s=>brunoGone&&NOBRUNO[s.bg]&&!(s.vo||'').startsWith('It tore')?Object.assign({},s,NOBRUNO[s.bg]):s);}
+let CREW_VIEW=null;/* gallery override: {bruno,rook} */
+function storyCut(list){const brunoGone=CREW_VIEW?!CREW_VIEW.bruno:!save.heroes.bruno;return list.map(s=>brunoGone&&NOBRUNO[s.bg]&&!(s.vo||'').startsWith('It tore')?Object.assign({},s,NOBRUNO[s.bg]):s);}
 
 /* ---------- CUTSCENE 3: THE FORK IN THE ROAD (first major choice, after Stage 2) ---------- */
 const RED='255,50,40',ACID='190,245,60';
@@ -1437,7 +1452,7 @@ const FORK={
 };
 const FORK_SHEETS=['c3horde','c3truck','c3smoke','c3peek','c3beam','c3fog','c3spark','c3ember','c3flash'];
 const FORK_KEYS=Object.keys(FORK).concat(FORK_SHEETS);
-function forkCrew(){return{bruno:!!save.heroes.bruno,rook:!!save.heroes.rook};}
+function forkCrew(){return CREW_VIEW?{bruno:CREW_VIEW.bruno,rook:CREW_VIEW.rook}:{bruno:!!save.heroes.bruno,rook:!!save.heroes.rook};}
 function forkBranch(route){const{rook}=forkCrew(),F=FORK;
   if(route==='highway')return[F.xa3,F.xa4,F.xa5,F.xa6,rook?F.xa7:F.xv7];
   return[F.xb3,F.xb4,rook?F.xb5:F.xv5,F.xb6,F.xb7,rook?F.xb8:F.xv6];}
@@ -1540,6 +1555,6 @@ function cineFrame(now){
 (()=>{try{const c=document.createElement('canvas');c.width=c.height=160;const x=c.getContext('2d'),d=x.createImageData(160,160);
 for(let i=0;i<d.data.length;i+=4){const v=Math.random()*255;d.data[i]=d.data[i+1]=d.data[i+2]=v;d.data[i+3]=Math.random()<.5?46:0;}x.putImageData(d,0,0);
 document.documentElement.style.setProperty('--grain','url('+c.toDataURL()+')');document.documentElement.style.setProperty('--gasimg','url('+CINE_SRC.gas+')');}catch(e){}})();
-window.__canReload=()=>['splash','menu','options','credits','load','modes','bye'].includes(state);
+window.__canReload=()=>['splash','menu','options','credits','load','modes','bye','gallery'].includes(state);
 ui();requestAnimationFrame(loop);setTimeout(()=>{cineLoad(SHOTS);cineLoad();},800);
 })();
