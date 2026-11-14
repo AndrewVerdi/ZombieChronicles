@@ -354,7 +354,7 @@ function jeepUpdate(dt){
     if(j.meter<1)j.meter=Math.max(0,j.meter-dt*.03);
     if(Math.random()<dt*10)R.pa.push({x:j.x+(Math.random()-.5)*60,z:j.z,h:30+Math.random()*20,vx:(Math.random()-.5)*20,vz:0,vh:70,t:.9,col:Math.random()<.3?'#ff8a3d':'#4a4450',ng:1});
     if(j.meter>=1)freeBruno(j);
-    else if(j.hp<=0){j.phase='lost';j.t=0;SND.explosion(1);if(!save.fallen.includes('bruno'))save.fallen.push('bruno');if(!HORDE()){save.downed=save.downed||{};save.downed.bruno={lv:1,xp:0};}persist();R.shake=.5;burst(j.x,j.z,30,'#ff7a2e',40);burst(j.x,j.z,30,'#3a3440',30);
+    else if(j.hp<=0){j.phase='lost';j.t=0;SND.explosion(1);story(HORDE()?'hero_died':'hero_down',{hero:'bruno',how:'jeep_destroyed'});if(!save.fallen.includes('bruno'))save.fallen.push('bruno');if(!HORDE()){save.downed=save.downed||{};save.downed.bruno={lv:1,xp:0};}persist();R.shake=.5;burst(j.x,j.z,30,'#ff7a2e',40);burst(j.x,j.z,30,'#3a3440',30);
       R.banner={txt:'BRUNO IS DOWN',t:2.6,col:'#ff4d5e'};}
   }else{
     if(j.phase==='lost'&&Math.random()<dt*12)R.pa.push({x:j.x+(Math.random()-.5)*70,z:j.z,h:20,vx:0,vz:0,vh:80,t:1,col:Math.random()<.4?'#ff7a2e':'#3a3440',ng:1});
@@ -626,7 +626,7 @@ function maxHp(id){return id==='cmd'?BASE_HP.cmd+15*(save.cmd-1):BASE_HP[id]+14*
 function getHp(id){if(id==='cmd'){if(save.cmdHp==null)save.cmdHp=maxHp('cmd');return save.cmdHp;}const s=save.heroes[id];if(s.hp==null)s.hp=maxHp(id);return s.hp;}
 function setHp(id,v){if(id==='cmd')save.cmdHp=v;else save.heroes[id].hp=v;}
 function healAll(f){for(const id of['cmd',...save.active])setHp(id,Math.min(maxHp(id),getHp(id)+maxHp(id)*f));}
-function addHero(id){
+function addHero(id){story('hero_joined',{hero:id});
   save.heroes[id]={lv:1,xp:0,hp:BASE_HP[id]};
   const act=save.active.length<MAX_ACTIVE;if(act)save.active.push(id);
   return act;
@@ -641,6 +641,7 @@ function hurtMember(id,d){
   if(id==='cmd'){R.over=true;gameOver();return;}
   if(m){burst(m.x,m.z,40,HEROES[id].color,30);R.dead.push({hero:id,x:m.x,z:m.z,t:0,fr:heroFrame(id)});}
   if(!HORDE()){save.downed=save.downed||{};save.downed[id]={lv:save.heroes[id].lv,xp:save.heroes[id].xp};}
+  story(HORDE()?'hero_died':'hero_down',{hero:id,level:save.heroes[id].lv});
   delete save.heroes[id];save.active=save.active.filter(h=>h!==id);if(!save.fallen.includes(id))save.fallen.push(id);
   for(const e of R.en)if(e.tgt===id){e.tgt=null;e.atk=undefined;}
   SND.heroDown();R.banner={txt:HEROES[id].name.toUpperCase()+(HORDE()?' HAS FALLEN':' IS DOWN'),t:3,col:'#ff4d5e'};R.shake=.4;persist();
@@ -657,6 +658,26 @@ function squadTargets(){
   return out;
 }
 let SQX={};
+
+/* ---------- LEGACY RECORD: a clean story log kept apart from gameplay numbers, for a future sequel ---------- */
+const LEGACY_SCHEMA=1;
+function legacy(){if(!save.legacy||save.legacy.schema!==LEGACY_SCHEMA)save.legacy={schema:LEGACY_SCHEMA,game:'holdout-squad-1',current:null,completed:[]};return save.legacy;}
+function where(){return R?{stage:R.stage||1,wave:R.stage===2?null:R.wave}:{};}
+function story(type,data){const L=legacy();if(!L.current)return;L.current.events.push(Object.assign({type,at:Date.now()},where(),data||{}));}
+function legacySnapshot(result){
+  const heroes={};for(const id of['cmd',...HERO_ORDER]){
+    if(id==='cmd'){heroes.cmd={status:result==='commander_fell'?'fell':'alive',level:save.cmd};continue;}
+    if(save.heroes[id])heroes[id]={status:'alive',level:save.heroes[id].lv,active:save.active.includes(id)};
+    else if(save.fallen.includes(id))heroes[id]={status:HORDE()?'dead':'down'};}
+  const kills={};for(const id in(save.runStats||{}))kills[id]=Object.values(save.runStats[id]).reduce((a,b)=>a+b,0);
+  return{heroes,kills,gold:save.gold,stagesCleared:save.legacy.current.stagesCleared.slice()};
+}
+function legacyStart(mode){const L=legacy();if(L.current)legacyEnd('abandoned');
+  L.current={id:Date.now().toString(36),mode,started:Date.now(),events:[],stagesCleared:[]};story('run_start',{mode});}
+function legacyEnd(result){const L=legacy();if(!L.current)return;story('run_end',{result});
+  L.current.result=result;L.current.ended=Date.now();L.current.final=legacySnapshot(result);
+  L.completed.push(L.current);if(L.completed.length>20)L.completed.shift();L.current=null;}
+function legacyStage(n){const L=legacy();if(!L.current)return;if(!L.current.stagesCleared.includes(n))L.current.stagesCleared.push(n);story('stage_clear',{stage:n,survivors:['cmd',...save.active]});}
 function squad(){
   const out=[{id:'cmd',x:SX,z:0}],tg=squadTargets();
   for(const h in tg){const p=SQX[h]||(SQX[h]=[tg[h][0],tg[h][1]]);out.push({id:h,x:p[0],z:p[1]});}
@@ -763,6 +784,7 @@ function kill(e,own){addKill(own,e.type);
   if(own==='cmd'){cmdXp(e.xp);const hs=save.active.slice();hs.forEach(h=>giveXp(h,e.xp*.3/Math.max(1,hs.length)));}
   if(e.type!=='boss'||1){R.kills=(R.kills||0)+1;if(save.cmd>=3&&R.kills%10===0)rally();}
   else giveXp(own,e.xp);
+  if(e.type==='boss')story('boss_defeated',{boss:'the_ward',by:own});
   if(e.type==='boss'&&R.stage===2){R.escapeT=3.2;R.spawnLeft=0;}
   if(e.type==='boss'){R.banner={txt:R.stage===2?'THE CONVOY BREAKS FREE':'THE WARD IS DOWN',t:3,col:'#b6f23a'};SND.explosion(.7);R.shake=.6;R.proj=[];}
   if(META[e.type]){R.dead.push({type:e.type,x:e.x,z:e.z,r:e.r,t:0,elite:e.elite});burst(e.x,e.z,e.r,e.col,5);}
@@ -893,7 +915,7 @@ function update(dt){
   R.en=R.en.filter(e=>!e.dead);R.bu=R.bu.filter(b=>b.life>0);R.cr=R.cr.filter(c=>!c.dead);
   R.pa=R.pa.filter(p=>p.t>0);R.bolts=R.bolts.filter(b=>b.life>0);R.tx=R.tx.filter(x=>x.t>0);
   if(R.over)return;
-  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);save.gold+=60;persist();state='win2';ui();return;}}
+  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);legacyEnd('cleared_stage_2');save.gold+=60;persist();state='win2';ui();return;}}
   R.scatter=R.wall<=0?R.scatter+dt:Math.max(0,R.scatter-dt*.4);
   if(R.mflash)for(const k in R.mflash)R.mflash[k]-=dt;
   if(R.spawnLeft<=0&&!R.bossPending&&R.en.length===0&&R.cr.length===0&&!R.cinePending&&!R.cine&&!(R.proj&&R.proj.length)&&!(R.jeep&&R.jeep.phase!=='lost'&&R.jeep.phase!=='freed'))waveClear();
@@ -1085,10 +1107,10 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
 function hudUpdate(){hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
-function waveClear(){if(R.stage===2)return;SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healAll(.3);save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
-function gameOver(){SND.gameOver();save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
+function waveClear(){if(R.stage===2)return;SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healAll(.3);save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
+function gameOver(){SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
-function freshSave(){save={mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
+function freshSave(){legacy();const LG=save.legacy;save={legacy:LG,mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
 function rosterHTML(){
   let h='<h3>Commander</h3>';
   const cc=trainCost(save.cmd);
@@ -1228,12 +1250,12 @@ ov.addEventListener('click',e=>{
   const b=e.target.closest('[data-act]');if(!b)return;const a=b.dataset.act;SND.init();SND.click();
   if(a==='mus'||a==='sfx'){SND.toggle(a==='mus'?'music':'sfx');ui();return;}
   if(a==='modes'){state='modes';ui();return;}
-  if(a==='pickmode'){freshSave();save.mode=b.dataset.mode;persist();SX=0;camX=0;startIntro(()=>{newRun(1);});return;}
-  if(a==='revive'){const id=b.dataset.id,c=reviveCost(id),rec=save.downed&&save.downed[id];if(rec&&save.gold>=c){save.gold-=c;save.heroes[id]={lv:rec.lv,xp:rec.xp};setHp(id,maxHp(id)*.5);delete save.downed[id];save.fallen=save.fallen.filter(h=>h!==id);if(save.active.length<MAX_ACTIVE)save.active.push(id);persist();SND.freed();ui();}return;}
+  if(a==='pickmode'){freshSave();save.mode=b.dataset.mode;legacyStart(save.mode);persist();SX=0;camX=0;startIntro(()=>{newRun(1);});return;}
+  if(a==='revive'){const id=b.dataset.id,c=reviveCost(id),rec=save.downed&&save.downed[id];if(rec&&save.gold>=c){story('hero_revived',{hero:id,cost:c});save.gold-=c;save.heroes[id]={lv:rec.lv,xp:rec.xp};setHp(id,maxHp(id)*.5);delete save.downed[id];save.fallen=save.fallen.filter(h=>h!==id);if(save.active.length<MAX_ACTIVE)save.active.push(id);persist();SND.freed();ui();}return;}
   if(a==='start'){const w=+b.dataset.w;const go=()=>{SX=0;camX=0;newRun(w);};if(w===1){freshSave();startIntro(go);}else go();}
   else if(a==='begin'){state='menu';ui();return;}
-  else if(a==='retry'){freshSave();SX=0;camX=0;newRun(1);}
-  else if(a==='stage2'){SX=0;camX=0;startStage2();}
+  else if(a==='retry'){freshSave();legacyStart(save.mode||'normal');SX=0;camX=0;newRun(1);}
+  else if(a==='stage2'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:2});}SX=0;camX=0;startStage2();}
   else if(a==='intro3'){startIntro(()=>{state='options';ui();},SHOTS3);}
   else if(a==='intro2'){startIntro(()=>{state='options';ui();},SHOTS2);}
   else if(a==='intro'){startIntro(()=>{state='options';ui();});}
