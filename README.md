@@ -1,4 +1,4 @@
-# Zombie Chronicles: Holdout Squad
+# Holdout Squad: The Zombie Chronicles
 
 Play: https://andrewverdi.github.io/ZombieChronicles/
 

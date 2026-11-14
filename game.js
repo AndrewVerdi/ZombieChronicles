@@ -1142,7 +1142,7 @@ function ui(){
   if(state==='menu'){
     ov.innerHTML=`<div class="mscreen"><div class="mbg"></div><div class="mglow"></div>
       <div class="mgas g1"></div><div class="mgas g2"></div><div class="mgrain"></div><div class="mvig"></div>
-      <div class="mside"><h1 class="mlogo"><span class="sr">Zombie Chronicles: Holdout Squad</span></h1>
+      <div class="mside"><h1 class="mlogo"><span class="sr">Holdout Squad: The Zombie Chronicles</span></h1>
         <nav class="mnav" aria-label="Main menu">
           <button class="mbtn play" data-act="modes">Play</button>
           <button class="mbtn" data-act="load">Load</button>
@@ -1182,7 +1182,7 @@ function ui(){
     <button class="btn ghost" data-act="menu">Back</button>`;
   }else if(state==='credits'){
     html=`<h2>Credits</h2><div class="stripe"></div>
-    <div class="credits"><b>ZOMBIE CHRONICLES: HOLDOUT SQUAD</b></div>
+    <div class="credits"><b>HOLDOUT SQUAD: THE ZOMBIE CHRONICLES</b></div>
     <div class="credits"><b>CREATED BY</b><span>Andrew</span></div>
     <div class="credits"><b>GAME DESIGN &amp; ART DIRECTION</b><span>Andrew</span></div>
     <div class="credits"><b>PROGRAMMING</b><span>Built with Claude</span></div>
