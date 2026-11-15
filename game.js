@@ -1661,7 +1661,6 @@ function ui(){
           <button class="mbtn" data-act="credits">Credits</button>
           <button class="mbtn" data-act="bye">Quit</button>
         </nav>
-        ${save.best?`<div class="mbest">Best wave ${save.best}</div>`:''}
       </div></div>`;
     if(R)hudUpdate();return;
   }
