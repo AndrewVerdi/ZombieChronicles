@@ -801,34 +801,37 @@ function drawStuns(){if(!R.hstun)return;for(const m of squad()){if(!stunned(m.id
   for(let i=0;i<3;i++){const a=t*6+i*2.09;ctx.beginPath();ctx.ellipse(sx,sy,22*k,7*k,0,a,a+1.2);ctx.stroke();}}}
 
 /* Momma: summons ground claws under the squad and throws bone daggers */
-function spawnMomma(){R.en.push({type:'momma',hp:2200*ENEMY_K,max:2200*ENEMY_K,spd:16*SPD,r:62,gold:60,xp:160,col:'#b6f23a',x:0,z:ZFAR+60,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:0,armor:1});}
+const MOMMA_HP=4200;
+function spawnMomma(){R.en.push({type:'momma',hp:MOMMA_HP*ENEMY_K,max:MOMMA_HP*ENEMY_K,spd:16*SPD,r:62,gold:60,xp:160,col:'#b6f23a',x:0,z:ZFAR+60,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:0,armor:1});}
 const MACT={summon:{d:1.1,rel:.85,fn:mommaSummon},throw:{d:.9,rel:.6,fn:mommaThrow},shriek:{d:1.0,rel:.45,fn:mommaShriek}};
 function mommaAI(e,dt){
-  if(e.sumT==null){e.sumT=3.5;e.thrT=2.2;e.act=null;R.banner={txt:'MOMMA',t:2.6,col:'#b6f23a'};SND.groan(0,.7);}
+  if(e.sumT==null){e.sumT=3.5;e.thrT=2.2;e.callT=10;e.act=null;R.banner={txt:'MOMMA',t:2.6,col:'#b6f23a'};SND.groan(0,.7);}
   let sp=e.spd;if(e.slow>0){e.slow-=dt;sp*=e.slowAmt;}
   if(e.z>440&&!e.act)e.z-=sp*dt;
   if(!e.act)e.x+=(Math.max(-220,Math.min(220,SX))-e.x)*.25*dt+Math.sin(t*.8)*14*dt;
   if(e.act){e.at+=dt;const A=MACT[e.act];if(!e.rel&&e.at>=A.rel){e.rel=1;A.fn(e);}if(e.at>=A.d)e.act=null;return;}
   if(e.z>ZFAR)return;
-  e.sumT-=dt;e.thrT-=dt;
+  e.sumT-=dt;e.thrT-=dt;e.callT-=dt;
   if(!e.enr&&e.hp<e.max*.5){e.enr=1;e.act='shriek';e.at=0;e.rel=0;return;}
-  if(e.sumT<=0){e.sumT=e.enr?4.2:6;e.act='summon';e.at=0;e.rel=0;}
-  else if(e.thrT<=0){e.thrT=e.enr?1.6:2.6;e.act='throw';e.at=0;e.rel=0;}
+  if(e.callT<=0){e.callT=e.enr?9:13;e.act='shriek';e.at=0;e.rel=0;e.call=1;return;}
+  if(e.sumT<=0){e.sumT=e.enr?3.6:5.2;e.act='summon';e.at=0;e.rel=0;}
+  else if(e.thrT<=0){e.thrT=e.enr?1.4:2.2;e.act='throw';e.at=0;e.rel=0;}
 }
-function mommaSummon(e){R.claws=R.claws||[];const sq=squad(),pick=[sq[0]].concat(sq.slice(1).sort(()=>Math.random()-.5).slice(0,1));
+function mommaSummon(e){R.claws=R.claws||[];const sq=squad(),pick=e.enr?sq:[sq[0]].concat(sq.slice(1).sort(()=>Math.random()-.5).slice(0,1));
   for(const m of pick)R.claws.push({x:m.x,z:m.z+6,t:0});if(e.enr)R.claws.push({x:Math.max(-LANE_E,Math.min(LANE_E,SX+(Math.random()<.5?-1:1)*160)),z:6,t:-.2});SND.groan(e.x/600,.5);}
-function mommaThrow(e){R.dag=R.dag||[];const sq=squad(),m=sq[Math.floor(Math.random()*sq.length)];const tx=m.x+(Math.random()-.5)*20,tz=m.z+10,dist=Math.hypot(tx-e.x,tz-e.z);
-  R.dag.push({x0:e.x+30,z0:e.z-10,h0:e.r*3,x1:tx,z1:tz,t:0,T:dist/820,x:e.x,z:e.z,h:e.r*3});SND.whoosh();}
-function mommaShriek(e){R.banner={txt:'MOMMA IS ENRAGED',t:2.4,col:'#ff4d5e'};R.shake=.4;SND.groan(0,.9);for(let k=0;k<4;k++){const m=mkEnemy('screecher',e.x+(k-1.5)*80,e.z-40);m.z=e.z-30;}}
+function mommaThrow(e){R.dag=R.dag||[];const sq=squad(),n=e.enr?3:2,pick=sq.slice().sort(()=>Math.random()-.5);
+  for(let i=0;i<n;i++){const m=pick[i%pick.length],tx=m.x+(i>=pick.length?(Math.random()<.5?-70:70):(Math.random()-.5)*20),tz=m.z+10,dist=Math.hypot(tx-e.x,tz-e.z);
+  R.dag.push({x0:e.x+30,z0:e.z-10,h0:e.r*3,x1:tx,z1:tz,t:-i*.12,T:dist/820,x:e.x,z:e.z,h:e.r*3});}SND.whoosh();}
+function mommaShriek(e){const call=e.call;e.call=0;if(!call)R.banner={txt:'MOMMA IS ENRAGED',t:2.4,col:'#ff4d5e'};R.shake=.4;SND.groan(0,.9);for(let k=0;k<(call?3:6);k++){const m=mkEnemy('screecher',e.x+(k-1.5)*80,e.z-40);m.z=e.z-30;}}
 function bossFxUpdate(dt){
   if(R.claws){for(const c of R.claws){c.t+=dt;if(c.t>=1.2&&!c.hit){c.hit=1;R.shake=Math.max(R.shake||0,.25);SND.explosion(.35);burst(c.x,c.z,30,'#b6f23a',14);
       for(const m of squad())if(Math.abs(m.x-c.x)<62&&Math.abs(m.z-c.z)<44)hurtMember(m.id,15);}}R.claws=R.claws.filter(c=>c.t<2);}
-  if(R.dag){for(const p of R.dag){p.t+=dt;const q=Math.min(1,p.t/p.T);p.x=p.x0+(p.x1-p.x0)*q;p.z=p.z0+(p.z1-p.z0)*q;p.h=p.h0+(50-p.h0)*q;
+  if(R.dag){for(const p of R.dag){p.t+=dt;const q=Math.max(0,Math.min(1,p.t/p.T));p.x=p.x0+(p.x1-p.x0)*q;p.z=p.z0+(p.z1-p.z0)*q;p.h=p.h0+(50-p.h0)*q;
       if(q>=1&&!p.done){p.done=1;burst(p.x,p.z,40,'#e8dcb0',8);for(const m of squad())if(Math.abs(m.x-p.x)<46&&Math.abs(m.z-p.z)<40)hurtMember(m.id,12);}}R.dag=R.dag.filter(p=>!p.done);}
 }
 function drawClaw(c){const[sx,sy,k]=P(c.x,c.z);if(c.t<1.2){const pl=.5+.5*Math.sin(t*16);ctx.fillStyle='rgba(182,242,58,'+(.12+.25*pl*Math.min(1,Math.max(0,c.t)*2))+')';ctx.strokeStyle='rgba(182,242,58,.8)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(sx,sy,64*k,20*k,0,0,6.283);ctx.fill();ctx.stroke();}
   if(c.t<0)return;const f=c.t<1.2?Math.floor(c.t*4)%2:Math.min(7,2+Math.floor((c.t-1.2)*8));fSpr('claw'+f,c.x,c.z+4,.95);}
-function drawDag(p){fSpr('dagger'+(Math.floor(p.t*14)%4),p.x,p.z,.55,{h:p.h,mid:1});}
+function drawDag(p){if(p.t<0)return;fSpr('dagger'+(Math.floor(p.t*14)%4),p.x,p.z,.55,{h:p.h,mid:1});}
 function mommaFrame(e){const M=META.momma;if(e.act){const A=M[e.act],q=Math.min(.999,e.at/MACT[e.act].d);return A[Math.floor(q*A.length)];}return M.walk[Math.floor(t*(e.z>445?7:4))%M.walk.length];}
 
 /* stage flow */
