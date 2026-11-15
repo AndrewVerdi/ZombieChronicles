@@ -801,8 +801,8 @@ function drawStuns(){if(!R.hstun)return;for(const m of squad()){if(!stunned(m.id
   for(let i=0;i<3;i++){const a=t*6+i*2.09;ctx.beginPath();ctx.ellipse(sx,sy,22*k,7*k,0,a,a+1.2);ctx.stroke();}}}
 
 /* Momma: summons ground claws under the squad and throws bone daggers */
-const MOMMA_HP=4200;
-function spawnMomma(){R.en.push({type:'momma',hp:MOMMA_HP*ENEMY_K,max:MOMMA_HP*ENEMY_K,spd:16*SPD,r:62,gold:60,xp:160,col:'#b6f23a',x:0,z:ZFAR+60,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:0,armor:1});}
+const MOMMA_HP=6000;
+function spawnMomma(){R.en.push({type:'momma',hp:MOMMA_HP*ENEMY_K*(HORDE()?1.4:1),max:MOMMA_HP*ENEMY_K*(HORDE()?1.4:1),spd:16*SPD,r:62,gold:60,xp:160,col:'#b6f23a',x:0,z:ZFAR+60,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:0,armor:1});}
 const MACT={summon:{d:1.1,rel:.85,fn:mommaSummon},throw:{d:.9,rel:.6,fn:mommaThrow},shriek:{d:1.0,rel:.45,fn:mommaShriek}};
 function mommaAI(e,dt){
   if(e.sumT==null){e.sumT=3.5;e.thrT=2.2;e.callT=10;e.act=null;R.banner={txt:'MOMMA',t:2.6,col:'#b6f23a'};SND.groan(0,.7);}
@@ -813,16 +813,16 @@ function mommaAI(e,dt){
   if(e.z>ZFAR)return;
   e.sumT-=dt;e.thrT-=dt;e.callT-=dt;
   if(!e.enr&&e.hp<e.max*.5){e.enr=1;e.act='shriek';e.at=0;e.rel=0;return;}
-  if(e.callT<=0){e.callT=e.enr?9:13;e.act='shriek';e.at=0;e.rel=0;e.call=1;return;}
-  if(e.sumT<=0){e.sumT=e.enr?3.6:5.2;e.act='summon';e.at=0;e.rel=0;}
-  else if(e.thrT<=0){e.thrT=e.enr?1.4:2.2;e.act='throw';e.at=0;e.rel=0;}
+  if(e.callT<=0){e.callT=e.enr?7:11;e.act='shriek';e.at=0;e.rel=0;e.call=1;return;}
+  if(e.sumT<=0){e.sumT=e.enr?3:4.5;e.act='summon';e.at=0;e.rel=0;}
+  else if(e.thrT<=0){e.thrT=e.enr?1.3:2;e.act='throw';e.at=0;e.rel=0;}
 }
-function mommaSummon(e){R.claws=R.claws||[];const sq=squad(),pick=e.enr?sq:[sq[0]].concat(sq.slice(1).sort(()=>Math.random()-.5).slice(0,1));
-  for(const m of pick)R.claws.push({x:m.x,z:m.z+6,t:0});if(e.enr)R.claws.push({x:Math.max(-LANE_E,Math.min(LANE_E,SX+(Math.random()<.5?-1:1)*160)),z:6,t:-.2});SND.groan(e.x/600,.5);}
-function mommaThrow(e){R.dag=R.dag||[];const sq=squad(),n=e.enr?3:2,pick=sq.slice().sort(()=>Math.random()-.5);
+function mommaSummon(e){R.claws=R.claws||[];const sq=squad(),pick=sq.slice();
+  for(const m of pick)R.claws.push({x:m.x,z:m.z+6,t:0});if(e.enr)for(const dx of[-170,170])R.claws.push({x:Math.max(-LANE_E,Math.min(LANE_E,SX+dx+(Math.random()-.5)*60)),z:6,t:-.2});SND.groan(e.x/600,.5);}
+function mommaThrow(e){R.dag=R.dag||[];const sq=squad(),n=e.enr?4:3,pick=sq.slice().sort(()=>Math.random()-.5);
   for(let i=0;i<n;i++){const m=pick[i%pick.length],tx=m.x+(i>=pick.length?(Math.random()<.5?-70:70):(Math.random()-.5)*20),tz=m.z+10,dist=Math.hypot(tx-e.x,tz-e.z);
   R.dag.push({x0:e.x+30,z0:e.z-10,h0:e.r*3,x1:tx,z1:tz,t:-i*.12,T:dist/820,x:e.x,z:e.z,h:e.r*3});}SND.whoosh();}
-function mommaShriek(e){const call=e.call;e.call=0;if(!call)R.banner={txt:'MOMMA IS ENRAGED',t:2.4,col:'#ff4d5e'};R.shake=.4;SND.groan(0,.9);for(let k=0;k<(call?3:6);k++){const m=mkEnemy('screecher',e.x+(k-1.5)*80,e.z-40);m.z=e.z-30;}}
+function mommaShriek(e){const call=e.call;e.call=0;if(!call)R.banner={txt:'MOMMA IS ENRAGED',t:2.4,col:'#ff4d5e'};R.shake=.4;SND.groan(0,.9);for(let k=0;k<(call?(e.enr?4:3):6);k++){const m=mkEnemy('screecher',e.x+(k-1.5)*80,e.z-40);m.z=e.z-30;}}
 function bossFxUpdate(dt){
   if(R.claws){for(const c of R.claws){c.t+=dt;if(c.t>=1.2&&!c.hit){c.hit=1;R.shake=Math.max(R.shake||0,.25);SND.explosion(.35);burst(c.x,c.z,30,'#b6f23a',14);
       for(const m of squad())if(Math.abs(m.x-c.x)<62&&Math.abs(m.z-c.z)<44)hurtMember(m.id,15);}}R.claws=R.claws.filter(c=>c.t<2);}
@@ -1178,7 +1178,7 @@ function fireHero(s){
    case'frost':{const[vx,vz]=aimAt(sx,sz,e,1000);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:H.color,r:9,slowAmt:L>=10?.3:.5,splash:L>=5?64:0,splashMul:.45,freeze:L>=15,glow:1});break;}
    case'hex':{const n=L>=5?2:1;for(let i=0;i<n;i++){const[vx,vz]=aimAt(sx,sz,e,440,1.0);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:H.color,r:L>=10?13:10,homing:L>=10?7:4,spd:L>=10?620:480,life:3.2,split:L>=15,glow:1,orb:1});}break;}
    case'bruno':{if(L>=20){R.bShots=(R.bShots||0)+1;if(R.bShots%4===0){const[vx,vz]=aimAt(sx,sz,e,1500,.01);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:'#ffe08a',pierce:99,r:10,trail:1,life:1.4});SND.explosion(.15);break;}}const n=5+(L>=5?2:0);const close=L>=15&&Math.hypot(e.x-sx,e.z-sz)<220;
-     for(let i=0;i<n;i++){const[vx,vz]=aimAt(sx,sz,e,1100,.4);shoot({x:sx,z:sz,vx,vz,dmg:(close?2:1)*d/n,own:id,col:'#ffb347',life:1.5,kb:L>=10?70:30,fall:1,ox:sx,oz:sz});}break;}
+     for(let i=0;i<n;i++){const[vx,vz]=aimAt(sx,sz,e,1100,n>5?.62:.4);shoot({x:sx,z:sz,vx,vz,dmg:(close?2:1)*d/n,own:id,col:'#ffb347',life:1.5,kb:L>=10?70:30,fall:1,ox:sx,oz:sz});}break;}
    case'nova':{if(L>=5)rate*=.75;const[vx,vz]=aimAt(sx,sz,e,2600);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:'#ff8a8a',r:8,pierce:L>=10?99:3,trail:1,slayer:L>=15});break;}
   }
   return rate;
@@ -1243,11 +1243,11 @@ function kill(e,own){addKill(own,e.type);supCharge(own,1/SUP_KILLS[own]);
   if(e.type==='momma'&&R.forest){R.spawnLeft=0;R.queue=[];R.claws=[];R.dag=[];R.swaves=[];if(R.hstun)R.hstun={};SND.explosion(.8);R.shake=.6;
     for(const o of R.en)if(o!==e&&!o.dead){o.dead=1;burst(o.x,o.z,o.r,o.col,8);if(META[o.type])R.dead.push({type:o.type,x:o.x,z:o.z,r:o.r,t:0});}
     R.banner={txt:'MOMMA IS DEAD',t:2.6,col:'#b6f23a'};}
-  save.gold+=e.gold;SND.die(e.type,e.x/600);
+  const hm=HORDE()&&e.type!=='boss'&&e.type!=='momma'?.5:1;save.gold+=Math.round(e.gold*hm*10)/10;SND.die(e.type,e.x/600);
   if(R.jail)hitJail(R.jail.max*.035);
   if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
   /* XP: the killer gets it all, everyone else in the squad gets a 20% share */
-  for(const id of['cmd',...save.active]){const x=e.xp*(id===own?1:XP_SHARE);if(id==='cmd')cmdXp(x);else giveXp(id,x);}
+  for(const id of['cmd',...save.active]){const x=e.xp*hm*(id===own?1:XP_SHARE);if(id==='cmd')cmdXp(x);else giveXp(id,x);}
   R.kills=(R.kills||0)+1;if(own==='cmd'){R.cmdKills=(R.cmdKills||0)+1;if(save.cmd>=5&&R.cmdKills%10===0)rally();}
   if(e.type==='boss')story('boss_defeated',{boss:'the_ward',by:own});
   if(e.type==='boss'&&R.stage===2){R.escapeT=3.2;R.spawnLeft=0;}
