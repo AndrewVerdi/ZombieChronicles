@@ -661,13 +661,13 @@ function hurtCiv(c,d){if(c.hp<=0||R.over)return;if(HORDE())d*=1.15;c.hp-=d;c.fla
 function drawCiv(c){if(townReady){const[sx,sy,k]=P(c.x,c.z);ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(sx,sy,20*k,6*k,0,0,6.283);ctx.fill();
     const f=c.scare>0?6+(Math.floor(c.ph*5)%2):Math.floor(c.ph*8)%6,n='civ'+c.kind+'_'+f,d=tSprite(n,c.x,c.z,CHAR_H*.9,false,false,c.van!=null?Math.max(0,1-c.van/.45):1);
     if(d&&c.flash>0){ctx.globalCompositeOperation='lighter';tSprite(n,c.x,c.z,CHAR_H*.9,false,false,.6);ctx.globalCompositeOperation='source-over';}
-    if(c.hp<c.max){const bw=30*k,by=sy-CHAR_H*k-4;ctx.fillStyle='#000b';ctx.fillRect(sx-bw/2,by,bw,4);ctx.fillStyle='#ff9a5a';ctx.fillRect(sx-bw/2,by,bw*Math.max(0,c.hp/c.max),4);}return;}
+    return;}
   if(!envReady)return;const[sx,sy,k]=P(c.x,c.z);
   ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(sx,sy,20*k,6*k,0,0,6.283);ctx.fill();
   const set=c.scare>0?EM.scared[c.kind]:EM.ref[c.kind],fr=set[Math.floor(c.ph*(c.scare>0?8:5))%set.length],r=ER[fr];if(!r)return;
   const sc=k*CHAR_H*.86/r[3];eDrawA(fr,sx,sy,sc,c.side>0);
   if(c.flash>0){ctx.globalCompositeOperation='lighter';eDrawA(fr,sx,sy,sc,c.side>0,.6);ctx.globalCompositeOperation='source-over';}
-  if(c.hp<c.max){const bw=30*k,by=sy-CHAR_H*k-4;ctx.fillStyle='#000b';ctx.fillRect(sx-bw/2,by,bw,4);ctx.fillStyle='#ff9a5a';ctx.fillRect(sx-bw/2,by,bw*Math.max(0,c.hp/c.max),4);}}
+}
 function startStage3(){townLoad();
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   roadScroll=0;
@@ -1522,7 +1522,7 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
-function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display=R.forest?'none':'';if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent=R.wave===1?'SURVIVORS '+civsAlive().length:mb?'MOMMA':'THE FOREST';const f=R.wave===1?civsAlive().length/CIV_N:R.spawnTotal?(R.spawnLeft+R.en.length)/Math.max(1,R.spawnTotal+(mb?1:0)):0;hH.style.width=(Math.min(1,f)*100)+'%';hH.style.background='var(--hazard)';hG.textContent=save.gold+'g';return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
+function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display=(R.stage===2||(R.forest&&R.wave!==1))?'none':'';if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent=R.wave===1?'SURVIVORS '+civsAlive().length:mb?'MOMMA':'THE FOREST';const f=R.wave===1?civsAlive().length/CIV_N:R.spawnTotal?(R.spawnLeft+R.en.length)/Math.max(1,R.spawnTotal+(mb?1:0)):0;hH.style.width=(Math.min(1,f)*100)+'%';hH.style.background='var(--hazard)';hG.textContent=save.gold+'g';return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
 function waveClear(){if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healAll(.3);save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
