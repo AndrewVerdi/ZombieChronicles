@@ -90,6 +90,14 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
 .cchoice button+button{background:#b6f23a;box-shadow:5px 5px 0 #6b2fa6,-2px -2px 0 #ff6a2b;transform:rotate(1.2deg);animation-delay:.12s}
 .cchoice button:hover,.cchoice button:focus-visible{transform:rotate(0) scale(1.04);outline:none}
 .cchoice button:active{transform:translate(3px,3px);box-shadow:2px 2px 0 #6b2fa6}
+.cmini{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-top:12vh;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;pointer-events:auto;z-index:5}
+.cmini .mlab{font:400 clamp(18px,3.4vw,30px)/1 var(--display,"Bungee"),sans-serif;color:#b6f23a;text-shadow:3px 3px 0 #6b2fa6;letter-spacing:.04em}
+.cmini .mbar{width:min(70vw,520px);height:22px;border:3px solid #0b080e;background:#2a1a33;box-shadow:4px 4px 0 #6b2fa6;border-radius:3px;overflow:hidden}
+.cmini .mbar i{display:block;height:100%;width:0;background:repeating-linear-gradient(-45deg,#ffc53d 0 10px,#ff6a2b 10px 20px)}
+.cmini .mtime{font:700 16px "Chakra Petch",sans-serif;color:#efe6dc;font-variant-numeric:tabular-nums}
+.cmini button{font:400 clamp(20px,4vw,34px)/1 var(--display,"Bungee"),sans-serif;padding:16px 46px;border:3px solid #0b080e;border-radius:6px;background:#ff6a2b;color:#0b080e;box-shadow:5px 5px 0 #6b2fa6;pointer-events:none}
+.cmini button.hit{animation:mHit .12s}
+@keyframes mHit{50%{transform:scale(.92) translate(2px,2px);box-shadow:2px 2px 0 #6b2fa6}}
 @keyframes cIn{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:none}}
 
 /* Title menu: riso key art, printed ink buttons */
@@ -207,13 +215,13 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
   <div class="overlay" id="ov"></div>
 </div>
 
-<script>window.__VER='e8706e12de';
+<script>window.__VER='4c79977124';
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 // when the app comes back from the background, check for a newer version and reload if the player is on a menu
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;
   fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(d=>{
     if(d.v&&d.v!==window.__VER&&window.__canReload&&window.__canReload())location.reload();}).catch(()=>{});});
 </script>
-<script src="game.js?v=e8706e12de"></script>
+<script src="game.js?v=4c79977124"></script>
 </body>
 </html>
