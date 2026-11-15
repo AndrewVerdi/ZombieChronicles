@@ -788,9 +788,9 @@ function drawSay(){const s=R.say;if(!s||R.cine)return;const a=Math.min(1,s.t*2),
   ctx.font='10px Bungee, Impact, sans-serif';ctx.textAlign='left';ctx.fillText(nm,x+14,y+16);ctx.fillStyle='#efe6dc';ctx.font='13px "Chakra Petch", sans-serif';ctx.fillText(s.txt,x+14,y+34);ctx.globalAlpha=1;}
 
 /* Screechers: hitting one releases a shockwave that stuns a hero for 3 seconds */
-function screech(e){if(e.scrCd>0)return;e.scrCd=2.5;e.scrT=.5;R.swaves=R.swaves||[];R.swaves.push({x:e.x,z:e.z,t:0});SND.hiss&&SND.hiss();}
+function screech(e){if(e.scrCd>0)return;e.scrCd=2.5;e.scrT=.5;R.swaves=R.swaves||[];let tg=null,bd=1e9;for(const m of squad()){const d=Math.abs(m.x-e.x);if(d<bd){bd=d;tg=m;}}R.swaves.push({x:e.x,z:e.z,x0:e.x,z0:e.z,tx:tg?tg.x:e.x,t:0});SND.hiss&&SND.hiss();}
 function swaveUpdate(dt){if(!R.swaves)return;
-  for(const w of R.swaves){w.t+=dt;if(!w.hit){w.z-=900*dt;if(w.z<=30){w.hit=1;w.ht=0;const sq=squad();R.hstun=R.hstun||{};let best=null,bd=1e9;for(const m of sq){if(R.hstun[m.id]>-2)continue;const d=Math.abs(m.x-w.x);if(d<bd){bd=d;best=m;}}
+  for(const w of R.swaves){w.t+=dt;if(!w.hit){w.z-=900*dt;w.x=w.tx+(w.x0-w.tx)*Math.max(0,w.z-30)/Math.max(1,w.z0-30);if(w.z<=30){w.hit=1;w.ht=0;const sq=squad();R.hstun=R.hstun||{};let best=null,bd=60;for(const m of sq){if(R.hstun[m.id]>-2)continue;const d=Math.abs(m.x-w.x);if(d<bd){bd=d;best=m;}}
       if(best){w.x=best.x;{R.hstun[best.id]=3;const[px,py]=P(best.x,best.z,CHAR_H+16);R.tx.push({x:px,y:py,txt:'STUNNED',col:'#c9a7ff',t:1.4});}hurtMember(best.id,3);R.shake=Math.max(R.shake||0,.15);}}}
     else w.ht+=dt;}
   R.swaves=R.swaves.filter(w=>!w.hit||w.ht<.3);
@@ -2033,8 +2033,15 @@ function cineEl(){
   clayer=document.createElement('div');clayer.id='intro';clayer.hidden=true;
   clayer.innerHTML='<canvas></canvas><button type="button" class="cskip">Skip</button>';
   stage.appendChild(clayer);ccv=clayer.querySelector('canvas');cctx=ccv.getContext('2d');
-  clayer.querySelector('.cskip').addEventListener('click',e=>{e.stopPropagation();if(cine&&!cine0pick){const j=cine.list.findIndex((q,k)=>k>=cine.i&&q.choiceAt!=null);if(j>=0){if(j!==cine.i){cine.i=j;cine.lc=0;SND.whoosh();}cine.tt=Math.max(cine.tt,cine.list[j].choiceAt);return;}}endIntro();});
-  ccv.addEventListener('pointerdown',()=>{if(!cine)return;const sh=cine.list[cine.i];if(sh.choiceAt!=null&&!cine0pick){cine.tt=Math.max(cine.tt,sh.choiceAt);return;}if(cine.tt<sh.d-.8)cine.tt=sh.d-.8;});
+  /* Skip: tap = next shot, hold 2s = skip the whole cutscene. A choice or mini-game is never skipped past. */
+  const sk=clayer.querySelector('.cskip');let skT=null,skRaf=0,skDone=false;
+  const skipAll=()=>{if(!cine)return;if(!cine0pick){const j=cine.list.findIndex((q,k)=>k>=cine.i&&q.choiceAt!=null);if(j>=0){if(j!==cine.i){cine.i=j;cine.lc=0;cine.snd=0;SND.whoosh();}cine.tt=Math.max(cine.tt,cine.list[j].choiceAt);return;}}endIntro();};
+  const skipOne=()=>{if(!cine)return;const sh=cine.list[cine.i];if(sh.choiceAt!=null&&!cine0pick){cine.tt=Math.max(cine.tt,sh.choiceAt);return;}if(cine.tt<sh.d-.6)cine.tt=sh.d-.6;};
+  const skReset=()=>{skT=null;cancelAnimationFrame(skRaf);sk.style.setProperty('--hold','0%');};
+  sk.addEventListener('pointerdown',e=>{e.stopPropagation();e.preventDefault();skDone=false;skT=performance.now();try{sk.setPointerCapture(e.pointerId);}catch(_){}
+    const tick=()=>{if(skT==null)return;const q=Math.min(1,(performance.now()-skT)/2000);sk.style.setProperty('--hold',(q*100)+'%');if(q>=1){skDone=true;skReset();skipAll();return;}skRaf=requestAnimationFrame(tick);};tick();});
+  sk.addEventListener('pointerup',e=>{e.stopPropagation();const held=skT!=null;skReset();if(held&&!skDone)skipOne();});
+  sk.addEventListener('pointercancel',skReset);sk.addEventListener('click',e=>e.stopPropagation());
   GRAIN=document.createElement('canvas');GRAIN.width=GRAIN.height=180;const g=GRAIN.getContext('2d'),id=g.createImageData(180,180);
   for(let i=0;i<id.data.length;i+=4){const v=Math.random()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=Math.random()<.5?40:0;}g.putImageData(id,0,0);
 }

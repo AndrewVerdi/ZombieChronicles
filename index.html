@@ -83,6 +83,7 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
 .how{color:var(--muted);font-size:14px;line-height:1.5;margin:0;padding-left:18px}
 #intro{position:absolute;inset:0;z-index:20;background:#0b080e}
 #intro canvas{width:100%;height:100%;display:block}
+.cskip{--hold:0%;background-image:linear-gradient(90deg,rgba(255,106,43,.55) var(--hold),transparent var(--hold))!important;touch-action:none;user-select:none;-webkit-user-select:none}
 .cskip{position:absolute;top:max(12px,env(safe-area-inset-top,0px));right:max(14px,env(safe-area-inset-right,0px));font:700 13px var(--ui);letter-spacing:.1em;text-transform:uppercase;color:#efe6dc;background:rgba(11,8,14,.6);border:1px solid rgba(239,230,220,.35);border-radius:8px;padding:9px 14px;cursor:pointer}
 .cskip:focus-visible{outline:2px solid #ff6a2b;outline-offset:2px}
 .cchoice{position:absolute;left:0;right:0;bottom:calc(24% + env(safe-area-inset-bottom,0px));display:flex;justify-content:center;gap:clamp(12px,3vw,28px);flex-wrap:wrap;padding:0 16px;pointer-events:auto;animation:cIn .45s cubic-bezier(.2,1.4,.4,1) both}
@@ -221,13 +222,13 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
   <div class="overlay" id="ov"></div>
 </div>
 
-<script>window.__VER='819bbc3a27';
+<script>window.__VER='b41f44c519';
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 // when the app comes back from the background, check for a newer version and reload if the player is on a menu
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;
   fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(d=>{
     if(d.v&&d.v!==window.__VER&&window.__canReload&&window.__canReload())location.reload();}).catch(()=>{});});
 </script>
-<script src="game.js?v=819bbc3a27"></script>
+<script src="game.js?v=b41f44c519"></script>
 </body>
 </html>
