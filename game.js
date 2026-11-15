@@ -807,7 +807,10 @@ function drawDag(p){fSpr('dagger'+(Math.floor(p.t*14)%4),p.x,p.z,.55,{h:p.h,mid:
 function mommaFrame(e){const M=META.momma;if(e.act){const A=M[e.act],q=Math.min(.999,e.at/MACT[e.act].d);return A[Math.floor(q*A.length)];}return M.walk[Math.floor(t*(e.z>445?7:4))%M.walk.length];}
 
 /* stage flow */
+/* on the backroad Bruno drives off to the lab: kept aside, not in the squad */
+function brunoLeaves(){if(!save.heroes.bruno)return;save.away=save.away||{};save.away.bruno=save.heroes.bruno;delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');persist();}
 function startForest(){
+  if(save.route==='backroad')brunoLeaves();
   forestLoad();for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   roadScroll=0;
   const civ=forestCivs(),ord=[5].concat([0,1,2,3,4,6,7,8,9].sort(()=>Math.random()-.5));
@@ -890,9 +893,9 @@ function fcutList(n,crew){const rook=crew.rook,C=FC;
   return[C.m1];}
 function miniShow(){if(clayer.querySelector('.cmini'))return;cine.mg={fill:0,left:6};const d=document.createElement('div');d.className='cmini';
   d.innerHTML='<div class="mlab">BREAK HER HOLD!</div><div class="mbar"><i></i></div><div class="mtime">6.0</div><button type="button">TAP!</button>';
-  const tap=e=>{e.preventDefault();e.stopPropagation();if(!cine||!cine.mg||cine.mg.res)return;cine.mg.fill=Math.min(1,cine.mg.fill+1/24);SND.click();if(cine.mg.fill>=1){miniEnd(true);return;}const b=d.querySelector('button');b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit');};
+  const tap=e=>{e.preventDefault();e.stopPropagation();if(!cine||!cine.mg||cine.mg.res)return;cine.mg.fill=Math.min(1,cine.mg.fill+1/28);SND.click();if(cine.mg.fill>=1){miniEnd(true);return;}const b=d.querySelector('button');b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit');};
   d.addEventListener('pointerdown',tap);clayer.appendChild(d);}
-function miniTick(dt){const g=cine.mg;if(!g||g.res)return;if(g.fill>=1){miniEnd(true);return;}g.left-=dt;g.fill=Math.max(0,g.fill-.05*dt);const d=clayer.querySelector('.cmini');
+function miniTick(dt){const g=cine.mg;if(!g||g.res)return;if(g.fill>=1){miniEnd(true);return;}g.left-=dt;g.fill=Math.max(0,g.fill-.04*dt);const d=clayer.querySelector('.cmini');
   if(d){d.querySelector('.mbar i').style.width=(g.fill*100)+'%';d.querySelector('.mtime').textContent=Math.max(0,g.left).toFixed(1);}
   if(g.fill>=1)miniEnd(true);else if(g.left<=0)miniEnd(false);}
 function miniEnd(won){const g=cine.mg;g.res=won?'won':'lost';cineLastMini=g.res;cine0pick='mini';const d=clayer.querySelector('.cmini');if(d)d.remove();
@@ -1162,6 +1165,9 @@ function drawEnemyThumbs(){
     const s=Math.min(c.width/r[2],c.height/r[3])*.95;g.clearRect(0,0,c.width,c.height);g.drawImage(ATL,r[0],r[1],r[2],r[3],(c.width-r[2]*s)/2,c.height-r[3]*s,r[2]*s,r[3]*s);});
 }
 function kill(e,own){addKill(own,e.type);
+  if(e.type==='momma'&&R.forest){R.spawnLeft=0;R.queue=[];R.claws=[];R.dag=[];R.swaves=[];if(R.hstun)R.hstun={};SND.explosion(.8);R.shake=.6;
+    for(const o of R.en)if(o!==e&&!o.dead){o.dead=1;burst(o.x,o.z,o.r,o.col,8);if(META[o.type])R.dead.push({type:o.type,x:o.x,z:o.z,r:o.r,t:0});}
+    R.banner={txt:'MOMMA IS DEAD',t:2.6,col:'#b6f23a'};}
   save.gold+=e.gold;SND.die(e.type,e.x/600);
   if(R.jail)hitJail(R.jail.max*.035);
   if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
@@ -1516,7 +1522,7 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
-function hudUpdate(){if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent=R.wave===1?'SURVIVORS '+civsAlive().length:mb?'MOMMA':'THE FOREST';const f=R.wave===1?civsAlive().length/CIV_N:R.spawnTotal?(R.spawnLeft+R.en.length)/Math.max(1,R.spawnTotal+(mb?1:0)):0;hH.style.width=(Math.min(1,f)*100)+'%';hH.style.background='var(--hazard)';hG.textContent=save.gold+'g';return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
+function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display=R.forest?'none':'';if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent=R.wave===1?'SURVIVORS '+civsAlive().length:mb?'MOMMA':'THE FOREST';const f=R.wave===1?civsAlive().length/CIV_N:R.spawnTotal?(R.spawnLeft+R.en.length)/Math.max(1,R.spawnTotal+(mb?1:0)):0;hH.style.width=(Math.min(1,f)*100)+'%';hH.style.background='var(--hazard)';hG.textContent=save.gold+'g';return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
 function waveClear(){if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healAll(.3);save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
@@ -1893,7 +1899,7 @@ function forkList(){const{bruno,rook}=forkCrew(),F=FORK;
 function startFork(done,record){cineLoadKeys(FORK_KEYS);const forced=!forkCrew().bruno;
   startIntro(()=>{const route=cine0pick||'backroad';cine0pick=null;
     if(record){const crew=forkCrew();save.route=route;story('choice',{id:'fork_road',pick:route,forced,crew});
-      if(route==='backroad'&&crew.bruno)story('hero_split',{hero:'bruno',to:'cyber_future_lab'});persist();}
+      if(route==='backroad'&&crew.bruno){story('hero_split',{hero:'bruno',to:'cyber_future_lab'});brunoLeaves();}persist();}
     done&&done(route);},forkList());
   if(forced)cine0pick='backroad';}
 let cine0pick=null;
