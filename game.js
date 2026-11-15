@@ -943,7 +943,7 @@ function spawnEnemy(){
 
 /* ---------- THE WARD: stage 1 boss, parks mid-road and hurls hospital junk ---------- */
 const BOSS_Z=380,BOSS_VIS=1.35;
-const PROJ={gurney:{set:'pgurney',dmg:34,rad:72,fx:'pimpact'},wheel:{set:'pwheel',dmg:24,rad:58,fx:'pimpact'},tank:{set:'ptank',dmg:26,rad:120,fx:'pblast'},car:{set:'pcar',dmg:40,rad:110,fx:'pblast'},gruntp:{set:null,dmg:14,rad:60,fx:'pimpact'}};
+const PROJ={gurney:{set:'pgurney',dmg:34,rad:72,fx:'pimpact',hp:45,truck:40},wheel:{set:'pwheel',dmg:24,rad:58,fx:'pimpact',hp:25,truck:25},tank:{set:'ptank',dmg:26,rad:120,fx:'pblast',hp:35,truck:45},car:{set:'pcar',dmg:40,rad:110,fx:'pblast',hp:90,truck:60},gruntp:{set:null,dmg:14,rad:60,fx:'pimpact',hp:30,truck:15}};
 function bossAI(e,dt){
   R.proj=R.proj||[];
   if(e.thrT==null){e.thrT=2.2;e.roarT=6;e.act=null;R.banner={txt:'THE WARD APPROACHES',t:2.6,col:'#b6f23a'};SND.groan(0,.6);}
@@ -964,7 +964,7 @@ function bossAI(e,dt){
 function bossThrow(e){
   const sq=squad();if(!sq.length)return;const m=sq[Math.floor(Math.random()*sq.length)],r=Math.random();
   const kind=e.nextKind||'gurney';
-  R.proj.push({kind,x0:e.x,z0:e.z,h0:e.r*EH*BOSS_VIS*.9,x1:m.x+(Math.random()-.5)*30,z1:m.z+10,t:0,T:1.4,peak:300,x:e.x,z:e.z,h:0,spin:Math.random()*4|0});
+  R.proj.push({kind,hp:PROJ[kind].hp,x0:e.x,z0:e.z,h0:e.r*EH*BOSS_VIS*.9,x1:m.x+(Math.random()-.5)*30,z1:m.z+10,t:0,T:1.4,peak:300,x:e.x,z:e.z,h:0,spin:Math.random()*4|0});
   SND.whoosh();
 }
 function projUpdate(dt){
@@ -973,12 +973,13 @@ function projUpdate(dt){
     if(q>=1&&!p.done){p.done=1;const P_=PROJ[p.kind];R.bfx.push({set:P_.fx,x:p.x,z:p.z,t:0});R.shake=p.kind==='tank'?.5:.3;
       SND.explosion(p.kind==='tank'?.9:.45);burst(p.x,p.z,20,p.kind==='tank'?'#b6f23a':'#c9a46a',p.kind==='tank'?24:14);
       for(const m of squad()){if(Math.hypot(m.x-p.x,(m.z-p.z)*1.6)<P_.rad)hurtMember(m.id,P_.dmg);}
+      if(R.stage===2)hitWall(P_.truck,p.x);
       if(p.kind==='gruntp'){const g=mkEnemy('grunt',p.x+(Math.random()-.5)*40,p.z+40);g.onRoof=1;g.hp*=.7;g.max=g.hp;}}}
   R.proj=R.proj.filter(p=>!p.done);
   for(const f of R.bfx)f.t+=dt;R.bfx=R.bfx.filter(f=>f.t<.6);
 }
 function drawProj(p){
-  if(!envReady)return;const[sx,sy,k]=P(p.x,p.z,p.h);
+  if(!envReady)return;const[sx,sy,k]=P(p.x,p.z,p.h);if(p.flash>0){p.flash-=1/60;ctx.save();ctx.globalAlpha=.6;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(sx,sy-20*k,30*k,0,6.283);ctx.fill();ctx.restore();}
   if(p.kind==='gruntp'){if(atlasReady){ctx.save();ctx.translate(sx,sy);ctx.rotate(p.t*9);drawFrame(META.grunt.hit[1],0,40*k,k*32*EH/EBODY);ctx.restore();}return;}
   const fr=EM[PROJ[p.kind].set];
   eDrawA(fr[(Math.floor(p.t*11)+p.spin)%fr.length],sx,sy,k*1.15*(1+Math.sin(Math.PI*Math.min(1,p.t/p.T))*.25));
@@ -1098,7 +1099,8 @@ function fireHero(s){
   let rate=H.rate*Math.pow(.975,L-1);
   const reach=H.range+(id==='blaze'&&L>=9?140:0);
   const sx=s.x+18,sz=s.z+8;
-  const e=nearest(sx,sz,reach);
+  let e=nearest(sx,sz,reach);
+  if(R.stage===2&&R.proj&&id!=='volt'){let bd=reach*reach;for(const q of R.proj){if(q.done||q.t/q.T>.85||q.t<.15)continue;const d=(q.x-sx)**2+(q.z-sz)**2;if(d<bd){bd=d;e=q;}}}
   if(!e)return .1;
   triggerShoot(id);
   switch(id){
@@ -1289,6 +1291,11 @@ function update(dt){
         if(--b.pierce<=0){b.life=0;break;}
       }
     }
+    if(b.life>0&&R.stage===2&&R.proj)for(const q of R.proj){
+      if(q.done||b.hit.has(q)||q.t/q.T>.92)continue;
+      if((q.x-b.x)**2+(q.z-b.z)**2<(46+b.r)**2){b.hit.add(q);q.hp-=b.dmg;q.flash=.08;SND.hit(q.x/600);
+        if(q.hp<=0){q.done=1;q.shot=1;R.bfx=R.bfx||[];R.bfx.push({set:'pimpact',x:q.x,z:q.z,t:0});burst(q.x,q.z,q.h,'#c9a46a',14);SND.explosion(.25);save.gold+=2;const[px,py]=P(q.x,q.z,q.h+20);R.tx.push({x:px,y:py,txt:'+2g',col:'#ffc53d',t:1});}
+        if(--b.pierce<=0){b.life=0;break;}}}
     if(b.life>0&&!b.flame)for(const c of R.cr){
       if(c.dead||b.hit.has(c))continue;
       if(Math.abs(c.x-b.x)<34+b.r&&Math.abs(c.z-b.z)<34+b.r){b.hit.add(c);c.hp-=b.dmg;c.flash=.08;if(c.hp<=0){c.dead=1;unlock(c.rw,c.x,c.z);}if(--b.pierce<=0){b.life=0;break;}}
@@ -1522,7 +1529,7 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
-function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display=R.stage===2?'none':'';if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
+function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
 function waveClear(){if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healAll(.3);save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
