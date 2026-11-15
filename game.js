@@ -251,9 +251,9 @@ const WEAPONS={
 const WEAPON_ORDER=['pistol','smg','shotgun','rail','rocket','minigun'];
 // squad fans out from the commander in a shallow arc (dx, dz)
 const SLOTS=[[-90,10],[90,10],[-180,26]];
-const xpNeed=l=>40+18*l*(l-1);
-const trainCost=l=>Math.round(35*Math.pow(l,1.85)+30);
-const MAXLV=25;
+const xpNeed=l=>50+50*l+4*(l-1)*(l-1);
+const trainCost=l=>Math.round(xpNeed(l)*2.5/5)*5;
+const MAXLV=25,XP_SHARE=.2;
 /* ---------- STATS: starting values per character, points add fixed amounts (cap 10 each), super is a 1-point unlock at 25 ---------- */
 const ENEMY_K=7,HURT_K=.65,STAT_CAP=10,RIFLE_BASE=8.5;
 const HSTAT={cmd:{hp:80,dmg:80,rec:5,crit:5,cm:2},bruno:{hp:120,dmg:150,rec:2,crit:3,cm:'zone'},rook:{hp:65,dmg:60,sword:200,rec:10,crit:10,cm:2.5},hex:{hp:55,dmg:125,rec:15,crit:15,cm:10},
@@ -1243,9 +1243,9 @@ function kill(e,own){addKill(own,e.type);supCharge(own,1/SUP_KILLS[own]);
   save.gold+=e.gold;SND.die(e.type,e.x/600);
   if(R.jail)hitJail(R.jail.max*.035);
   if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
-  if(own==='cmd'){cmdXp(e.xp);const hs=save.active.slice();hs.forEach(h=>giveXp(h,e.xp*.3/Math.max(1,hs.length)));}
-  if(e.type!=='boss'||1){R.kills=(R.kills||0)+1;if(own==='cmd'){R.cmdKills=(R.cmdKills||0)+1;if(save.cmd>=5&&R.cmdKills%10===0)rally();}}
-  else giveXp(own,e.xp);
+  /* XP: the killer gets it all, everyone else in the squad gets a 20% share */
+  for(const id of['cmd',...save.active]){const x=e.xp*(id===own?1:XP_SHARE);if(id==='cmd')cmdXp(x);else giveXp(id,x);}
+  R.kills=(R.kills||0)+1;if(own==='cmd'){R.cmdKills=(R.cmdKills||0)+1;if(save.cmd>=5&&R.cmdKills%10===0)rally();}
   if(e.type==='boss')story('boss_defeated',{boss:'the_ward',by:own});
   if(e.type==='boss'&&R.stage===2){R.escapeT=3.2;R.spawnLeft=0;}
   if(e.type==='boss'){R.banner={txt:R.stage===2?'THE CONVOY BREAKS FREE':'THE WARD IS DOWN',t:3,col:'#b6f23a'};SND.explosion(.7);R.shake=.6;R.proj=[];}
@@ -1636,7 +1636,7 @@ function rosterHTML(){
 }
 const POR_SRC={"cmd": "assets/por/cmd.webp?v=24461889cc", "bruno": "assets/por/bruno.webp?v=3744c0c01f", "rook": "assets/por/rook.webp?v=f5dac59da9", "blaze": "assets/por/blaze.webp?v=8a683f266f", "frost": "assets/por/frost.webp?v=09d4a6d3fb", "hex": "assets/por/hex.webp?v=38e4b79068", "volt": "assets/por/volt.webp?v=950712d37d", "nova": "assets/por/nova.webp?v=e9b3533ad0"},POR={};for(const k in POR_SRC){const im=new Image();im.onload=()=>{if(state!=='play')drawPortraits();};im.src=POR_SRC[k];POR[k]=im;}
 function porReady(id){const im=POR[id];return im&&im.complete&&im.naturalWidth;}
-let statId='cmd',statBack='roster';
+let statId='cmd',statBack='roster',rosterBack='menu';
 function drawPortraits(){drawEnemyThumbs();
   ov.querySelectorAll('canvas[data-por]').forEach(c=>{
     const id=c.dataset.por,g=c.getContext('2d');g.clearRect(0,0,c.width,c.height);
@@ -1690,7 +1690,7 @@ function ui(){
     <div class="btns"><button class="btn" data-act="retry">Play Stage 1 (skip intro)</button></div>
     ${(save.cleared||0)>=1?`<div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 2 · The Escape<small>Convoy chase</small></div><div class="lv">${(save.cleared||0)>=2?'CLEARED':'OPEN'}</div></div><div class="btns"><button class="btn" data-act="stage2">Play Stage 2</button></div>`:`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">Stage 2 · The Escape<small>Clear Stage 1 to unlock</small></div><div class="lv">LOCKED</div></div>`}
     ${(save.cleared||0)>=2&&save.route==='highway'?`<div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 3 · The Empty Town<small>3 waves on foot</small></div><div class="lv">${(save.cleared||0)>=3?'CLEARED':'OPEN'}</div></div><div class="btns"><button class="btn" data-act="stage3">Play Stage 3</button></div>`:(save.cleared||0)>=2&&save.route?`<div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 3 · The Forest<small>4 waves on foot</small></div><div class="lv">${save.forestDone?'CLEARED':'OPEN'}</div></div><div class="btns"><button class="btn" data-act="stage3f">Play Stage 3</button></div>`:`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">Stage 3<small>Clear Stage 2 to unlock</small></div><div class="lv">LOCKED</div></div>`}
-    <button class="btn ghost" data-act="menu">Back</button>`;
+    <div class="btns"><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="menu">Back</button></div>`;
   }else if(state==='options'){
     html=`<h2>Options</h2><div class="stripe"></div>
     <h3>How to play</h3>
@@ -1723,12 +1723,12 @@ function ui(){
   }else if(state==='bye'){
     html=`<h1 class="title" style="margin-top:10vh">SEE YOU ON<span>THE WALL</span></h1><div class="stripe"></div>
     <p class="sub">The squad holds until you get back, Commander. Close this tab or swipe the app away to leave.</p>
-    <button class="btn ghost" data-act="menu">Back to title</button>`;
+    <button class="btn ghost" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button>`;
   }else if(state==='inter'){
     html=`<div class="row"><h2>Wave ${R.wave} held</h2><span class="big">${save.gold}g</span></div><div class="stripe"></div>${rosterHTML()}
     <div class="btns"><button class="btn" data-act="next">Next wave</button></div>`;
   }else if(state==='roster'){
-    html=`<div class="row"><h2>Squad</h2><span class="big">${save.gold}g</span></div><div class="stripe"></div>${rosterHTML()}<div class="btns"><button class="btn ghost" data-act="menu">Back</button></div>`;
+    html=`<div class="row"><h2>Squad</h2><span class="big">${save.gold}g</span></div><div class="stripe"></div>${rosterHTML()}<div class="btns"><button class="btn ghost" data-act="rosterback">Back</button></div>`;
   }else if(state==='pause'){
     html=`<h2 style="margin-top:6vh">Paused</h2><div class="btns"><button class="btn" data-act="resume">Resume</button><button class="btn ghost" data-act="quit">Quit to menu</button></div>`;
   }else if(state==='over'){
@@ -1743,7 +1743,7 @@ function ui(){
     <div class="row"><span class="sub">Squad standing</span><span class="big">${alive}</span></div>
     ${lost?`<div class="row"><span class="sub">Fallen</span><span class="big" style="color:var(--blood)">${save.fallen.map(h=>HEROES[h].name).join(', ')}</span></div>`:''}
     <div class="row"><span class="sub">Gold earned</span><span class="big">${save.gold}g</span></div>
-    <div class="btns"><button class="btn" data-act="stage2">Continue to Stage 2</button><button class="btn ghost" data-act="menu">Back to title</button></div>`;
+    <div class="btns"><button class="btn" data-act="stage2">Continue to Stage 2</button><button class="btn ghost" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button></div>`;
   }else if(state==='stat'){
     html=statHTML(statId);
   }else if(state==='win2'){
@@ -1752,7 +1752,7 @@ function ui(){
     <div class="row"><span class="sub">Squad standing</span><span class="big">${['cmd',...save.active].length}</span></div>
     <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
     ${save.route?`<p class="sub">${save.route==='highway'?'The convoy stayed on the highway together.':(save.heroes.bruno?'The convoy took the backroad into the forest. Bruno went on alone toward Cyber Future.':'The convoy took the backroad into the forest.')}</p>`:''}
-    <div class="btns"><button class="btn" data-act="${save.route==='highway'?'stage3':'stage3f'}">Continue to Stage 3</button><button class="btn ghost" data-act="menu">Back to title</button><button class="btn ghost" data-act="stage2">Play Stage 2 again</button></div>`;
+    <div class="btns"><button class="btn" data-act="${save.route==='highway'?'stage3':'stage3f'}">Continue to Stage 3</button><button class="btn ghost" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="stage2">Play Stage 2 again</button></div>`;
   }else if(state==='win3f'){
     const hx=!!save.heroes.hex;
     html=`<h1 class="title">STAGE 3<span>COMPLETE</span></h1><div class="stripe"></div>
@@ -1760,7 +1760,7 @@ function ui(){
     <div class="row"><span class="sub">Squad standing</span><span class="big">${['cmd',...save.active].length}</span></div>
     <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
     <p class="sub">Stage 4 is coming soon.</p>
-    <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="stage3f">Play Stage 3 again</button></div>`;
+    <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="stage3f">Play Stage 3 again</button></div>`;
   }else if(state==='win3'){
     const alive=['cmd',...save.active].length;
     html=`<h1 class="title">STAGE 3<span>COMPLETE</span></h1><div class="stripe"></div>
@@ -1769,7 +1769,7 @@ function ui(){
     <div class="row"><span class="sub">Squad standing</span><span class="big">${alive}</span></div>
     <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
     <p class="sub">Stage 4 is coming soon.</p>
-    <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="stage3">Play Stage 3 again</button></div>`;
+    <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="stage3">Play Stage 3 again</button></div>`;
   }
   if(state!=='play'){ov.innerHTML='<div class="wrap">'+html+'</div>';drawPortraits();}
   if(R)hudUpdate();
@@ -1798,7 +1798,8 @@ ov.addEventListener('click',e=>{
   else if(a==='next'){if(R.forest)forestNext();else if(R.stage===3)startWave3(R.wave+1);else startWave_(R.wave+1);}
   else if(a==='resume'){state='play';ui();last=performance.now();}
   else if(a==='quit'||a==='menu'){R=null;state='menu';ui();}
-  else if(a==='roster'){R=null;state='roster';ui();}
+  else if(a==='roster'){rosterBack=state==='menu'?'menu':state;if(state==='menu')R=null;state='roster';ui();ov.scrollTop=0;}
+  else if(a==='rosterback'){state=rosterBack||'menu';ui();}
   else if(a==='load'||a==='options'||a==='credits'||a==='bye'){state=a;ui();}
   else if(a==='reset'){if(b.dataset.armed){save={heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:0,cmd:1,active:[],fallen:[]};persist();ui();}else{b.dataset.armed='1';b.textContent='Tap again to erase everything';}}
   else if(a==='eq'){save.equip=b.dataset.id;persist();ui();}
