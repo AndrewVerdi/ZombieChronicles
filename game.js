@@ -439,7 +439,9 @@ function drawJeep(j){
 }
 
 /* ---------- STAGE 2: THE ESCAPE (truck roof, runners + The Ward) ---------- */
-function startStage2(){stashHero('rook');setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
+/* starting a stage directly: heroes the story has already given you join if they're missing (not fallen) */
+function ensureHero(id){if(save.heroes[id]||save.fallen.includes(id))return;if(save.away&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];save.heroes[id].hp=null;if(save.active.length<MAX_ACTIVE)save.active.push(id);}else addHero(id);persist();}
+function startStage2(){ensureHero('bruno');stashHero('rook');setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   R={stage:2,wave:5,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:{txt:'STAGE 2: THE ESCAPE',t:2.6,col:'#ffc53d'},vx:0,prevSX:SX,dead:[],
     queue:[],kills:0,spawnLeft:99999,spawnTotal:99999,spawnT:2.2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
@@ -691,7 +693,7 @@ function drawCiv(c){if(townReady){const[sx,sy,k]=P(c.x,c.z);ctx.fillStyle='rgba(
   const sc=k*CHAR_H*.86/r[3];eDrawA(fr,sx,sy,sc,c.side>0);
   if(c.flash>0){ctx.globalCompositeOperation='lighter';eDrawA(fr,sx,sy,sc,c.side>0,.6);ctx.globalCompositeOperation='source-over';}
 }
-function startStage3(){townLoad();
+function startStage3(){ensureHero('bruno');ensureHero('rook');townLoad();
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   roadScroll=0;
   R={stage:3,wave:1,wall:0,wallMax:1,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[],civ:mkCivs(),civLost:0,
@@ -833,7 +835,7 @@ function mommaFrame(e){const M=META.momma;if(e.act){const A=M[e.act],q=Math.min(
 /* on the backroad Bruno drives off to the lab: kept aside, not in the squad */
 function brunoLeaves(){if(!save.heroes.bruno)return;save.away=save.away||{};save.away.bruno=save.heroes.bruno;delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');persist();}
 function startForest(){
-  if(save.route==='backroad')brunoLeaves();stashHero('hex');
+  ensureHero('rook');if(save.route==='backroad')brunoLeaves();stashHero('hex');
   forestLoad();for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   roadScroll=0;
   const civ=forestCivs(),ord=[5].concat([0,1,2,3,4,6,7,8,9].sort(()=>Math.random()-.5));
@@ -1400,7 +1402,7 @@ function drawWorld(){
   if(R&&R.stage===2){}else if(plateReady){const pw=WW*1.06,ph=pw*PLATE.height/PLATE.width,px=WW/2-pw/2-camX*.04,py=HOR-PLATE_HZ*ph;ctx.drawImage(PLATE,px,py,pw,ph);}
   if(!(R&&R.stage===2)){const yb=HOR+CAMH*K(WALL_Z),gr=ctx.createLinearGradient(0,yb-6,0,WH);gr.addColorStop(0,'rgba(18,10,26,.55)');gr.addColorStop(1,'rgba(18,10,26,.35)');ctx.fillStyle=gr;ctx.fillRect(-20,yb-6,WW+40,WH-yb+30);}
   if(R&&R.stage===2){drawStage2World(dt);if(plate2Ready){const pw=WW*1.06,ph=pw*PLATE2.height/PLATE2.width,py=HOR-PLATE_HZ*ph;
-    ctx.save();ctx.beginPath();ctx.rect(-20,py+ph*.655,WW+40,WH);ctx.clip();ctx.drawImage(PLATE2,WW/2-pw/2,py,pw,ph);ctx.restore();}drawRoad2();if(envReady)drawSky(dt);return;}
+    ctx.save();ctx.beginPath();const px0=WW/2-pw/2,TP=[[0,853],[0,787],[18,752],[95,640],[195,584],[312,560],[995,560],[1090,584],[1185,640],[1250,722],[1280,762],[1280,853]];TP.forEach(([x,y],i)=>{const X=px0+x/1280*pw,Y=py+Math.max(y,559)/853*ph;i?ctx.lineTo(X,Y):ctx.moveTo(X,Y);});ctx.lineTo(px0+pw,WH+40);ctx.lineTo(px0,WH+40);ctx.closePath();ctx.clip();ctx.drawImage(PLATE2,px0,py,pw,ph);ctx.restore();}drawRoad2();if(envReady)drawSky(dt);return;}
   if(envReady){drawSky(dt);drawBeams();}
 }
 function drawFrame(idx,x,y,sc,alpha){const r=RECTS[idx];if(!r)return;if(alpha!==undefined)ctx.globalAlpha=alpha;ctx.drawImage(ATL,r[0],r[1],r[2],r[3],x-r[4]*sc,y-r[5]*sc,r[2]*sc,r[3]*sc);ctx.globalAlpha=1;}
