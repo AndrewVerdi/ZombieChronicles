@@ -276,6 +276,15 @@ try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.weapons){save=Object.a
 if(!Array.isArray(save.fallen))save.fallen=[];
 save.active=save.active.filter(h=>save.heroes[h]);
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(save));}catch(e){}}
+/* checkpoint: the wave you're on, so Continue drops you back at its start */
+function checkpoint(){if(!R)return;save.ckpt={stage:R.forest?'3f':(R.stage||1),wave:R.stage===2?1:R.wave,hex:!!save.heroes.hex};persist();}
+function clearCkpt(){if(save.ckpt){delete save.ckpt;persist();}}
+const ckptLabel=c=>c.stage===2?'Stage 2 · The Escape':c.stage===3?'Stage 3 · The Empty Town, wave '+c.wave:c.stage==='3f'?'Stage 3 · The Forest, wave '+c.wave:'Stage 1 · wave '+c.wave;
+function resumeCkpt(){const c=save.ckpt;if(!c)return;if(!legacy().current)legacyStart(save.mode||'normal');SX=0;camX=0;
+  if(c.stage===2)startStage2();
+  else if(c.stage===3){startStage3();if(c.wave>1)startWave3(c.wave);}
+  else if(c.stage==='3f'){startForest();if(c.wave>1){if(c.hex&&save.away&&save.away.hex){save.heroes.hex=save.away.hex;delete save.away.hex;if(save.active.length<MAX_ACTIVE)save.active.push('hex');}startWaveF(c.wave);}}
+  else newRun(c.wave);}
 
 /* ---------- RUN STATE ---------- */
 let R=null,state='splash',SX=0,t=0;
@@ -289,7 +298,7 @@ function newRun(startWave){setTimeout(()=>cineLoad(SHOTS2),20000);
 function hpScale(w){return 1}
 function spdScale(w){return .9}
 function startWave_(w){
-  R.wave=w;SND.alarm();
+  R.wave=w;SND.alarm();setTimeout(checkpoint,0);
   const boss=w%5===0;
   // Stage 1 lineups: [total, runners, armored]
   const LU=(({1:[20,0,0],2:[30,10,0],3:[35,12,1],4:[40,13,3],5:[40,14,3]}[w]||[Math.max(20,4+w*4+Math.max(0,w-4)*2),Math.round(w*1.5),Math.round(w/2)])).map(n=>n*(HORDE()?2:1));
@@ -434,7 +443,7 @@ function startStage2(){stashHero('rook');setTimeout(()=>cineLoad(SHOTS3),8000);s
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   R={stage:2,wave:5,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:{txt:'STAGE 2: THE ESCAPE',t:2.6,col:'#ffc53d'},vx:0,prevSX:SX,dead:[],
     queue:[],kills:0,spawnLeft:99999,spawnTotal:99999,spawnT:2.2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
-  SND.alarm();spawnBoss();const b=R.en[R.en.length-1];b.z=ZFAR+60;
+  SND.alarm();spawnBoss();const b=R.en[R.en.length-1];b.z=ZFAR+60;setTimeout(checkpoint,0);
   state='play';ui();
 }
 function startRook(e){
@@ -670,7 +679,7 @@ function hurtCiv(c,d){if(c.hp<=0||R.over)return;if(HORDE())d*=1.15;c.hp-=d;c.fla
   if(c.hp>0)return;burst(c.x,c.z,30,'#c9a46a',22);SND.heroDown();R.civLost=(R.civLost||0)+1;story('survivor_lost',{left:civsAlive().length});
   const[px,py]=P(c.x,c.z,CHAR_H+10);R.tx.push({x:px,y:py,txt:'SURVIVOR LOST',col:'#ff4d5e',t:1.6});
   for(const e of R.en)if(e.ctgt===c){e.ctgt=null;e.atk=undefined;}
-  if(!civsAlive().length){R.over=true;SND.gameOver();story('survivors_lost',{});legacyEnd('survivors_lost');persist();R.lostAll=1;state='over';ui();}
+  if(!civsAlive().length){R.over=true;SND.gameOver();story('survivors_lost',{});legacyEnd('survivors_lost');delete save.ckpt;persist();R.lostAll=1;state='over';ui();}
   else{R.banner={txt:civsAlive().length+' SURVIVORS LEFT',t:2,col:'#ff4d5e'};}}
 function drawCiv(c){if(townReady){const[sx,sy,k]=P(c.x,c.z);ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(sx,sy,20*k,6*k,0,0,6.283);ctx.fill();
     const f=c.scare>0?6+(Math.floor(c.ph*5)%2):Math.floor(c.ph*8)%6,n='civ'+c.kind+'_'+f,d=tSprite(n,c.x,c.z,CHAR_H*.9,false,false,c.van!=null?Math.max(0,1-c.van/.45):1);
@@ -690,7 +699,7 @@ function startStage3(){townLoad();
   startWave3(1);
 }
 function startWave3(w){
-  R.wave=w;SND.alarm();const H2=HORDE()?2:1;const q=[];
+  R.wave=w;SND.alarm();setTimeout(checkpoint,0);const H2=HORDE()?2:1;const q=[];
   if(w===3){for(let i=0;i<200*H2;i++)q.push('grunt');}
   else if(w===2){for(let i=0;i<15*H2;i++){q.push('runner');q.push('armored');}for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}}
   else{for(let i=0;i<6*H2;i++)q.push('runner');for(let i=0;i<14*H2;i++)q.push('grunt');for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}}
@@ -700,7 +709,7 @@ function startWave3(w){
 }
 function spawnPace3(){if(R.wave===3){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.22,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(R.wave===1?1.7:1.3)*(.65+Math.random()*.7);}
 function waveClear3(){SND.waveClear();healRecovery();save.gold+=8+R.wave*4;persist();
-  if(R.wave>=S3_WAVES){const n=civsAlive().length;save.cleared=Math.max(save.cleared||0,3);save.townSaved=n;legacyStage(3);story('survivors_saved',{saved:n,of:CIV_N});legacyEnd('cleared_stage_3');save.gold+=60;persist();state='win3';ui();return;}
+  if(R.wave>=S3_WAVES){const n=civsAlive().length;save.cleared=Math.max(save.cleared||0,3);save.townSaved=n;legacyStage(3);story('survivors_saved',{saved:n,of:CIV_N});legacyEnd('cleared_stage_3');save.gold+=60;delete save.ckpt;persist();state='win3';ui();return;}
   state='inter';ui();}
 
 /* ---------- STAGE 3B: THE FOREST (backroad). Survivors vanish, Hex ambush, Screechers, Momma ---------- */
@@ -835,12 +844,12 @@ function startForest(){
 }
 function shuf(q){for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}return q;}
 function startWaveF(w){
-  R.wave=w;SND.alarm();const H2=HORDE()?2:1,q=[],add=(ty,n)=>{for(let i=0;i<n*H2;i++)q.push(ty);};
+  R.wave=w;SND.alarm();setTimeout(checkpoint,0);const H2=HORDE()?2:1,q=[],add=(ty,n)=>{for(let i=0;i<n*H2;i++)q.push(ty);};
   if(w===1){add('grunt',40);add('runner',20);add('armored',5);shuf(q);}
   else if(w===2)add('grunt',150);
   else if(w===3){add('screecher',10);add('grunt',50);add('runner',20);add('armored',10);shuf(q);}
   else{add('screecher',20);spawnMomma();}
-  if(w>=2&&R.civ&&w===2){for(const c of R.civ){c.hp=c.max=30;c.safe=0;c.van=null;c.x=c.ox;c.z=c.oz;}}
+  if(w>=2&&R.civ&&R.civ.some(c=>c.safe)){for(const c of R.civ){c.hp=c.max=30;c.safe=0;c.van=null;c.x=c.ox;c.z=c.oz;}}
   R.queue=q;R.kills=0;R.spawnLeft=q.length;R.spawnTotal=q.length;R.spawnT=w===4?3:2.4;R.say=null;
   R.banner=w===2?{txt:'THEY ARE EVERYWHERE',t:2.6,col:'#ff4d5e'}:w===4?null:{txt:(w===1?'STAGE 3: THE FOREST · ':'')+'WAVE '+w,t:2.4,col:'#ffc53d'};
   if(R.pendBanner){R.banner=R.pendBanner;R.pendBanner=null;}
@@ -849,7 +858,7 @@ function startWaveF(w){
 function spawnPaceF(){const w=R.wave;if(w===2){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.24,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(w===1?.8:w===3?.75:2.6)*(.65+Math.random()*.7);}
 function packF(){const w=R.wave;return w===2?1+Math.floor(Math.random()*2.6):w===3&&Math.random()<.35?2:1;}
 function waveClearF(){SND.waveClear();healRecovery();save.gold+=8+R.wave*4;persist();
-  if(R.wave>=F_WAVES){save.cleared=Math.max(save.cleared||0,3);save.forestDone=1;legacyStage(3);story('stage_clear_forest',{hex:!!save.heroes.hex});legacyEnd('cleared_stage_3');save.gold+=60;persist();state='win3f';ui();return;}
+  if(R.wave>=F_WAVES){save.cleared=Math.max(save.cleared||0,3);save.forestDone=1;legacyStage(3);story('stage_clear_forest',{hex:!!save.heroes.hex});legacyEnd('cleared_stage_3');save.gold+=60;delete save.ckpt;persist();state='win3f';ui();return;}
   state='inter';ui();}
 function forestNext(){const w=R.wave+1;startForestCut(w-1,()=>{startWaveF(w);},true);}
 
@@ -1287,7 +1296,7 @@ function update(dt){
     if(idx===R.jeepAt){R.cinePending=true;R.jeepAt=-1;break;}
     if(R.bossPending&&idx>=Math.floor(R.spawnTotal*.6)){spawnBoss();R.bossPending=false;}
     spawnEnemy();if(R.stage===2&&HORDE())spawnEnemy();R.spawnLeft--;}}}
-  supUpdate(dt);abilUpdate(dt);
+  supUpdate(dt);abilUpdate(dt);R.saveT=(R.saveT||0)-dt;if(R.saveT<=0){R.saveT=4;persist();}
   squadStep(dt);if(R.stage===3){civUpdate(dt);for(const d of R.dead)d.z-=WALK*dt;}if(R.forest){vanishUpdate(dt);swaveUpdate(dt);bossFxUpdate(dt);if(R.say){R.say.t-=dt;if(R.say.t<=0)R.say=null;}}jeepUpdate(dt);SND.engineSet(!!(R.jeep&&R.jeep.phase==='drive'));SND.ambient(dt,R.en);SND.intensity=R.stage===3?((R.en.length>14||civsAlive().length<5)?1:0):(R.wall/R.wallMax<.4||R.en.length>14)?1:0;
   const sq=squad();
   if(!R.cine)for(const s of sq){anim(s.id);if(stunned(s.id))continue;R.cd[s.id]=(R.cd[s.id]||0)-dt;if(R.cd[s.id]<=0)R.cd[s.id]=(s.id==='cmd'?fireCmd(s):fireHero(s))/(R.rcT>0?1.5:1);}
@@ -1376,7 +1385,7 @@ function update(dt){
   R.en=R.en.filter(e=>!e.dead);R.bu=R.bu.filter(b=>b.life>0);R.cr=R.cr.filter(c=>!c.dead);
   R.pa=R.pa.filter(p=>p.t>0);R.bolts=R.bolts.filter(b=>b.life>0);R.tx=R.tx.filter(x=>x.t>0);
   if(R.over)return;
-  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);save.gold+=60;persist();startFork(()=>{persist();state='win2';ui();},true);return;}}
+  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);save.gold+=60;persist();startFork(()=>{save.ckpt={stage:save.route==='highway'?3:'3f',wave:1};persist();state='win2';ui();},true);return;}}
   R.scatter=R.wall<=0?R.scatter+dt:Math.max(0,R.scatter-dt*.4);
   if(R.mflash)for(const k in R.mflash)R.mflash[k]-=dt;
   if(R.spawnLeft<=0&&!R.bossPending&&R.en.length===0&&R.cr.length===0&&!R.cinePending&&!R.cine&&!(R.proj&&R.proj.length)&&!(R.jeep&&R.jeep.phase!=='lost'&&R.jeep.phase!=='freed'))waveClear();
@@ -1515,7 +1524,6 @@ function drawSquadMember(s){
   if(R&&supOn(s.id)){const v=supV(s.id),bw=46*k,by=sy-CHAR_H*k-3;ctx.fillStyle='#000b';ctx.fillRect(sx-bw/2-1,by-1,bw+2,4);ctx.fillStyle=v>=1?'#b6f23a':'#7b4bd6';ctx.fillRect(sx-bw/2,by,bw*v,2);
     if(v>=1){const pl=.5+.5*Math.sin(t*6);ctx.save();ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(sx,sy-CHAR_H*k*.45,0,sx,sy-CHAR_H*k*.45,CHAR_H*k*.75);g.addColorStop(0,'rgba(182,242,58,'+(.15+.15*pl)+')');g.addColorStop(1,'rgba(182,242,58,0)');ctx.fillStyle=g;ctx.fillRect(sx-CHAR_H*k,sy-CHAR_H*k*1.3,CHAR_H*k*2,CHAR_H*k*1.4);ctx.restore();
       ctx.strokeStyle='rgba(182,242,58,'+(.5+.5*pl)+')';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(sx,sy,(32+4*pl)*k,(10+1.5*pl)*k,0,0,6.283);ctx.stroke();}}
-  if(s.id!=='cmd'){ctx.fillStyle='#0d1016cc';ctx.fillRect(sx-9,sy+3,18,12);ctx.fillStyle='#ffc53d';ctx.font='700 10px "Chakra Petch", sans-serif';ctx.textAlign='center';ctx.fillText(save.heroes[s.id].lv,sx,sy+13);}
 }
 function drawBullet(b){
   const[sx,sy,k]=P(b.x,b.z,b.h);
@@ -1594,8 +1602,8 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
 function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
-function waveClear(){if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healRecovery();save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
-function gameOver(){SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
+function waveClear(){if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healRecovery();save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{save.ckpt={stage:2,wave:1};persist();state='win';ui();},SHOTS2);return;}state='inter';ui();}
+function gameOver(){clearCkpt();SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
 function freshSave(){legacy();const LG=save.legacy;save={legacy:LG,mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
 function rosterHTML(){
@@ -1655,7 +1663,8 @@ function ui(){
       <div class="mgas g1"></div><div class="mgas g2"></div><div class="mgrain"></div><div class="mvig"></div>
       <div class="mside"><h1 class="mlogo"><span class="sr">Holdout Squad: The Zombie Chronicles</span></h1>
         <nav class="mnav" aria-label="Main menu">
-          <button class="mbtn play" data-act="modes">Play</button>
+          ${save.ckpt?`<button class="mbtn play" data-act="continue">Continue<small style="display:block;font-size:.5em;letter-spacing:.04em;opacity:.8">${ckptLabel(save.ckpt)}</small></button>`:''}
+          <button class="mbtn ${save.ckpt?'':'play'}" data-act="modes">${save.ckpt?'New game':'Play'}</button>
           <button class="mbtn" data-act="load">Load</button>
           <button class="mbtn" data-act="options">Options</button>
           <button class="mbtn" data-act="credits">Credits</button>
@@ -1771,6 +1780,7 @@ ov.addEventListener('click',e=>{
   if(a==='revive'){const id=b.dataset.id,c=reviveCost(id),rec=save.downed&&save.downed[id];if(rec&&save.gold>=c){story('hero_revived',{hero:id,cost:c});save.gold-=c;save.heroes[id]={lv:rec.lv,xp:rec.xp};setHp(id,maxHp(id)*.5);delete save.downed[id];save.fallen=save.fallen.filter(h=>h!==id);if(save.active.length<MAX_ACTIVE)save.active.push(id);persist();SND.freed();ui();}return;}
   if(a==='start'){const w=+b.dataset.w;const go=()=>{SX=0;camX=0;newRun(w);};if(w===1){freshSave();startIntro(go);}else go();}
   else if(a==='begin'){state='menu';ui();return;}
+  else if(a==='continue'){resumeCkpt();}
   else if(a==='retry'){freshSave();legacyStart(save.mode||'normal');SX=0;camX=0;newRun(1);}
   else if(a==='stage3f'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:3,route:'backroad'});}SX=0;camX=0;startForest();}
   else if(a==='stage3'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:3});}SX=0;camX=0;startStage3();}
@@ -1799,7 +1809,7 @@ ov.addEventListener('click',e=>{
   else if(a==='deploy'){if(save.active.length<MAX_ACTIVE&&!save.active.includes(b.dataset.id))save.active.push(b.dataset.id);persist();ui();}
   else if(a==='train'){const s=save.heroes[b.dataset.id],c=trainCost(s.lv);if(save.gold>=c&&s.lv<MAXLV){save.gold-=c;s.xp=0;s.lv++;persist();ui();}}
 });
-document.addEventListener('visibilitychange',()=>{if(document.hidden&&state==='play'){state='pause';ui();}});
+document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();if(state==='play'){state='pause';ui();}}});window.addEventListener('pagehide',()=>persist());
 
 /* ---------- INTRO CUTSCENE: riso-print panels with partial animation ---------- */
 const CINE_META={"gas": {"n": 6, "fw": 330.4, "fh": 248.49999999999997}, "crowd": {"n": 6, "fw": 237.99999999999997, "fh": 239.39999999999998}, "arm": {"n": 6, "fw": 209.4, "fh": 288.0}, "shadow": {"n": 6, "fw": 268, "fh": 102.0}, "wave": {"n": 4, "fw": 411, "fh": 117.0}, "lift": {"n": 4, "fw": 402.0, "fh": 492.0}, "bike": {"n": 4, "fw": 332.0, "fh": 300.8}, "leap": {"n": 4, "fw": 247.20000000000002, "fh": 326.40000000000003}, "bikef": {"n": 4, "fw": 350.40000000000003, "fh": 324.0}, "c3horde": {"n": 8, "fw": 320.4, "fh": 175.79999999999998}, "c3truck": {"n": 8, "fw": 137.5, "fh": 128.0}, "c3smoke": {"n": 8, "fw": 164.4, "fh": 103.2}, "c3peek": {"n": 8, "fw": 164.4, "fh": 121.8}, "c3beam": {"n": 8, "fw": 191.79999999999998, "fh": 72.8}, "c3fog": {"n": 8, "fw": 411.20000000000005, "fh": 192.8}, "c3spark": {"n": 8, "fw": 306.0, "fh": 162.0}, "c3fire": {"n": 8, "fw": 175.5, "fh": 210.6}, "c3ember": {"n": 8, "fw": 156.0, "fh": 160.0}, "c3flash": {"n": 8, "fw": 175.5, "fh": 176.4}, "c4ring": {"n": 4, "fw": 389.75, "fh": 140}, "c4spark": {"n": 4, "fw": 389.75, "fh": 210}, "c4fog": {"n": 4, "fw": 389.75, "fh": 140}, "c4burst": {"n": 4, "fw": 389.75, "fh": 255}};
