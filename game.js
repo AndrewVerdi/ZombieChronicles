@@ -876,8 +876,8 @@ const FC={
   fx(c,tt){sparkLoop(c,tt,.71,.31,.1,1);blinkEyes(c,tt,[[.05,.62,.3],[.15,.68,.6],[.9,.6,.9],[.97,.68,1.2],[.25,.2,1.5],[.78,.22,1.8],[.45,.12,2.1],[.6,.15,2.4]],.004);}},
  s1:{bg:'xs1',fb:'xb8',d:6,vo:"Then the woods began to scream.",cam:p=>({cx:lerp(.5,.6,ease(p)),cy:.5,z:lerp(1.02,1.1,ease(p))}),snd:()=>{SND.hiss&&SND.hiss();setTimeout(()=>SND.hiss&&SND.hiss(),1400);},
   fx(c,tt){const q=(tt*.55)%1;fx4(c,'c4fog',Math.floor(q*4),.8,.68,.3+q*.35,1-q);if((tt%1.4)<.3)c.shake=3;}},
- s2:{bg:'xs2',fb:'xb8',d:4,vo:"Hex: \"Those are Screechers. RUN!\"",cam:p=>({cx:.45,cy:.42,z:lerp(1.05,1.25,ease(p))}),fx(c,tt){c.shake=2;}},
- s2v:{bg:'xs2v',fb:'xv6',d:4,vo:"Commander: \"Whatever that is, we're not sticking around. RUN!\"",cam:p=>({cx:.45,cy:.42,z:lerp(1.05,1.25,ease(p))}),fx(c,tt){c.shake=2;}},
+ s2:{bg:'xs2',fb:'xb8',d:4,snd:()=>{SND.hiss&&SND.hiss();},vo:"Hex: \"Those are Screechers. RUN!\"",cam:p=>({cx:.45,cy:.42,z:lerp(1.05,1.25,ease(p))}),fx(c,tt){c.shake=2;}},
+ s2v:{bg:'xs2v',fb:'xv6',d:4,snd:()=>{SND.hiss&&SND.hiss();setTimeout(()=>SND.hiss&&SND.hiss(),900);},vo:"Commander: \"Whatever that is, we're not sticking around. RUN!\"",cam:p=>({cx:.45,cy:.42,z:lerp(1.05,1.25,ease(p))}),fx(c,tt){c.shake=2;}},
  m1:{bg:'xm1',fb:'xb6',d:8,vo:"Something heard her children die. And she was angry.",cam:p=>({cx:.5,cy:lerp(.72,.36,ease(p)),z:lerp(1.3,1.08,ease(p))}),snd:()=>{SND.groan(0,.8);setTimeout(()=>SND.hiss&&SND.hiss(),2500);},
   fx(c,tt){c.glow(.2,.37,.1,.35+.15*Math.sin(tt*5),'190,245,60');c.glow(.8,.41,.1,.35+.15*Math.sin(tt*5+1),'190,245,60');
    if(tt>4.2){const a=Math.min(1,(tt-4.2)*1.5);c.glow(.478,.077,.012,a,'230,255,180');c.glow(.517,.077,.012,a,'230,255,180');c.glow(.497,.08,.05,.35*a,'190,245,60');}
@@ -886,7 +886,7 @@ const FC={
 const FCUT_KEYS=['c3fog','c3ember','c3flash','c4ring','c4spark','c4fog','c4burst'].concat(...Object.values(FC).map(s=>[s.bg,s.fb]));
 function fcutList(n,crew){const rook=crew.rook,C=FC;
   if(n===1)return rook?[C.f1,C.f2,C.f3,C.f4,C.f5]:[C.rv1,C.f3,C.f4,C.f5];
-  if(n===2)return[crew.hex&&rook?C.s1:C.s1alt,crew.hex?C.s2:C.s2v];
+  if(n===2)return crew.hex&&rook?[C.s1,C.s2]:[crew.hex?C.s2:C.s2v];
   return[C.m1];}
 function miniShow(){if(clayer.querySelector('.cmini'))return;cine.mg={fill:0,left:6};const d=document.createElement('div');d.className='cmini';
   d.innerHTML='<div class="mlab">BREAK HER HOLD!</div><div class="mbar"><i></i></div><div class="mtime">6.0</div><button type="button">TAP!</button>';
