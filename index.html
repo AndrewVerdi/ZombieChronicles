@@ -90,6 +90,12 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
 .cchoice button+button{background:#b6f23a;box-shadow:5px 5px 0 #6b2fa6,-2px -2px 0 #ff6a2b;transform:rotate(1.2deg);animation-delay:.12s}
 .cchoice button:hover,.cchoice button:focus-visible{transform:rotate(0) scale(1.04);outline:none}
 .cchoice button:active{transform:translate(3px,3px);box-shadow:2px 2px 0 #6b2fa6}
+.sbuild{display:flex;flex-direction:column;gap:8px;margin:8px 0}
+.srowb{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1.6fr) auto;align-items:center;gap:10px;background:#0f0b14;border:1px solid #33293d;border-radius:8px;padding:8px 10px}
+.srowb .sname{font-weight:700;font-size:14px;display:flex;flex-direction:column}.srowb .sname small{font-weight:600;color:var(--hazard,#ffc53d);font-variant-numeric:tabular-nums}
+.srowb .pips{display:flex;gap:3px}.srowb .pips i{flex:1;height:10px;border-radius:2px;background:#2a2033}.srowb .pips i.on{background:var(--hazard,#ffc53d)}
+.srowb .plus{font:700 13px "Chakra Petch",sans-serif;padding:9px 12px;border-radius:7px;border:0;background:var(--hazard,#ffc53d);color:#1a1300;min-width:64px;cursor:pointer}
+.srowb .plus:disabled{background:#2a2033;color:#6d6178;cursor:default}
 .cmini{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;padding-top:12vh;touch-action:manipulation;user-select:none;-webkit-user-select:none;cursor:pointer;pointer-events:auto;z-index:5}
 .cmini .mlab{font:400 clamp(18px,3.4vw,30px)/1 var(--display,"Bungee"),sans-serif;color:#b6f23a;text-shadow:3px 3px 0 #6b2fa6;letter-spacing:.04em}
 .cmini .mbar{width:min(70vw,520px);height:22px;border:3px solid #0b080e;background:#2a1a33;box-shadow:4px 4px 0 #6b2fa6;border-radius:3px;overflow:hidden}
@@ -215,13 +221,13 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
   <div class="overlay" id="ov"></div>
 </div>
 
-<script>window.__VER='8534d617da';
+<script>window.__VER='0437e957bc';
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 // when the app comes back from the background, check for a newer version and reload if the player is on a menu
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;
   fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(d=>{
     if(d.v&&d.v!==window.__VER&&window.__canReload&&window.__canReload())location.reload();}).catch(()=>{});});
 </script>
-<script src="game.js?v=8534d617da"></script>
+<script src="game.js?v=0437e957bc"></script>
 </body>
 </html>

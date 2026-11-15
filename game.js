@@ -239,7 +239,7 @@ const HEROES={
    perks:['Quick bolt','Pierce all','Giant slayer']},
 };
 const HERO_ORDER=['bruno','rook','blaze','volt','frost','hex','nova'];
-const PERK_LV=[3,6,9];
+const PERK_LV=[5,10,15,20,25];
 const WEAPONS={
  pistol:{name:'Semi-Auto Rifle',rate:.3,dmg:8.5},
  smg:{name:'SMG',rate:.09,dmg:3.6},
@@ -251,9 +251,23 @@ const WEAPONS={
 const WEAPON_ORDER=['pistol','smg','shotgun','rail','rocket','minigun'];
 // squad fans out from the commander in a shallow arc (dx, dz)
 const SLOTS=[[-90,10],[90,10],[-180,26]];
-const xpNeed=l=>45+40*l*(l-1);
+const xpNeed=l=>40+18*l*(l-1);
 const trainCost=l=>Math.round(35*Math.pow(l,1.85)+30);
-const MAXLV=10;
+const MAXLV=25;
+/* ---------- STATS: starting values per character, points add fixed amounts (cap 10 each), super is a 1-point unlock at 25 ---------- */
+const ENEMY_K=7,HURT_K=.65,STAT_CAP=10,RIFLE_BASE=8.5;
+const HSTAT={cmd:{hp:80,dmg:80,rec:5,crit:5,cm:2},bruno:{hp:120,dmg:150,rec:2,crit:3,cm:'zone'},rook:{hp:65,dmg:60,sword:200,rec:10,crit:10,cm:2.5},hex:{hp:55,dmg:125,rec:15,crit:15,cm:10},
+  blaze:{hp:85,dmg:11,rec:5,crit:5,cm:2},volt:{hp:75,dmg:105,rec:5,crit:5,cm:2},frost:{hp:75,dmg:56,rec:5,crit:5,cm:2},nova:{hp:65,dmg:385,rec:5,crit:5,cm:2}};
+const JOIN_LV={bruno:2,rook:4,hex:5};
+const ZONE_CM=[10,5,3,1,1];
+const STAT_DEF=[['hp','Health',15,''],['dmg','Damage',10,''],['rec','Round recovery',5,'%'],['crit','Crit chance',5,'%']];
+function lvOf(id){return id==='cmd'?save.cmd:((save.heroes[id]||(save.away&&save.away[id])||{lv:1}).lv);}
+function pts(id){save.pts=save.pts||{};return save.pts[id]||(save.pts[id]={hp:0,dmg:0,rec:0,crit:0,sup:0});}
+function ptsUsed(id){const p=pts(id);return p.hp+p.dmg+p.rec+p.crit+p.sup;}
+function ptsFree(id){return Math.max(0,lvOf(id)-ptsUsed(id));}
+function st(id){const b=HSTAT[id],p=pts(id);let crit=b.crit+5*p.crit;if(id==='rook'&&lvOf(id)>=15)crit+=10;return{hp:b.hp+15*p.hp,dmg:b.dmg+10*p.dmg,sword:(b.sword||0)+10*p.dmg,rec:b.rec+5*p.rec,crit,cm:b.cm,sup:p.sup};}
+const respecCost=id=>20*lvOf(id);
+const perksOf=id=>(id==='cmd'?CMD_PERKS:HEROES[id].perks.concat(['To be revealed','Super ability']));
 
 /* ---------- SAVE ---------- */
 const KEY='holdout-squad-v1';
@@ -685,7 +699,7 @@ function startWave3(w){
   state='play';ui();
 }
 function spawnPace3(){if(R.wave===3){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.22,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(R.wave===1?1.7:1.3)*(.65+Math.random()*.7);}
-function waveClear3(){SND.waveClear();healAll(.3);save.gold+=8+R.wave*4;persist();
+function waveClear3(){SND.waveClear();healRecovery();save.gold+=8+R.wave*4;persist();
   if(R.wave>=S3_WAVES){const n=civsAlive().length;save.cleared=Math.max(save.cleared||0,3);save.townSaved=n;legacyStage(3);story('survivors_saved',{saved:n,of:CIV_N});legacyEnd('cleared_stage_3');save.gold+=60;persist();state='win3';ui();return;}
   state='inter';ui();}
 
@@ -776,7 +790,7 @@ function drawStuns(){if(!R.hstun)return;for(const m of squad()){if(!stunned(m.id
   for(let i=0;i<3;i++){const a=t*6+i*2.09;ctx.beginPath();ctx.ellipse(sx,sy,22*k,7*k,0,a,a+1.2);ctx.stroke();}}}
 
 /* Momma: summons ground claws under the squad and throws bone daggers */
-function spawnMomma(){R.en.push({type:'momma',hp:2200,max:2200,spd:16*SPD,r:62,gold:60,xp:160,col:'#b6f23a',x:0,z:ZFAR+60,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:0,armor:1});}
+function spawnMomma(){R.en.push({type:'momma',hp:2200*ENEMY_K,max:2200*ENEMY_K,spd:16*SPD,r:62,gold:60,xp:160,col:'#b6f23a',x:0,z:ZFAR+60,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:0,armor:1});}
 const MACT={summon:{d:1.1,rel:.85,fn:mommaSummon},throw:{d:.9,rel:.6,fn:mommaThrow},shriek:{d:1.0,rel:.45,fn:mommaShriek}};
 function mommaAI(e,dt){
   if(e.sumT==null){e.sumT=3.5;e.thrT=2.2;e.act=null;R.banner={txt:'MOMMA',t:2.6,col:'#b6f23a'};SND.groan(0,.7);}
@@ -834,7 +848,7 @@ function startWaveF(w){
 }
 function spawnPaceF(){const w=R.wave;if(w===2){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.24,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(w===1?.8:w===3?.75:2.6)*(.65+Math.random()*.7);}
 function packF(){const w=R.wave;return w===2?1+Math.floor(Math.random()*2.6):w===3&&Math.random()<.35?2:1;}
-function waveClearF(){SND.waveClear();healAll(.3);save.gold+=8+R.wave*4;persist();
+function waveClearF(){SND.waveClear();healRecovery();save.gold+=8+R.wave*4;persist();
   if(R.wave>=F_WAVES){save.cleared=Math.max(save.cleared||0,3);save.forestDone=1;legacyStage(3);story('stage_clear_forest',{hex:!!save.heroes.hex});legacyEnd('cleared_stage_3');save.gold+=60;persist();state='win3f';ui();return;}
   state='inter';ui();}
 function forestNext(){const w=R.wave+1;startForestCut(w-1,()=>{startWaveF(w);},true);}
@@ -906,7 +920,7 @@ function startForestCut(n,done,record){cineLoadKeys(FCUT_KEYS);const crew={rook:
   if(CREW_VIEW){crew.rook=CREW_VIEW.rook;crew.hex=CREW_VIEW.hex!==false;}
   cine0pick=null;startIntro(()=>{const res=cineLastMini;cineLastMini=null;cine0pick=null;
     if(record&&n===1){const won=res==='won';story('minigame',{id:'hex_pin',won});
-      if(won&&!save.heroes.hex&&!save.fallen.includes('hex')){const lvs=[save.cmd,...save.active.map(h=>save.heroes[h].lv)],avg=lvs.reduce((a,b)=>a+b,0)/lvs.length,had=!!(save.away&&save.away.hex);const act=addHero('hex');if(!had)save.heroes.hex.lv=Math.max(2,Math.min(MAXLV,Math.round(avg)-1));setHp('hex',maxHp('hex'));R.pendBanner={txt:(act?'HEX JOINS THE SQUAD':'HEX JOINS THE RESERVES'),t:2.6,col:HEROES.hex.color};save.hexMet='joined';}
+      if(won&&!save.heroes.hex&&!save.fallen.includes('hex')){const lvs=[save.cmd,...save.active.map(h=>save.heroes[h].lv)],avg=lvs.reduce((a,b)=>a+b,0)/lvs.length,had=!!(save.away&&save.away.hex);const act=addHero('hex');setHp('hex',maxHp('hex'));R.pendBanner={txt:(act?'HEX JOINS THE SQUAD':'HEX JOINS THE RESERVES'),t:2.6,col:HEROES.hex.color};save.hexMet='joined';}
       else if(!won&&!save.heroes.hex)save.hexMet=save.hexMet||'missed';persist();}
     done&&done(res);},fcutList(n,crew));
   cine.crew=crew;}
@@ -932,7 +946,7 @@ function mkEnemy(type,x,z){
     screecher:{hp:12,spd:72,r:22,gold:4,xp:4,col:'#9aa08a',dmg:5,scr:1},
   }[type];
   const e=Object.assign({type},T);
-  e.hp*=hs;e.spd*=ss*SPD;e.x=x;e.z=z;e.slow=0;e.burn=0;e.bdps=0;e.stun=0;e.wob=Math.random()*6;
+  e.hp*=hs*ENEMY_K;if(e.armor)e.armor*=ENEMY_K;e.spd*=ss*SPD;e.x=x;e.z=z;e.slow=0;e.burn=0;e.bdps=0;e.stun=0;e.wob=Math.random()*6;
   if(false){e.elite=1;e.hp*=3;e.r*=1.2;e.gold*=4;e.xp*=3;e.dmg*=2;}
   e.max=e.hp;R.en.push(e);return e;
 }
@@ -964,7 +978,7 @@ function bossAI(e,dt){
 function bossThrow(e){
   const sq=squad();if(!sq.length)return;const m=sq[Math.floor(Math.random()*sq.length)],r=Math.random();
   const kind=e.nextKind||'gurney';
-  R.proj.push({kind,hp:PROJ[kind].hp,x0:e.x,z0:e.z,h0:e.r*EH*BOSS_VIS*.9,x1:m.x+(Math.random()-.5)*30,z1:m.z+10,t:0,T:1.4,peak:300,x:e.x,z:e.z,h:0,spin:Math.random()*4|0});
+  R.proj.push({kind,hp:PROJ[kind].hp*ENEMY_K,x0:e.x,z0:e.z,h0:e.r*EH*BOSS_VIS*.9,x1:m.x+(Math.random()-.5)*30,z1:m.z+10,t:0,T:1.4,peak:300,x:e.x,z:e.z,h:0,spin:Math.random()*4|0});
   SND.whoosh();
 }
 function projUpdate(dt){
@@ -998,7 +1012,7 @@ function drawBossBar(){
 }
 function spawnBoss(){
   const hs=hpScale(R.wave);
-  R.en.push({type:'boss',hp:2900,max:2900,spd:15*SPD,r:100,gold:50,xp:150,col:'#ff2e63',x:0,z:ZFAR+80,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:100,armor:1});
+  R.en.push({type:'boss',hp:2900*ENEMY_K,max:2900*ENEMY_K,spd:15*SPD,r:100,gold:50,xp:150,col:'#ff2e63',x:0,z:ZFAR+80,slow:0,burn:0,bdps:0,stun:0,wob:0,dmg:100,armor:1});
 }
 function spawnCrate(){
   const rw=nextReward(),hp=80+R.wave*48,lim=sxLimit();
@@ -1010,22 +1024,23 @@ function spawnCrate(){
 /* ---------- SQUAD HEALTH, ACTIVE ROSTER, PERMADEATH ---------- */
 const BASE_HP={cmd:150,bruno:120,rook:85,blaze:85,volt:75,frost:75,hex:70,nova:65};
 const MAX_ACTIVE=3,WALL_MAX=400;
-function maxHp(id){return id==='cmd'?BASE_HP.cmd+15*(save.cmd-1):BASE_HP[id]+14*((save.heroes[id]||{lv:1}).lv-1);}
-function getHp(id){if(id==='cmd'){if(save.cmdHp==null)save.cmdHp=maxHp('cmd');return save.cmdHp;}const s=save.heroes[id];if(s.hp==null)s.hp=maxHp(id);return s.hp;}
+function maxHp(id){return Math.round(st(id).hp*Math.pow(1.02,lvOf(id)-1));}
+function getHp(id){const m=maxHp(id);if(id==='cmd'){if(save.cmdHp==null||save.cmdHp>m)save.cmdHp=m;return save.cmdHp;}const s=save.heroes[id];if(s.hp==null||s.hp>m)s.hp=m;return s.hp;}
 function setHp(id,v){if(id==='cmd')save.cmdHp=v;else save.heroes[id].hp=v;}
+function healRecovery(){for(const id of['cmd',...save.active])if(id==='cmd'||save.heroes[id]){const m=maxHp(id),h=getHp(id);setHp(id,Math.min(m,h+m*st(id).rec/100));}}
 function healAll(f){for(const id of['cmd',...save.active])setHp(id,Math.min(maxHp(id),getHp(id)+maxHp(id)*f));}
 /* a hero who joins mid-stage is set aside at the stage start (keeping their level) and comes back when the story brings them in */
 function stashHero(id){if(!save.heroes[id])return;save.away=save.away||{};save.away[id]=save.heroes[id];delete save.heroes[id];save.active=save.active.filter(h=>h!==id);persist();}
 function addHero(id){story('hero_joined',{hero:id});
   if(save.away&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];save.heroes[id].hp=null;}
-  else save.heroes[id]={lv:1,xp:0,hp:BASE_HP[id]};
+  else save.heroes[id]={lv:JOIN_LV[id]||1,xp:0,hp:null};
   const act=save.active.length<MAX_ACTIVE;if(act)save.active.push(id);
   return act;
 }
 const HORDE=()=>save.mode==='horde';
 const reviveCost=id=>20+30*((save.downed&&save.downed[id]&&save.downed[id].lv)||1);
 function hurtMember(id,d){
-  if(!R||R.over)return;if(HORDE())d*=1.15;
+  if(!R||R.over)return;d*=HURT_K;if(HORDE())d*=1.15;
   const hp=getHp(id)-d;setHp(id,hp);SND.hurt(0);R.mflash=R.mflash||{};R.mflash[id]=.12;
   const m=squad().find(q=>q.id===id);if(m)burst(m.x,m.z,40,'#ff4d5e',6);
   if(hp>0)return;
@@ -1081,14 +1096,14 @@ function nearest(x,z,range,skip){
   for(const e of R.en){if(e.dead||e.z>ZFAR||e.z<z||(skip&&skip.has(e)))continue;const d=(e.x-x)**2+(e.z-z)**2;if(d<bd){bd=d;best=e;}}
   return best;
 }
-function shoot(o){R.bu.push(Object.assign({r:7,pierce:1,hit:new Set(),life:2,h:MZ_H},o));}
+function shoot(o){if(o.own&&HSTAT[o.own]&&o.cc==null){const S_=st(o.own);o.cc=S_.crit/100;o.cm=S_.cm;}R.bu.push(Object.assign({r:7,pierce:1,hit:new Set(),life:2,h:MZ_H},o));}
 function aimAt(sx,sz,e,spd,spread=0){const a=Math.atan2(e.z-sz,e.x-sx)+(Math.random()-.5)*spread;return[Math.cos(a)*spd,Math.sin(a)*spd];}
 function anim(id){if(!R.an[id])R.an[id]={a:'run',t:Math.random()*2,last:-9};return R.an[id];}
 const SHOT_KIND={rook:'pistol',bruno:'shotgun',blaze:'flame',volt:'zap',frost:'ice',hex:'orb',nova:'sniper'};
 function triggerShoot(id){{const m=squad().find(q=>q.id===id);SND.shot(id==='cmd'?({pistol:'rifle',smg:'smg',shotgun:'shotgun',rail:'rail',rocket:'rocket',minigun:'minigun'})[save.equip]:SHOT_KIND[id],m?m.x/600:0);}const st=anim(id);if(st.a==='shoot'&&(id==='blaze'||st.t<.12)){st.last=t;return;}st.a='shoot';st.t=0;st.last=t;}
 
 function fireCmd(s){
-  const W=WEAPONS[save.equip],m=Math.pow(1.12,save.cmd-1),d=W.dmg*m;
+  const W=WEAPONS[save.equip],d=st('cmd').dmg*W.dmg/RIFLE_BASE;
   const gx=s.x+16,gz=s.z+10;
   triggerShoot('cmd');
   if(save.equip==='shotgun'){for(let i=0;i<W.pel;i++){const a=Math.PI/2+(i/(W.pel-1)-.5)*.5;shoot({x:gx,z:gz,vx:Math.cos(a)*1050,vz:Math.sin(a)*1050,dmg:d,own:'cmd',col:'#fff',life:.7});}}
@@ -1098,9 +1113,9 @@ function fireCmd(s){
   return W.rate;
 }
 function fireHero(s){
-  const id=s.id,H=HEROES[id],L=save.heroes[id].lv,d=H.dmg*Math.pow(1.13,L-1);
-  let rate=H.rate*Math.pow(.975,L-1);
-  const reach=H.range+(id==='blaze'&&L>=9?140:0);
+  const id=s.id,H=HEROES[id],L=save.heroes[id].lv,S_=st(id),d=S_.dmg;
+  let rate=H.rate;
+  const reach=H.range+(id==='blaze'&&L>=15?140:0);
   const sx=s.x+18,sz=s.z+8;
   let e=nearest(sx,sz,reach);
   if(R.stage===2&&R.proj&&id!=='volt'){let bd=reach*reach;for(const q of R.proj){if(q.done||q.t/q.T>.85||q.t<.15)continue;const d=(q.x-sx)**2+(q.z-sz)**2;if(d<bd){bd=d;e=q;}}}
@@ -1109,22 +1124,22 @@ function fireHero(s){
   switch(id){
    case'rook':{
      const near=R.en.filter(q=>!q.dead&&q.type!=='boss'&&Math.abs(q.z-s.z)<175+q.r*.5&&Math.abs(q.x-s.x)<150+q.r*.5);
-     if(near.length&&(R.katCd||0)<=0){R.katCd=L>=6?.6:.85;const kd=42*Math.pow(1.13,L-1);
-       for(const q of near){damage(q,kd*(L>=9&&Math.random()<.25?2.5:1),id);if(!q.dead&&q.type!=='brute')q.z+=36;q.stun=Math.max(q.stun||0,.15);}
+     if(near.length&&(R.katCd||0)<=0){R.katCd=L>=10?.6:.85;const kd=S_.sword;
+       for(const q of near){damage(q,kd,id,{cc:S_.crit/100,cm:S_.cm});if(!q.dead&&q.type!=='brute')q.z+=36;q.stun=Math.max(q.stun||0,.15);}
        {const st=anim('rook');st.a='slash';st.t=0;}R.slashes=R.slashes||[];R.slashes.push({x:s.x,z:s.z+120,t:0,dir:(R.slashN=(R.slashN||0)+1)%2?1:-1});SND.slash(s.x/600);R.shake=Math.max(R.shake||0,.1);return .3;}
      R.gunSide=-(R.gunSide||1);const gx=sx+R.gunSide*14;
-     const[vx,vz]=aimAt(gx,sz,e,1400,.03);shoot({x:gx,z:sz,vx,vz,dmg:d*.6,own:id,col:'#ffd27a',pierce:L>=6?3:1,crit:L>=9,trail:1});
-     if(L>=3){const[vx2,vz2]=aimAt(sx-R.gunSide*14,sz,e,1400,.05);shoot({x:sx-R.gunSide*14,z:sz,vx:vx2,vz:vz2,dmg:d*.6,own:id,col:'#ffd27a',pierce:L>=6?3:1,crit:L>=9,trail:1});}
+     const[vx,vz]=aimAt(gx,sz,e,1400,.03);shoot({x:gx,z:sz,vx,vz,dmg:d,own:id,col:'#ffd27a',pierce:L>=10?3:1,crit:L>=15,trail:1});
+     if(L>=5){const[vx2,vz2]=aimAt(sx-R.gunSide*14,sz,e,1400,.05);shoot({x:sx-R.gunSide*14,z:sz,vx:vx2,vz:vz2,dmg:d,own:id,col:'#ffd27a',pierce:L>=10?3:1,crit:L>=15,trail:1});}
      rate*=.62;break;}
-   case'blaze':{for(let i=0;i<2;i++){const[vx,vz]=aimAt(sx,sz,e,560,L>=3?.7:.35);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:H.color,pierce:99,life:reach/560,flame:1,r:12,burn:d*2.2,burnT:L>=6?3.2:1.6});}break;}
-   case'volt':{let chain=2+(L>=3?1:0)+(L>=6?2:0),cur=e,hit=new Set(),pts=[[sx,sz,MZ_H]];
-     while(cur&&chain-->=0){hit.add(cur);pts.push([cur.x,cur.z,cur.r]);damage(cur,d,id);if(L>=9)cur.stun=Math.max(cur.stun,.45);cur=nearestTo(cur,210,hit);}
+   case'blaze':{for(let i=0;i<2;i++){const[vx,vz]=aimAt(sx,sz,e,560,L>=5?.7:.35);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:H.color,pierce:99,life:reach/560,flame:1,r:12,burn:d*2.2,burnT:L>=10?3.2:1.6});}break;}
+   case'volt':{let chain=2+(L>=5?1:0)+(L>=10?2:0),cur=e,hit=new Set(),pts=[[sx,sz,MZ_H]];
+     while(cur&&chain-->=0){hit.add(cur);pts.push([cur.x,cur.z,cur.r]);damage(cur,d,id);if(L>=15)cur.stun=Math.max(cur.stun,.45);cur=nearestTo(cur,210,hit);}
      R.bolts.push({pts,life:.2,col:'#bfe0ff'});break;}
-   case'frost':{const[vx,vz]=aimAt(sx,sz,e,1000);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:H.color,r:9,slowAmt:L>=6?.3:.5,splash:L>=3?64:0,splashMul:.45,freeze:L>=9,glow:1});break;}
-   case'hex':{const n=L>=3?2:1;for(let i=0;i<n;i++){const[vx,vz]=aimAt(sx,sz,e,440,1.0);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:H.color,r:L>=6?13:10,homing:L>=6?7:4,spd:L>=6?620:480,life:3.2,split:L>=9,glow:1,orb:1});}break;}
-   case'bruno':{const n=5+(L>=3?2:0);const close=L>=9&&Math.hypot(e.x-sx,e.z-sz)<220;
-     for(let i=0;i<n;i++){const[vx,vz]=aimAt(sx,sz,e,1100,.4);shoot({x:sx,z:sz,vx,vz,dmg:close?d*2:d,own:id,col:'#ffb347',life:1.5,kb:L>=6?70:30,fall:1,ox:sx,oz:sz});}break;}
-   case'nova':{if(L>=3)rate*=.75;const[vx,vz]=aimAt(sx,sz,e,2600);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:'#ff8a8a',r:8,pierce:L>=6?99:3,trail:1,slayer:L>=9});break;}
+   case'frost':{const[vx,vz]=aimAt(sx,sz,e,1000);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:H.color,r:9,slowAmt:L>=10?.3:.5,splash:L>=5?64:0,splashMul:.45,freeze:L>=15,glow:1});break;}
+   case'hex':{const n=L>=5?2:1;for(let i=0;i<n;i++){const[vx,vz]=aimAt(sx,sz,e,440,1.0);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:H.color,r:L>=10?13:10,homing:L>=10?7:4,spd:L>=10?620:480,life:3.2,split:L>=15,glow:1,orb:1});}break;}
+   case'bruno':{const n=5+(L>=5?2:0);const close=L>=15&&Math.hypot(e.x-sx,e.z-sz)<220;
+     for(let i=0;i<n;i++){const[vx,vz]=aimAt(sx,sz,e,1100,.4);shoot({x:sx,z:sz,vx,vz,dmg:(close?2:1)*d/n,own:id,col:'#ffb347',life:1.5,kb:L>=10?70:30,fall:1,ox:sx,oz:sz});}break;}
+   case'nova':{if(L>=5)rate*=.75;const[vx,vz]=aimAt(sx,sz,e,2600);shoot({x:sx,z:sz,vx,vz,dmg:d,own:id,col:'#ff8a8a',r:8,pierce:L>=10?99:3,trail:1,slayer:L>=15});break;}
   }
   return rate;
 }
@@ -1134,7 +1149,7 @@ function nearestTo(e0,range,skip){let best=null,bd=range*range;for(const e of R.
 function damage(e,d,own,b){
   if(e.dead)return;
   if(e.type==='boss'&&R.stage===2&&!R.raged&&e.hp-d<e.max*.5){e.hp=e.max*.5;e.flash=.06;return;}
-  if(b&&b.crit&&Math.random()<.25)d*=2.5;
+  if(b&&b.cc&&Math.random()<b.cc){const m=b.cm==='zone'?ZONE_CM[Math.max(0,Math.min(4,Math.floor(e.z/(ZFAR/5))))]:b.cm;if(m>1){d*=m;if(R&&Math.random()<.5){const[px,py]=P(e.x,e.z,e.r*2.6);R.tx.push({x:px,y:py,txt:'CRIT',col:'#ffe066',t:.6});}}}
   if(b&&b.slayer&&(e.type==='brute'||e.type==='boss'||e.type==='momma'))d*=3;
   if(e.armor)d=Math.max(d*.15,d-e.armor);
   e.hp-=d;e.flash=.06;if(!(e.hitT>0))e.hitT=.24;SND.hit(e.x/600);if(e.scr)screech(e);
@@ -1159,11 +1174,24 @@ function statHTML(id){
   if(!rows)rows='<p class="sub">No kills yet. Get them on the wall.</p>';
   return `<div class="shead"><div class="badge sbig"><canvas width="192" height="192" data-por="${id}" ${fallen?'data-st="fallen"':''}></canvas></div>
     <div class="sinfo"><h2>${H.name}</h2><div class="sub">${H.role}${lv?` · Level ${lv}`:''}${fallen?' · Fallen':''}</div></div></div>
-    <div class="stripe"></div>
+    <div class="stripe"></div>${lv?buildHTML(id):''}
     <div class="row stot"><span class="sub">Total kills</span><span class="snum"><span><small>THIS RUN</small>${tot(run)}</span><span><small>ALL TIME</small>${tot(all)}</span></span></div>
     <h3>Kills by enemy</h3>${rows}
     <div class="btns"><button class="btn ghost" data-act="statback">Back</button></div>`;
 }
+function buildHTML(id){const S_=st(id),p=pts(id),free=ptsFree(id),lv=lvOf(id),b=HSTAT[id];
+  const cmTxt=S_.cm==='zone'?'Crits hit harder up close: x10, x5, x3, x1, none at range':'Crits hit for x'+S_.cm;
+  const val=(k,v,u)=>k==='hp'?maxHp(id)+' HP':v+u;
+  let h=`<div class="row"><h3 style="margin:0">Points</h3><span class="big">${free} to spend</span></div><div class="sbuild">`;
+  for(const[k,nm,per,u]of STAT_DEF){const n=p[k],cap=n>=STAT_CAP;
+    h+=`<div class="srowb"><div class="sname">${nm}<small>${val(k,S_[k],u)}${k==='dmg'&&id==='rook'?' · blade '+S_.sword:''}${k==='dmg'&&id==='bruno'?' per shot':''}</small></div>
+    <div class="pips">${Array.from({length:STAT_CAP},(_,i)=>`<i class="${i<n?'on':''}"></i>`).join('')}</div>
+    <button class="plus" data-act="pt" data-id="${id}" data-k="${k}" ${!free||cap?'disabled':''} aria-label="Add a point to ${nm}">+${per}${u}</button></div>`;}
+  h+=`<div class="srowb"><div class="sname">Super ability<small>${p.sup?'Unlocked':lv>=25?'Ready to unlock':'Unlocks at level 25'}</small></div><div class="pips"><i class="${p.sup?'on':''}"></i></div>
+    <button class="plus" data-act="pt" data-id="${id}" data-k="sup" ${p.sup||lv<25||!free?'disabled':''}>${p.sup?'Done':'Unlock'}</button></div></div>
+    <p class="sub">${cmTxt}. Health also grows 2% every level.</p>
+    <div class="btns"><button class="btn ghost" data-act="respec" data-id="${id}" ${!ptsUsed(id)||save.gold<respecCost(id)?'disabled':''}>Reset points · ${respecCost(id)}g</button></div>`;
+  return h;}
 function drawEnemyThumbs(){
   if(!atlasReady)return;
   ov.querySelectorAll('canvas[data-enemy]').forEach(c=>{const M=META[c.dataset.enemy];if(!M)return;const fr=(M.walk||M.idle)[0],r=RECTS[fr],g=c.getContext('2d');
@@ -1177,7 +1205,7 @@ function kill(e,own){addKill(own,e.type);
   if(R.jail)hitJail(R.jail.max*.035);
   if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
   if(own==='cmd'){cmdXp(e.xp);const hs=save.active.slice();hs.forEach(h=>giveXp(h,e.xp*.3/Math.max(1,hs.length)));}
-  if(e.type!=='boss'||1){R.kills=(R.kills||0)+1;if(save.cmd>=3&&R.kills%10===0)rally();}
+  if(e.type!=='boss'||1){R.kills=(R.kills||0)+1;if(save.cmd>=5&&R.kills%10===0)rally();}
   else giveXp(own,e.xp);
   if(e.type==='boss')story('boss_defeated',{boss:'the_ward',by:own});
   if(e.type==='boss'&&R.stage===2){R.escapeT=3.2;R.spawnLeft=0;}
@@ -1185,10 +1213,10 @@ function kill(e,own){addKill(own,e.type);
   if(META[e.type]){R.dead.push({type:e.type,x:e.x,z:e.z,r:e.r,t:0,elite:e.elite});burst(e.x,e.z,e.r,e.col,5);}
   else burst(e.x,e.z,e.r,e.col,e.type==='boss'?40:12);
 }
-const CMD_PERKS=['Rally: heal squad 10% every 10 kills','Locked: to be revealed','Locked: to be revealed'];
+const CMD_PERKS=['Rally: heal squad 10% every 10 kills','To be revealed','To be revealed','To be revealed','Super ability'];
 function cmdXp(x){if(save.cmd>=MAXLV)return;save.cmdXp=(save.cmdXp||0)+x;
   while(save.cmd<MAXLV&&save.cmdXp>=xpNeed(save.cmd)){save.cmdXp-=xpNeed(save.cmd);save.cmd++;SND.levelUp();
-    if(R){const[px,py]=P(SX,0,CHAR_H+14);R.tx.push({x:px,y:py,txt:'COMMANDER LV '+save.cmd,col:'#ffc53d',t:1.6});if(save.cmd===3)R.banner={txt:'COMMANDER: RALLY UNLOCKED',t:2.4,col:'#ffc53d'};}}}
+    if(R){const[px,py]=P(SX,0,CHAR_H+14);R.tx.push({x:px,y:py,txt:'COMMANDER LV '+save.cmd,col:'#ffc53d',t:1.6});if(save.cmd===5)R.banner={txt:'COMMANDER: RALLY UNLOCKED',t:2.4,col:'#ffc53d'};}}}
 function rally(){healAll(.1);SND.chime&&0;const[px,py]=P(SX,0,CHAR_H+30);R.tx.push({x:px,y:py,txt:'RALLY +10%',col:'#5ee08a',t:1.4});for(const m of squad())burst(m.x,m.z,30,'#5ee08a',8);}
 function giveXp(h,x){
   const s=save.heroes[h];if(!s||s.lv>=MAXLV)return;
@@ -1200,7 +1228,7 @@ function levelUp(h){
   const pi=PERK_LV.indexOf(s.lv);
   const sq=squad().find(q=>q.id===h);
   if(R&&sq){const[px,py]=P(sq.x,sq.z,CHAR_H+14);R.tx.push({x:px,y:py,txt:HEROES[h].name.toUpperCase()+' LV '+s.lv,col:HEROES[h].color,t:1.6});}
-  if(pi>=0&&R)R.banner={txt:HEROES[h].name+': '+HEROES[h].perks[pi],t:2,col:HEROES[h].color};
+  if(pi>=0&&R)R.banner={txt:HEROES[h].name+': '+perksOf(h)[pi],t:2,col:HEROES[h].color};
   if(s.lv>=MAXLV)s.xp=0;
 }
 function burst(x,z,h,col,n){for(let i=0;i<n;i++){const a=Math.random()*6.28,s=60+Math.random()*220;R.pa.push({x,z,h,vx:Math.cos(a)*s,vz:Math.sin(a)*s*.6,vh:80+Math.random()*200,t:.5+Math.random()*.4,col});}}
@@ -1533,7 +1561,7 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
 function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
-function waveClear(){if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healAll(.3);save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
+function waveClear(){if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healRecovery();save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
 function freshSave(){legacy();const LG=save.legacy;save={legacy:LG,mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
@@ -1542,7 +1570,7 @@ function rosterHTML(){
   const cc=trainCost(save.cmd);
   h+=`<div class="cards"><div class="card"><div class="badge"><canvas width="128" height="128" data-por="cmd"></canvas></div><div class="cname">You<small>${WEAPONS[save.equip].name}</small></div><div class="lv">LV ${save.cmd}</div><div class="xp"><i style="width:${save.cmd>=MAXLV?100:Math.min(100,(save.cmdXp||0)/xpNeed(save.cmd)*100)}%"></i></div>
   <div class="perks">${CMD_PERKS.map((p,i)=>`<span class="perk ${save.cmd>=PERK_LV[i]?'on':''}">Lv${PERK_LV[i]} ${p}</span>`).join('')}</div>
-  <button class="train" data-act="stat" data-id="cmd">Stats</button>
+  <button class="train" data-act="stat" data-id="cmd">${ptsFree('cmd')?'Stats · '+ptsFree('cmd')+' points to spend':'Stats & points'}</button>
   <button class="train" data-act="cmd" ${save.cmd>=MAXLV||save.gold<cc?'disabled':''}>${save.cmd>=MAXLV?'Max level':'Train to Lv '+(save.cmd+1)+' · '+cc+'g'}</button></div></div>`;
   if(save.weapons.length>1)h+='<h3>Weapons · tap to equip</h3><div class="chips">'+WEAPON_ORDER.map(w=>save.weapons.includes(w)?`<button class="chip ${save.equip===w?'on':''}" data-act="eq" data-id="${w}">${WEAPONS[w].name}</button>`:`<span class="chip locked">Locked</span>`).join('')+'</div>';
   h+=`<h3>Squad · ${save.active.length}/${MAX_ACTIVE} heroes deployed with you</h3><div class="cards">`;
@@ -1556,8 +1584,8 @@ function rosterHTML(){
     h+=`<div class="card" style="${act?'border-color:var(--hazard)':''}"><div class="badge" style="box-shadow:inset 0 0 0 2px ${H.color}"><canvas width="128" height="128" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${H.role}</small></div><div class="lv">LV ${s.lv}</div>
     <div class="xp" style="grid-column:2/4"><i style="width:${hpf*100}%;background:${hpf<.3?'var(--blood)':'var(--good)'}"></i></div>
     <div class="xp"><i style="width:${mx?100:Math.min(100,s.xp/need*100)}%"></i></div>
-    <div class="perks">${H.perks.map((p,i)=>`<span class="perk ${s.lv>=PERK_LV[i]?'on':''}">Lv${PERK_LV[i]} ${p}</span>`).join('')}</div>
-    <button class="train" data-act="stat" data-id="${id}">Stats</button>
+    <div class="perks">${perksOf(id).map((p,i)=>`<span class="perk ${s.lv>=PERK_LV[i]?'on':''}">Lv${PERK_LV[i]} ${p}</span>`).join('')}</div>
+    <button class="train" data-act="stat" data-id="${id}">${ptsFree(id)?'Stats · '+ptsFree(id)+' points to spend':'Stats & points'}</button>
     <button class="train" data-act="${act?'bench':'deploy'}" data-id="${id}" ${!act&&save.active.length>=MAX_ACTIVE?'disabled':''}>${act?'In squad · move to reserve':save.active.length>=MAX_ACTIVE?'Reserve · squad is full':'Reserve · add to squad'}</button>
     <button class="train" data-act="train" data-id="${id}" ${mx||save.gold<cost?'disabled':''}>${mx?'Max level':'Train to Lv '+(s.lv+1)+' · '+cost+'g'}</button></div>`;
   }
@@ -1732,6 +1760,8 @@ ov.addEventListener('click',e=>{
   else if(a==='eq'){save.equip=b.dataset.id;persist();ui();}
   else if(a==='cmd'){const c=trainCost(save.cmd);if(save.gold>=c&&save.cmd<MAXLV){save.gold-=c;save.cmd++;save.cmdXp=0;persist();ui();}}
   else if(a==='stat'){statId=b.dataset.id;statBack=state;state='stat';ui();ov.scrollTop=0;}
+  else if(a==='pt'){const id=b.dataset.id,k=b.dataset.k,p=pts(id);if(ptsFree(id)>0&&(k==='sup'?(!p.sup&&lvOf(id)>=25):p[k]<STAT_CAP)){const hpOld=k==='hp'?maxHp(id):0;p[k]++;if(k==='hp'&&(id==='cmd'||save.heroes[id]))setHp(id,getHp(id)+maxHp(id)-hpOld);SND.click();persist();const y=ov.scrollTop;ui();ov.scrollTop=y;}}
+  else if(a==='respec'){const id=b.dataset.id,c=respecCost(id);if(save.gold>=c&&ptsUsed(id)){save.gold-=c;save.pts[id]={hp:0,dmg:0,rec:0,crit:0,sup:0};persist();const y=ov.scrollTop;ui();ov.scrollTop=y;}}
   else if(a==='statback'){state=statBack||'roster';ui();}
   else if(a==='bench'){save.active=save.active.filter(h=>h!==b.dataset.id);persist();ui();}
   else if(a==='deploy'){if(save.active.length<MAX_ACTIVE&&!save.active.includes(b.dataset.id))save.active.push(b.dataset.id);persist();ui();}
