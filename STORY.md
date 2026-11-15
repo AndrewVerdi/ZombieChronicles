@@ -4,7 +4,7 @@
 - Stage 1: The Outskirts (wall defense). Bruno freed from the jeep (joins lv 2).
 - Stage 2: The Escape (truck roof). Rook arrives mid-stage (joins lv 4).
 - Fork in the road (first major choice, hidden consequences):
-  - Highway -> Stage 3 The Empty Town. Team stays together, Hex is missed (met later as a zombie witch), Blaze auto-recruited at the lab, Volt easier.
+  - Highway -> Stage 3 The Empty Town. Team stays together, Blaze auto-recruited at the lab, Volt easier. Hex is met later: if Volt is in the party she can still be unlocked (how TBD); without Volt she has already mutated and is fought as the zombie witch.
   - Backroad -> Stage 3 The Forest. Bruno leaves for the lab. Hex can be recruited via the pin mini-game (joins lv 5). Lab is overrun, Volt harder.
   - If Bruno has fallen, the choice is forced to the backroad.
 
