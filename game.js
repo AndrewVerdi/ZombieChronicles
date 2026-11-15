@@ -416,7 +416,7 @@ function drawJeep(j){
 }
 
 /* ---------- STAGE 2: THE ESCAPE (truck roof, runners + The Ward) ---------- */
-function startStage2(){setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
+function startStage2(){stashHero('rook');setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   R={stage:2,wave:5,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:{txt:'STAGE 2: THE ESCAPE',t:2.6,col:'#ffc53d'},vx:0,prevSX:SX,dead:[],
     queue:[],kills:0,spawnLeft:99999,spawnTotal:99999,spawnT:2.2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
@@ -810,7 +810,7 @@ function mommaFrame(e){const M=META.momma;if(e.act){const A=M[e.act],q=Math.min(
 /* on the backroad Bruno drives off to the lab: kept aside, not in the squad */
 function brunoLeaves(){if(!save.heroes.bruno)return;save.away=save.away||{};save.away.bruno=save.heroes.bruno;delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');persist();}
 function startForest(){
-  if(save.route==='backroad')brunoLeaves();
+  if(save.route==='backroad')brunoLeaves();stashHero('hex');
   forestLoad();for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   roadScroll=0;
   const civ=forestCivs(),ord=[5].concat([0,1,2,3,4,6,7,8,9].sort(()=>Math.random()-.5));
@@ -906,7 +906,7 @@ function startForestCut(n,done,record){cineLoadKeys(FCUT_KEYS);const crew={rook:
   if(CREW_VIEW){crew.rook=CREW_VIEW.rook;crew.hex=CREW_VIEW.hex!==false;}
   cine0pick=null;startIntro(()=>{const res=cineLastMini;cineLastMini=null;cine0pick=null;
     if(record&&n===1){const won=res==='won';story('minigame',{id:'hex_pin',won});
-      if(won&&!save.heroes.hex&&!save.fallen.includes('hex')){const lvs=[save.cmd,...save.active.map(h=>save.heroes[h].lv)],avg=lvs.reduce((a,b)=>a+b,0)/lvs.length;const act=addHero('hex');save.heroes.hex.lv=Math.max(2,Math.min(MAXLV,Math.round(avg)-1));setHp('hex',maxHp('hex'));R.pendBanner={txt:(act?'HEX JOINS THE SQUAD':'HEX JOINS THE RESERVES'),t:2.6,col:HEROES.hex.color};save.hexMet='joined';}
+      if(won&&!save.heroes.hex&&!save.fallen.includes('hex')){const lvs=[save.cmd,...save.active.map(h=>save.heroes[h].lv)],avg=lvs.reduce((a,b)=>a+b,0)/lvs.length,had=!!(save.away&&save.away.hex);const act=addHero('hex');if(!had)save.heroes.hex.lv=Math.max(2,Math.min(MAXLV,Math.round(avg)-1));setHp('hex',maxHp('hex'));R.pendBanner={txt:(act?'HEX JOINS THE SQUAD':'HEX JOINS THE RESERVES'),t:2.6,col:HEROES.hex.color};save.hexMet='joined';}
       else if(!won&&!save.heroes.hex)save.hexMet=save.hexMet||'missed';persist();}
     done&&done(res);},fcutList(n,crew));
   cine.crew=crew;}
@@ -1014,8 +1014,11 @@ function maxHp(id){return id==='cmd'?BASE_HP.cmd+15*(save.cmd-1):BASE_HP[id]+14*
 function getHp(id){if(id==='cmd'){if(save.cmdHp==null)save.cmdHp=maxHp('cmd');return save.cmdHp;}const s=save.heroes[id];if(s.hp==null)s.hp=maxHp(id);return s.hp;}
 function setHp(id,v){if(id==='cmd')save.cmdHp=v;else save.heroes[id].hp=v;}
 function healAll(f){for(const id of['cmd',...save.active])setHp(id,Math.min(maxHp(id),getHp(id)+maxHp(id)*f));}
+/* a hero who joins mid-stage is set aside at the stage start (keeping their level) and comes back when the story brings them in */
+function stashHero(id){if(!save.heroes[id])return;save.away=save.away||{};save.away[id]=save.heroes[id];delete save.heroes[id];save.active=save.active.filter(h=>h!==id);persist();}
 function addHero(id){story('hero_joined',{hero:id});
-  save.heroes[id]={lv:1,xp:0,hp:BASE_HP[id]};
+  if(save.away&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];save.heroes[id].hp=null;}
+  else save.heroes[id]={lv:1,xp:0,hp:BASE_HP[id]};
   const act=save.active.length<MAX_ACTIVE;if(act)save.active.push(id);
   return act;
 }
@@ -1546,7 +1549,7 @@ function rosterHTML(){
   const rk=id=>save.heroes[id]?0:save.away&&save.away[id]?1:save.fallen.includes(id)?2:3;
   for(const id of HERO_ORDER.slice().sort((a,b)=>rk(a)-rk(b))){
     const H=HEROES[id],s=save.heroes[id];
-    if(!s&&save.away&&save.away[id]){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>Away</small></div><div class="lv">LV ${save.away[id].lv}</div><div class="xp"></div><div class="perks"><span class="perk">${id==='bruno'?'Gone ahead to Cyber Future':'Away from the squad'}</span></div></div>`;continue;}
+    if(!s&&save.away&&save.away[id]){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>Away</small></div><div class="lv">LV ${save.away[id].lv}</div><div class="xp"></div><div class="perks"><span class="perk">${id==='bruno'?'Gone ahead to Cyber Future':'Rejoins later in the story'}</span></div></div>`;continue;}
     if(!s&&save.fallen.includes(id)){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="fallen" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${HORDE()?'Fallen':'Down'}</small></div><div class="lv">†</div><div class="xp"></div><div class="perks"><span class="perk">${HORDE()?'Lost for good. Horde mode has no revives.':'Revive for gold to bring them back at half health.'}</span></div>${!HORDE()&&save.downed&&save.downed[id]?`<button class="train" data-act="revive" data-id="${id}" ${save.gold<reviveCost(id)?'disabled':''}>Revive · ${reviveCost(id)}g</button>`:''}<button class="train" data-act="stat" data-id="${id}">Stats</button></div>`;continue;}
     if(!s){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="locked" data-por="${id}"></canvas></div><div class="cname">Unknown hero</div><div class="lv"></div><div class="xp"></div><div class="perks"><span class="perk">Joins later in the story</span></div></div>`;continue;}
     const need=xpNeed(s.lv),cost=trainCost(s.lv),mx=s.lv>=MAXLV,act=save.active.includes(id),hpf=Math.max(0,getHp(id)/maxHp(id));
