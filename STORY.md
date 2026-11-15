@@ -4,7 +4,7 @@
 - Stage 1: The Outskirts (wall defense). Bruno freed from the jeep (joins lv 2).
 - Stage 2: The Escape (truck roof). Rook arrives mid-stage (joins lv 4).
 - Fork in the road (first major choice, hidden consequences):
-  - Highway -> Stage 3 The Empty Town. Team stays together, Blaze auto-recruited at the lab, Volt easier. Hex is met later: the squad comes upon Momma mid-ritual, casting a spell to turn Hex while her Screecher children circle them singing. If Volt is in the party, he launches chain lightning that takes out Momma's children and breaks the ritual, saving Hex (she can join). Without Volt, the ritual goes through and Hex is fought as the zombie witch.
+  - Highway -> Stage 3 The Empty Town. Team stays together, Blaze auto-recruited at the lab, Volt easier. Hex is met later: the squad comes upon Momma mid-ritual, casting a spell to turn Hex while her Screecher children circle them singing. If Volt is in the party, he launches chain lightning that takes out Momma's children and breaks the ritual and kills Momma herself in the blast, a showcase of Volt's true power. Hex is saved (she can join). Without Volt, the ritual goes through and Hex is fought as the zombie witch.
   - Backroad -> Stage 3 The Forest. Bruno leaves for the lab. Hex can be recruited via the pin mini-game (joins lv 5). Lab is overrun, Volt harder.
   - If Bruno has fallen, the choice is forced to the backroad.
 
