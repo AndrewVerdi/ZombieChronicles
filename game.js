@@ -998,7 +998,7 @@ function spawnEnemy(){
 
 /* ---------- THE WARD: stage 1 boss, parks mid-road and hurls hospital junk ---------- */
 const BOSS_Z=380,BOSS_VIS=1.35;
-const PROJ={gurney:{set:'pgurney',dmg:34,rad:72,fx:'pimpact',hp:45,truck:40},wheel:{set:'pwheel',dmg:24,rad:58,fx:'pimpact',hp:25,truck:25},tank:{set:'ptank',dmg:26,rad:120,fx:'pblast',hp:35,truck:45},car:{set:'pcar',dmg:40,rad:110,fx:'pblast',hp:90,truck:60},gruntp:{set:null,dmg:14,rad:60,fx:'pimpact',hp:30,truck:15}};
+const PROJ={gurney:{set:'pgurney',dmg:15,rad:72,fx:'pimpact',hp:45,truck:15},wheel:{set:'pwheel',dmg:10,rad:58,fx:'pimpact',hp:25,truck:10},tank:{set:'ptank',dmg:25,rad:120,fx:'pblast',hp:35,truck:25},car:{set:'pcar',dmg:40,rad:110,fx:'pblast',hp:90,truck:40},gruntp:{set:null,dmg:10*.65,rad:60,fx:'pimpact',hp:30,truck:10}};
 function bossAI(e,dt){
   R.proj=R.proj||[];
   if(e.thrT==null){e.thrT=2.2;e.roarT=6;e.act=null;R.banner={txt:'THE WARD APPROACHES',t:2.6,col:'#b6f23a'};SND.groan(0,.6);}
@@ -1027,7 +1027,7 @@ function projUpdate(dt){
   for(const p of R.proj){p.t+=dt;const q=Math.min(1,p.t/p.T);p.x=p.x0+(p.x1-p.x0)*q;p.z=p.z0+(p.z1-p.z0)*q;p.h=p.h0*(1-q)+Math.sin(Math.PI*q)*p.peak;
     if(q>=1&&!p.done){p.done=1;const P_=PROJ[p.kind];R.bfx.push({set:P_.fx,x:p.x,z:p.z,t:0});R.shake=p.kind==='tank'?.5:.3;
       SND.explosion(p.kind==='tank'?.9:.45);burst(p.x,p.z,20,p.kind==='tank'?'#b6f23a':'#c9a46a',p.kind==='tank'?24:14);
-      for(const m of squad()){if(Math.hypot(m.x-p.x,(m.z-p.z)*1.6)<P_.rad)hurtMember(m.id,P_.dmg);}
+      for(const m of squad()){if(Math.hypot(m.x-p.x,(m.z-p.z)*1.6)<P_.rad)hurtMember(m.id,P_.dmg/HURT_K);}
       if(R.stage===2)hitWall(P_.truck,p.x);
       if(p.kind==='gruntp'){const g=mkEnemy('grunt',p.x+(Math.random()-.5)*40,p.z+40);g.onRoof=1;g.hp*=.7;g.max=g.hp;}}}
   R.proj=R.proj.filter(p=>!p.done);
