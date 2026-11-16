@@ -273,7 +273,7 @@ const perksOf=id=>(id==='cmd'?CMD_PERKS:HEROES[id].perks.length>=5?HEROES[id].pe
 const KEY='holdout-squad-v1';
 let save={heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:0,cmd:1,active:[],fallen:[]};
 try{const s=JSON.parse(localStorage.getItem(KEY));if(s&&s.weapons){save=Object.assign(save,s);if(!Array.isArray(s.active))save.active=HERO_ORDER.filter(h=>save.heroes[h]).slice(0,3);}}catch(e){}
-if(!Array.isArray(save.fallen))save.fallen=[];
+if(!Array.isArray(save.fallen))save.fallen=[];save.gold=Math.floor(save.gold||0);
 save.active=save.active.filter(h=>save.heroes[h]);
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(save));}catch(e){}}
 /* checkpoint: the wave you're on, so Continue drops you back at its start */
@@ -1246,7 +1246,7 @@ function kill(e,own){addKill(own,e.type);supCharge(own,1/SUP_KILLS[own]);
   if(e.type==='momma'&&R.forest){R.spawnLeft=0;R.queue=[];R.claws=[];R.dag=[];R.swaves=[];if(R.hstun)R.hstun={};SND.explosion(.8);R.shake=.6;
     for(const o of R.en)if(o!==e&&!o.dead){o.dead=1;burst(o.x,o.z,o.r,o.col,8);if(META[o.type])R.dead.push({type:o.type,x:o.x,z:o.z,r:o.r,t:0});}
     R.banner={txt:'MOMMA IS DEAD',t:2.6,col:'#b6f23a'};}
-  const hm=HORDE()&&e.type!=='boss'&&e.type!=='momma'?.5:1;save.gold+=Math.round(e.gold*hm*10)/10;SND.die(e.type,e.x/600);
+  const hm=HORDE()&&e.type!=='boss'&&e.type!=='momma'?.5:1;R.gc=(R.gc||0)+e.gold*hm;const gw=Math.floor(R.gc+1e-9);if(gw>0){save.gold+=gw;R.gc-=gw;}SND.die(e.type,e.x/600);
   if(R.jail)hitJail(R.jail.max*.035);
   if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
   /* XP: the killer gets it all, everyone else in the squad gets a 20% share */
