@@ -954,7 +954,7 @@ const SUP_NAME={cmd:'RALLY CRY',bruno:'BULLDOZER',rook:'THOUSAND CUTS',hex:'BANI
 function fireSuper(m){const id=m.id;save.sup[id]=0;persist();R.shake=.5;SND.explosion(.6);R.banner={txt:(id==='cmd'?'COMMANDER':HEROES[id].name.toUpperCase())+': '+(SUP_NAME[id]||'SUPER'),t:2,col:'#b6f23a'};
   const S_=st(id),live=R.en.filter(e=>!e.dead&&e.z<ZFAR),big=e=>e.type==='boss'||e.type==='momma';
   if(id==='cmd'){R.rcT=8;healAll(.25);for(const q of squad())burst(q.x,q.z,40,'#5ee08a',18);}
-  else if(id==='bruno'){for(const e of live){if(Math.abs(e.x-m.x)>110)continue;damage(e,S_.dmg*2,id,{cc:S_.crit/100,cm:'zone'});if(!e.dead&&!big(e)){e.stun=Math.max(e.stun||0,2);e.z+=160;}burst(e.x,e.z,e.r,'#c9a46a',10);}
+  else if(id==='bruno'){for(const e of live){if(Math.abs(e.x-m.x)>110)continue;damage(e,S_.dmg*2,id,{cc:S_.crit/100,cm:'zone'});if(!e.dead&&!big(e)){e.stun=Math.max(e.stun||0,2);if(!e.nokb)e.z+=160;}burst(e.x,e.z,e.r,'#c9a46a',10);}
     for(let z=0;z<ZFAR;z+=90)burst(m.x+(Math.random()-.5)*60,z,10,'#8d7c58',5);}
   else if(id==='rook'){R.slashes=R.slashes||[];for(const e of live){damage(e,S_.sword*3,id,{cc:S_.crit/100,cm:S_.cm});R.slashes.push({x:e.x,z:e.z,t:0,dir:Math.random()<.5?1:-1});}SND.slash&&SND.slash(0);}
   else if(id==='hex'){for(const e of live){burst(e.x,e.z,e.r,'#b6f23a',10);if(big(e)){damage(e,S_.dmg*6,id,{cc:S_.crit/100,cm:S_.cm});continue;}e.x=(Math.random()*2-1)*(LANE_E-40);e.z=ZFAR+Math.random()*150;e.atk=undefined;e.tgt=null;e.ctgt=null;e.jeep=0;}}
@@ -962,7 +962,7 @@ function fireSuper(m){const id=m.id;save.sup[id]=0;persist();R.shake=.5;SND.expl
 function abilUpdate(dt){
   const r=save.heroes.rook,hx=save.heroes.hex;R.guardT=(R.guardT||0)-dt;R.markT=(R.markT||0)-dt;
   if(r&&r.lv>=20&&save.active.includes('rook')&&R.guardT<=0&&!stunned('rook')){const e=R.en.find(q=>!q.dead&&q.atk!==undefined&&q.tgt&&q.tgt!=='rook'&&q.type!=='boss'&&q.type!=='momma');
-    if(e){R.guardT=2.5;const S_=st('rook');SQX.rook=[e.x+(e.x<0?40:-40),e.z-24];damage(e,S_.sword,'rook',{cc:S_.crit/100,cm:S_.cm});if(!e.dead)e.z+=36;
+    if(e){R.guardT=2.5;const S_=st('rook');SQX.rook=[e.x+(e.x<0?40:-40),e.z-24];damage(e,S_.sword,'rook',{cc:S_.crit/100,cm:S_.cm});if(!e.dead&&!e.nokb)e.z+=36;
       R.slashes=R.slashes||[];R.slashes.push({x:e.x,z:e.z+20,t:0,dir:1});const st_=anim('rook');st_.a='slash';st_.t=0;SND.slash&&SND.slash(e.x/600);}}
   if(hx&&hx.lv>=20&&save.active.includes('hex')&&R.markT<=0){const e=R.en.find(q=>!q.dead&&q.atk!==undefined&&q.tgt==='hex'&&q.type!=='boss'&&q.type!=='momma');
     if(e){R.markT=1.2;burst(e.x,e.z,e.r,'#b6f23a',14);e.x=(Math.random()*2-1)*180;e.z=ZFAR*.55;e.atk=undefined;e.tgt=null;e.curse=1;SND.whoosh();burst(e.x,e.z,e.r,'#b6f23a',14);}}
@@ -979,16 +979,17 @@ const SPD=1.9;
 function mkEnemy(type,x,z){
   const w=R.wave,hs=hpScale(w),ss=spdScale(w);
   const T={
-    grunt:{hp:26,spd:42,r:32,gold:1,xp:4,col:'#7fcf4a',dmg:10},
-    runner:{hp:12,spd:95,r:26,gold:3,xp:3,col:'#b46bff',dmg:7},
+    grunt:{hp:185/ENEMY_K,spd:42,r:32,gold:1,xp:4,col:'#7fcf4a',dmg:10,hd:7},
+    runner:{hp:65/ENEMY_K,spd:42*2.8,r:26,gold:3,xp:3,col:'#b46bff',dmg:5,hd:3,zig:1},
     brute:{hp:120,spd:26,r:50,gold:15,xp:11,col:'#e2483d',dmg:24},
-    armored:{hp:55,spd:34,r:38,gold:5,xp:8,col:'#8a94a6',dmg:14,armor:5},
+    armored:{hp:500/ENEMY_K,spd:42*.7,r:38,gold:5,xp:8,col:'#8a94a6',dmg:20,hd:15,armor:5,nokb:1},
     splitter:{hp:45,spd:36,r:39,gold:10,xp:7,col:'#3fd6c6',dmg:12,split:1},
-    screecher:{hp:12,spd:72,r:22,gold:4,xp:4,col:'#9aa08a',dmg:5,scr:1},
+    screecher:{hp:80/ENEMY_K,spd:72,r:22,gold:4,xp:4,col:'#9aa08a',dmg:7,hd:5,scr:1},
   }[type];
   const e=Object.assign({type},T);
   e.hp*=hs*ENEMY_K;if(e.armor)e.armor*=ENEMY_K;e.spd*=ss*SPD;e.x=x;e.z=z;e.slow=0;e.burn=0;e.bdps=0;e.stun=0;e.wob=Math.random()*6;
   if(false){e.elite=1;e.hp*=3;e.r*=1.2;e.gold*=4;e.xp*=3;e.dmg*=2;}
+  if(e.hd==null)e.hd=e.dmg*HURT_K;if(e.zig){e.zz=Math.random()<.5?-1:1;e.zzT=Math.random()*1.4;}
   e.max=e.hp;R.en.push(e);return e;
 }
 function spawnEnemy(){
@@ -1318,7 +1319,7 @@ function update(dt){
       else if(!e.tgt&&R.wall<=0)e.atk=undefined;
       else if(e.tgt){const m=squad().find(q=>q.id===e.tgt);if(!m||Math.hypot(m.x-e.x,m.z+16-e.z)>e.r+60){e.atk=undefined;e.tgt=null;}}
       if(e.atk!==undefined){e.atk+=dt;const c=Math.floor(e.atk/1.1),ph=e.atk-c*1.1;
-        if(ph>=.34&&e.hitC!==c){e.hitC=c;if(e.ctgt)hurtCiv(e.ctgt,e.dmg);else if(e.tgt)hurtMember(e.tgt,e.dmg);else{hitWall(e.dmg,e.x);burst(e.x,WALL_Z,e.r,'#c9a46a',6);}}
+        if(ph>=.34&&e.hitC!==c){e.hitC=c;if(e.ctgt)hurtCiv(e.ctgt,e.dmg);else if(e.tgt)hurtMember(e.tgt,e.hd/HURT_K);else{hitWall(e.dmg,e.x);burst(e.x,WALL_Z,e.r,'#c9a46a',6);}}
         continue;}
     }
     if(e.type==='boss'){if(e.flash>0)e.flash-=dt;bossAI(e,dt);continue;}
@@ -1336,7 +1337,8 @@ function update(dt){
           if(e.jt!==undefined){e.jt+=dt;if(!e.jhit&&e.jt>=.34){e.jhit=1;J.hp-=e.dmg*.8;burst(J.x,J.z,30,'#ffd27a',4);}}}
         continue;}
     }
-    e.z-=sp*dt;e.x+=Math.sin(t*1.6+e.wob)*18*dt;
+    let zx=0;if(e.zig){e.zzT-=dt;if(e.zzT<=0){e.zzT=1.4;e.zz=Math.random()<.5?-1:1;}if(Math.abs(e.x)>LANE_E-30)e.zz=-Math.sign(e.x);zx=e.zz*sp*.55*dt;}
+    e.z-=sp*dt;e.x+=Math.sin(t*1.6+e.wob)*18*dt+zx;
     e.x=Math.max(-LANE_E,Math.min(LANE_E,e.x));
     if(R.wall>0&&!e.onRoof){
       if(e.z<=WALL_Z+WALL_STOP+e.r*.5){e.z=WALL_Z+WALL_STOP+e.r*.5;e.atk=0;e.tgt=null;e.hitC=-1;}
@@ -1344,7 +1346,7 @@ function update(dt){
       let best=null,bd=1e9,civ=false;for(const m of squad()){const d=Math.hypot(m.x-e.x,m.z-e.z);if(d<bd){bd=d;best=m;civ=false;}}
       if(R.civ)for(const c of R.civ){if(c.hp<=0||c.safe)continue;const d=Math.hypot(c.x-e.x,c.z-e.z)*.9;if(d<bd){bd=d;best=c;civ=true;}}
       if(best){const tx=best.x+(e.x<best.x?-1:1)*e.r*.4,tz=best.z+(civ?12:16),dx=tx-e.x,dz=tz-e.z,dd=Math.hypot(dx,dz);
-        e.z+=sp*dt;e.x-=Math.sin(t*1.6+e.wob)*18*dt;
+        e.z+=sp*dt;e.x-=Math.sin(t*1.6+e.wob)*18*dt+zx;
         if(dd>e.r+22){e.x+=dx/dd*sp*1.1*dt;e.z+=dz/dd*sp*1.1*dt;}else{e.atk=0;e.hitC=-1;if(civ){e.ctgt=best;e.tgt=null;}else{e.tgt=best.id;e.ctgt=null;}}}
     }
   }
@@ -1361,7 +1363,7 @@ function update(dt){
         if(b.slowAmt){e.slow=2;e.slowAmt=b.slowAmt;if(b.freeze&&Math.random()<.15)e.stun=1;}
         if(b.burn){e.burn=b.burnT;e.bdps=Math.max(e.bdps,b.burn);e.burnOwn=b.own;}
         const fm=b.fall?Math.max(.15,1.6-Math.hypot(b.x-b.ox,b.z-b.oz)/650):1;
-        if(b.kb&&e.type!=='boss'&&e.type!=='momma')e.z+=b.kb*Math.min(1,fm)*(e.type==='brute'?.4:1);
+        if(b.kb&&e.type!=='boss'&&e.type!=='momma'&&!e.nokb)e.z+=b.kb*Math.min(1,fm)*(e.type==='brute'?.4:1);
         damage(e,b.dmg*fm,b.own,b);
         if(b.split){for(let k=-1;k<=1;k+=2)shoot({x:b.x,z:b.z,h:b.h,vx:k*380,vz:200,dmg:b.dmg*.5,own:b.own,col:b.col,r:8,homing:6,spd:520,life:1.6,glow:1,orb:1});}
         if(--b.pierce<=0){b.life=0;break;}
