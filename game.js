@@ -827,9 +827,9 @@ function mommaThrow(e){R.dag=R.dag||[];const sq=squad(),n=e.enr?4:3,pick=sq.slic
 function mommaShriek(e){const call=e.call;e.call=0;if(!call)R.banner={txt:'MOMMA IS ENRAGED',t:2.4,col:'#ff4d5e'};R.shake=.4;SND.groan(0,.9);for(let k=0;k<(call?(e.enr?4:3):6);k++){const m=mkEnemy('screecher',e.x+(k-1.5)*80,e.z-40);m.z=e.z-30;}}
 function bossFxUpdate(dt){
   if(R.claws){for(const c of R.claws){c.t+=dt;if(c.t>=1.2&&!c.hit){c.hit=1;R.shake=Math.max(R.shake||0,.25);SND.explosion(.35);burst(c.x,c.z,30,'#b6f23a',14);
-      for(const m of squad())if(Math.abs(m.x-c.x)<62&&Math.abs(m.z-c.z)<44)hurtMember(m.id,15);}}R.claws=R.claws.filter(c=>c.t<2);}
+      for(const m of squad())if(Math.abs(m.x-c.x)<62&&Math.abs(m.z-c.z)<44)hurtMember(m.id,20/HURT_K);}}R.claws=R.claws.filter(c=>c.t<2);}
   if(R.dag){for(const p of R.dag){p.t+=dt;const q=Math.max(0,Math.min(1,p.t/p.T));p.x=p.x0+(p.x1-p.x0)*q;p.z=p.z0+(p.z1-p.z0)*q;p.h=p.h0+(50-p.h0)*q;
-      if(q>=1&&!p.done){p.done=1;burst(p.x,p.z,40,'#e8dcb0',8);for(const m of squad())if(Math.abs(m.x-p.x)<46&&Math.abs(m.z-p.z)<40)hurtMember(m.id,12);}}R.dag=R.dag.filter(p=>!p.done);}
+      if(q>=1&&!p.done){p.done=1;burst(p.x,p.z,40,'#e8dcb0',8);for(const m of squad())if(Math.abs(m.x-p.x)<46&&Math.abs(m.z-p.z)<40)hurtMember(m.id,15/HURT_K);}}R.dag=R.dag.filter(p=>!p.done);}
 }
 function drawClaw(c){const[sx,sy,k]=P(c.x,c.z);if(c.t<1.2){const pl=.5+.5*Math.sin(t*16);ctx.fillStyle='rgba(182,242,58,'+(.12+.25*pl*Math.min(1,Math.max(0,c.t)*2))+')';ctx.strokeStyle='rgba(182,242,58,.8)';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(sx,sy,64*k,20*k,0,0,6.283);ctx.fill();ctx.stroke();}
   if(c.t<0)return;const f=c.t<1.2?Math.floor(c.t*4)%2:Math.min(7,2+Math.floor((c.t-1.2)*8));fSpr('claw'+f,c.x,c.z+4,.95);}
