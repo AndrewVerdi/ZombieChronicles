@@ -290,7 +290,7 @@ function resumeCkpt(){const c=save.ckpt;if(!c)return;if(!legacy().current)legacy
 let R=null,state='splash',SX=0,t=0;
 const LANE_E=300;
 function sxLimit(){return LANE_E;}
-function newRun(startWave){setTimeout(()=>cineLoad(SHOTS2),20000);
+function newRun(startWave){setTimeout(()=>cineLoad(SHOTS2),20000);storyParty(startWave>1?['bruno']:[]);
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   R={wave:startWave,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[]};
   startWave_(startWave);
@@ -441,7 +441,9 @@ function drawJeep(j){
 /* ---------- STAGE 2: THE ESCAPE (truck roof, runners + The Ward) ---------- */
 /* starting a stage directly: heroes the story has already given you join if they're missing (not fallen) */
 function ensureHero(id){if(save.heroes[id]||save.fallen.includes(id))return;if(save.away&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];save.heroes[id].hp=null;if(save.active.length<MAX_ACTIVE)save.active.push(id);}else addHero(id);persist();}
-function startStage2(){ensureHero('bruno');stashHero('rook');setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
+/* keep only the heroes the story has given you at this point; the rest wait (levels kept) until they join */
+function storyParty(allowed){for(const id of Object.keys(save.heroes))if(!allowed.includes(id))stashHero(id);}
+function startStage2(){ensureHero('bruno');storyParty(['bruno']);setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   R={stage:2,wave:5,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:{txt:'STAGE 2: THE ESCAPE',t:2.6,col:'#ffc53d'},vx:0,prevSX:SX,dead:[],
     queue:[],kills:0,spawnLeft:99999,spawnTotal:99999,spawnT:2.2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
@@ -693,7 +695,7 @@ function drawCiv(c){if(townReady){const[sx,sy,k]=P(c.x,c.z);ctx.fillStyle='rgba(
   const sc=k*CHAR_H*.86/r[3];eDrawA(fr,sx,sy,sc,c.side>0);
   if(c.flash>0){ctx.globalCompositeOperation='lighter';eDrawA(fr,sx,sy,sc,c.side>0,.6);ctx.globalCompositeOperation='source-over';}
 }
-function startStage3(){ensureHero('bruno');ensureHero('rook');townLoad();
+function startStage3(){ensureHero('bruno');ensureHero('rook');storyParty(['bruno','rook']);townLoad();
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   roadScroll=0;
   R={stage:3,wave:1,wall:0,wallMax:1,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[],civ:mkCivs(),civLost:0,
@@ -838,7 +840,7 @@ function mommaFrame(e){const M=META.momma;if(e.act){const A=M[e.act],q=Math.min(
 /* on the backroad Bruno drives off to the lab: kept aside, not in the squad */
 function brunoLeaves(){if(!save.heroes.bruno)return;save.away=save.away||{};save.away.bruno=save.heroes.bruno;delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');persist();}
 function startForest(){
-  ensureHero('rook');if(save.route==='backroad')brunoLeaves();stashHero('hex');
+  ensureHero('rook');if(save.route==='backroad')brunoLeaves();storyParty(['rook']);
   forestLoad();for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   roadScroll=0;
   const civ=forestCivs(),ord=[5].concat([0,1,2,3,4,6,7,8,9].sort(()=>Math.random()-.5));
