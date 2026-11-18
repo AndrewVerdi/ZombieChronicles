@@ -279,10 +279,10 @@ function persist(){try{localStorage.setItem(KEY,JSON.stringify(save));}catch(e){
 /* checkpoint: the wave you're on, so Continue drops you back at its start */
 function checkpoint(){if(!R)return;save.ckpt={stage:R.forest?'3f':(R.stage||1),wave:R.stage===2?1:R.wave,hex:!!save.heroes.hex};persist();}
 function clearCkpt(){if(save.ckpt){delete save.ckpt;persist();}}
-const ckptLabel=c=>c.stage===2?'Stage 2 · The Escape':c.stage===3?'Stage 3 · The Empty Town, wave '+c.wave:c.stage==='3f'?'Stage 3 · The Forest, wave '+c.wave:'Stage 1 · wave '+c.wave;
+const ckptLabel=c=>c.stage===2?'Stage 2 · The Escape':c.stage===3?(c.wave==='end'?'Stage 3 · The Empty Town, ending':'Stage 3 · The Empty Town, wave '+c.wave):c.stage==='3f'?'Stage 3 · The Forest, wave '+c.wave:'Stage 1 · wave '+c.wave;
 function resumeCkpt(){const c=save.ckpt;if(!c)return;if(!legacy().current)legacyStart(save.mode||'normal');SX=0;camX=0;
   if(c.stage===2)startStage2();
-  else if(c.stage===3){startStage3();if(c.wave>1)startWave3(c.wave);}
+  else if(c.stage===3){startStage3();if(c.wave==='end'){R.wave=3;startTownEnd();}else if(c.wave>1)startWave3(c.wave);}
   else if(c.stage==='3f'){startForest();if(c.wave>1){if(c.hex&&save.away&&save.away.hex){save.heroes.hex=save.away.hex;delete save.away.hex;if(save.active.length<MAX_ACTIVE)save.active.push('hex');}startWaveF(c.wave);}}
   else newRun(c.wave);}
 
@@ -713,7 +713,7 @@ function startWave3(w){
 }
 function spawnPace3(){if(R.wave===3){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.22,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(R.wave===1?1.7:1.3)*(.65+Math.random()*.7);}
 function waveClear3(){SND.waveClear();healRecovery();save.gold+=8+R.wave*4;persist();
-  if(R.wave>=S3_WAVES){const n=civsAlive().length;save.cleared=Math.max(save.cleared||0,3);save.townSaved=n;legacyStage(3);story('survivors_saved',{saved:n,of:CIV_N});legacyEnd('cleared_stage_3');save.gold+=60;delete save.ckpt;persist();state='win3';ui();return;}
+  if(R.wave>=S3_WAVES){const n=civsAlive().length;save.cleared=Math.max(save.cleared||0,3);save.townSaved=n;legacyStage(3);story('survivors_saved',{saved:n,of:CIV_N});legacyEnd('cleared_stage_3');save.gold+=60;persist();startTownEnd();return;}
   state='inter';ui();}
 
 /* ---------- STAGE 3B: THE FOREST (backroad). Survivors vanish, Hex ambush, Screechers, Momma ---------- */
@@ -941,6 +941,134 @@ function startForestCut(n,done,record){cineLoadKeys(FCUT_KEYS);const crew={rook:
     done&&done(res);},fcutList(n,crew));
   cine.crew=crew;}
 let cineLastMini=null;
+
+/* ---------- STAGE 3A ENDING: the endless swarm, Blaze, the flamethrower mini-game ---------- */
+const TEF='xa7';
+const glowF=(c,tt,u,v,r,a,rgb)=>c.glow(u,v,r,a*(.75+.25*Math.sin(tt*23)*Math.sin(tt*9.7)),rgb||'255,170,80');
+const muz=(c,tt,pts)=>{for(const[u,v,ph]of pts){if(((tt+ph)%.42)<.08)c.glow(u,v,.06,.9,'255,220,140');}};
+const TE={
+ t1:{bg:'te_t1',fb:TEF,d:6,vo:"The horde fell. Then the alleys started moving.",cam:p=>({cx:.5,cy:lerp(.56,.48,ease(p)),z:lerp(1.02,1.14,ease(p))}),snd:()=>{SND.groan(-.5,.5);setTimeout(()=>SND.groan(.5,.5),900);},
+  fx(c,tt){c.embers(tt);glowF(c,tt,.44,.16,.03,.5);glowF(c,tt,.47,.43,.03,.4);}},
+ t2:{bg:'te_t2a',fb:TEF,d:5.5,vo:"Commander: \"They just keep coming!\"",cam:p=>({cx:.5,cy:.5,z:lerp(1.12,1.02,ease(p))}),snd:()=>{[.3,.7,1.1,1.6,2.1,2.6,3.2].forEach((t,i)=>setTimeout(()=>SND.shot(i%2?'shotgun':'rifle',i%2?-.4:.4),t*1000));},
+  fx(c,tt){c.embers(tt);if((tt%.42)<.06)c.shake=2;}},
+ t3:{bg:'te_t3',fb:TEF,d:6,vo:"Commander: \"Everyone, to Cyber Future! Go! You'll be safe there!\"",cam:p=>({cx:lerp(.42,.55,ease(p)),cy:.5,z:lerp(1.12,1.04,ease(p))}),
+  fx(c,tt){c.glow(.63,.29,.06,.4+.1*Math.sin(tt*3),'190,245,60');c.glow(.86,.29,.06,.4+.1*Math.sin(tt*3+1),'190,245,60');c.embers(tt);}},
+ t4:{bg:'te_t4',fb:TEF,d:5.5,vo:"Cyber Future. Walls, guns, and steel gates. Eight blocks away.",cam:p=>({cx:.5,cy:lerp(.55,.42,ease(p)),z:lerp(1.02,1.16,ease(p))}),
+  fx(c,tt){for(const[u,v,ph]of[[.35,.3,0],[.67,.3,1.3],[.42,.43,2],[.61,.43,.7]])c.glow(u,v,.05,.35+.25*Math.sin(tt*1.6+ph),'190,245,60');c.glow(.5,.3,.12,.15+.05*Math.sin(tt*2),'190,245,60');}},
+ t5:{bg:'te_t5a',fb:TEF,d:5.5,vo:"They ran. The swarm kept pace, block after block.",cam:p=>({cx:.5,cy:lerp(.46,.54,ease(p)),z:lerp(1.16,1.04,ease(p))}),snd:()=>{[.4,1.2,2,2.8,3.6].forEach((t,i)=>setTimeout(()=>SND.shot(i%2?'shotgun':'rifle',0),t*1000));SND.groan(0,.6);},
+  fx(c,tt){c.shake=1.2;if((tt%.5)<.06)c.shake=3;}},
+ t6:{bg:'te_t6',fb:TEF,d:5.5,vo:"Commander: \"We can't lead them to the gates. We'll have to pull them away from—\"",cam:p=>({cx:lerp(.42,.36,ease(p)),cy:.45,z:lerp(1.04,1.18,ease(p))}),snd:()=>SND.groan(.6,.4),
+  fx(c,tt){c.embers(tt);}},
+ t7:{bg:'te_t7',fb:TEF,d:5.5,vo:"???: \"Care for a light?\"",cam:p=>({cx:.5,cy:lerp(.62,.4,ease(p)),z:lerp(1.18,1.04,ease(p))}),snd:()=>{setTimeout(()=>SND.whoosh(),2600);},
+  fx(c,tt){glowF(c,tt,.84,.73,.05,.9,'255,180,80');if(tt>2.6&&tt<3.1)c.shake=2;}},
+ t8:{bg:'te_t8',fb:TEF,d:4.5,vo:"Blaze: \"Get behind me, boys. Light 'em up.\"",cam:p=>({cx:lerp(.4,.55,ease(p)),cy:.5,z:lerp(1.14,1.04,ease(p))}),snd:()=>{SND.explosion(.2);},
+  fx(c,tt){glowF(c,tt,.66,.48,.08,.9,'255,210,120');glowF(c,tt,.85,.48,.12,.5,'255,150,60');c.embers(tt*1.4);c.shake=1.5;}},
+ w1:{bg:'te_w1',fb:TEF,d:6,vo:"The street went up like a matchbook.",cam:p=>({cx:.5,cy:.5,z:lerp(1.02,1.12,ease(p))}),snd:()=>{SND.explosion(.6);SND.groan(0,.7);},
+  fx(c,tt){c.pulse('rgba(255,120,40,1)',.05+.04*Math.sin(tt*7)*Math.sin(tt*3.1));glowF(c,tt,.64,.86,.04,.8,'255,190,90');c.embers(tt*1.6);}},
+ w2:{bg:'te_w2a',fb:TEF,d:6,vo:"Rook: \"Remind me never to get on her bad side.\"",cam:p=>({cx:.5,cy:.48,z:lerp(1.02,1.1,ease(p))}),
+  fx(c,tt){c.embers(tt);glowF(c,tt,.67,.86,.03,.7,'255,190,90');}},
+ w2b:{bg:'te_w2b',fb:TEF,d:6,vo:"Commander: \"Hell of an entrance.\"",cam:p=>({cx:.48,cy:.48,z:lerp(1.02,1.1,ease(p))}),
+  fx(c,tt){c.embers(tt);glowF(c,tt,.97,.82,.03,.7,'255,190,90');}},
+ w3:{bg:'te_w3',fb:TEF,d:7,vo:"Bruno: \"Told you I'd find you.\" Blaze: \"You're late.\"",cam:p=>({cx:.45,cy:lerp(.5,.4,ease(p)),z:lerp(1.02,1.16,ease(p))}),
+  fx(c,tt){c.embers(tt*.6);}},
+ w4:{bg:'te_w4',fb:TEF,d:6,vo:"Blaze: \"Where's Bruno? He was with you... where is he?\"",cam:p=>({cx:.5,cy:.42,z:lerp(1.04,1.16,ease(p))}),
+  fx(c,tt){c.embers(tt*.5);}},
+ w5:{bg:'te_w5',fb:TEF,d:7,vo:"She'd saved them all. Everyone except the one she'd been waiting for.",cam:p=>({cx:.5,cy:.5,z:lerp(1.18,1.02,ease(p))}),
+  fx(c,tt){c.embers(tt*.4);c.dim(Math.min(.25,tt*.04));}},
+ l1:{bg:'te_l1',fb:TEF,d:5,vo:"The igniter sputtered. The horde didn't wait.",cam:p=>({cx:.45,cy:.45,z:lerp(1.04,1.2,ease(p))}),snd:()=>{SND.click();setTimeout(()=>SND.click(),300);setTimeout(()=>SND.groan(0,.9),800);},
+  fx(c,tt){if(tt<1.4&&(tt%.35)<.1)c.glow(.1,.2,.04,.9,'255,220,140');if(tt>1)c.shake=2;c.dim(Math.max(0,(tt-3.6)*.6));}},
+ l2:{bg:'te_l2',fb:TEF,d:4.5,vo:"Bruno: \"BLAZE!\"",cam:p=>({cx:.5,cy:.45,z:lerp(1.16,1.04,ease(p))}),snd:()=>{[.2,1,1.8,2.6,3.4].forEach(t=>setTimeout(()=>SND.shot('shotgun',.3),t*1000));},
+  fx(c,tt){muz(c,tt*.95,[[.93,.37,0]]);if((tt%.84)<.12)c.shake=4;}},
+ l3:{bg:'te_l3',fb:TEF,d:6,vo:"He reached her. Neither of them came back.",cam:p=>({cx:.5,cy:lerp(.4,.55,ease(p)),z:lerp(1.12,1.0,ease(p))}),snd:()=>{setTimeout(()=>SND.shot('shotgun',0),1500);},
+  fx(c,tt){const a=tt>1.5&&tt<1.75?1:0;c.glow(.5,.06,.1,.9*a,'255,220,140');if(a)c.shake=4;c.dim(Math.max(0,(tt-4)*.4));}},
+ l4:{bg:'te_l4a',fb:TEF,d:6,vo:"The survivors made it inside. Not all of the squad did.",cam:p=>({cx:.5,cy:.5,z:lerp(1.16,1.04,ease(p))}),snd:()=>{SND.groan(0,.6);setTimeout(()=>SND.explosion(.5),4200);},
+  fx(c,tt){if(tt>4.2&&tt<4.6)c.shake=6;}},
+ l4b:{bg:'te_l4b',fb:TEF,d:6,vo:"The survivors made it inside. Not all of the squad did.",cam:p=>({cx:.5,cy:.5,z:lerp(1.16,1.04,ease(p))}),snd:()=>{SND.groan(0,.6);setTimeout(()=>SND.explosion(.5),4200);},
+  fx(c,tt){c.glow(.31,.15,.05,.5,'190,245,60');c.glow(.69,.15,.05,.5,'190,245,60');if(tt>4.2&&tt<4.6)c.shake=6;}},
+ e1:{bg:'te_e1',fb:TEF,d:7,vo:"Cyber Future. Solid walls. Armed guards. Nothing was getting through.",cam:p=>({cx:.5,cy:lerp(.62,.42,ease(p)),z:lerp(1.14,1.02,ease(p))}),snd:()=>{SND.explosion(.6);SND.groan(0,.5);},
+  fx(c,tt){if(tt<.4)c.shake=6;c.glow(.25,.06,.06,.5+.1*Math.sin(tt*2),'190,245,60');c.glow(.75,.06,.06,.5+.1*Math.sin(tt*2+1),'190,245,60');}},
+ e2:{bg:'te_e2',fb:TEF,d:5,vo:"Nothing.",cam:p=>({cx:.5,cy:.48,z:lerp(1.02,1.12,ease(p))}),snd:()=>{setTimeout(()=>SND.explosion(.35),3200);},
+  fx(c,tt){const on=(tt%1.3)<.9;c.glow(.5,.08,.09,on?.8:.15,'255,60,40');c.dim(on?0:.25);if(tt>3.2&&tt<3.5)c.shake=7;if(tt>4.3)c.dim((tt-4.3)*1.4);}},
+};
+const TE_KEYS=Object.values(TE).map(s=>s.bg).concat(['te_t2b','te_t2c','te_t2d','te_t5b','te_t5c','te_t5d',TEF]);
+const teV=(s,crew)=>{const v=crew.bruno&&crew.rook?'a':crew.bruno?'b':crew.rook?'c':'d';return Object.assign({},s,{bg:s.bg.slice(0,-1)+v});};
+function teOpen(crew){return[TE.t1,teV(TE.t2,crew),TE.t3,TE.t4,teV(TE.t5,crew),TE.t6,TE.t7];}
+function teEnd(won,crew){const T=TE,out=won?[T.w1].concat(crew.bruno?[crew.rook?T.w2:T.w2b,T.w3]:[T.w4,T.w5]):[T.l1].concat(crew.bruno?[T.l2,T.l3]:[]).concat([crew.rook?T.l4:T.l4b]);return out.concat([T.e1,T.e2]);}
+function teCrew(){const c={bruno:save.active.includes('bruno')&&!!save.heroes.bruno,rook:save.active.includes('rook')&&!!save.heroes.rook};if(CREW_VIEW){c.bruno=CREW_VIEW.bruno;c.rook=CREW_VIEW.rook;}return c;}
+/* the real thing: opening -> igniter -> T8 -> sweep -> ending */
+function startTownEnd(){save.ckpt={stage:3,wave:'end'};persist();cineLoadKeys(TE_KEYS);blzLoad();const crew=teCrew();
+  startIntro(()=>blazeStart(crew),teOpen(crew));}
+function townEndFinish(won,crew){
+  if(won){save.blaze='joined';story('minigame',{id:'blaze_burn',won:true});}
+  else{save.blaze='lost';story('minigame',{id:'blaze_burn',won:false});
+    if(crew.bruno&&save.heroes.bruno){if(!HORDE()){save.downed=save.downed||{};save.downed.bruno={lv:save.heroes.bruno.lv,xp:save.heroes.bruno.xp};}
+      save.blazeBruno=1;story(HORDE()?'hero_died':'hero_down',{hero:'bruno',how:'overrun_with_blaze'});delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');if(!save.fallen.includes('bruno'))save.fallen.push('bruno');}}
+  persist();
+  startIntro(()=>{delete save.ckpt;persist();R.blz=null;state='win3';ui();},teEnd(won,crew));}
+/* gallery: cutscenes only, the mini-game is replaced by its result */
+function townEndGallery(won,back){const crew=teCrew();cineLoadKeys(TE_KEYS);startIntro(back,teOpen(crew).concat(won?[TE.t8]:[]).concat(teEnd(won,crew)));}
+
+/* the mini-game, played on the town street in first person */
+const BLZM={"vm0": [0, 0, 326, 434], "vm1": [328, 0, 326, 434], "vm2": [656, 0, 326, 434], "vm3": [984, 0, 326, 434], "fl0": [1312, 0, 275, 371], "fl1": [1589, 0, 280, 374], "fl2": [0, 436, 281, 374], "fl3": [283, 436, 275, 372], "bz0": [560, 436, 167, 320], "bz1": [729, 436, 163, 287], "bz2": [894, 436, 153, 299], "bz3": [1049, 436, 180, 272], "bz4": [1231, 436, 176, 235], "bz5": [1409, 436, 155, 203], "bz6": [1566, 436, 188, 211]},BLZIMG=new Image();let blzReady=false;BLZIMG.onload=()=>{blzReady=true;};
+function blzLoad(){if(!BLZIMG.src)BLZIMG.src="assets/blz.webp?v=f49993378e";}
+const BZ_REACH=150,BZ_ZR=900,BZ_RANGE=1350;
+function blazeStart(crew){blzLoad();state='blaze';camX=0;SX=0;
+  R.en=[];R.bu=[];R.pa=[];R.dead=[];R.tx=[];R.cr=[];R.bolts=[];R.slashes=[];R.banner=null;R.civHide=1;
+  const N=HORDE()?70:45;R.blz={ph:'ign',crew,fill:0,left:6,tapT:0,t:0,z:[],left2:N,aim:0,fire:false,dn:false,endT:0,lit:0};
+  for(let i=0;i<14;i++)bzSpawn(1300+Math.random()*600);
+  ui();last=performance.now();}
+function bzSpawn(z){const B=R.blz,fast=Math.random()<.18;B.left2--;B.z.push({type:fast?'runner':'grunt',r:fast?48:58,x:(Math.random()*2-1)*480,z:z||1500+Math.random()*400,spd:fast?190+Math.random()*40:105+Math.random()*55,wob:Math.random()*6,hp:1,max:1,heat:0,burn:-1});}
+function blazeUpdate(dt){const B=R.blz;if(!B)return;B.t+=dt;t+=dt;
+  for(const p of R.pa){p.x+=(p.vx||0)*dt;p.z+=(p.vz||0)*dt;p.h+=(p.vh||0)*dt;p.t-=dt;}R.pa=R.pa.filter(p=>p.t>0);if(R.shake>0)R.shake-=dt;
+  if(B.ph==='ign'){B.left-=dt;B.tapT-=dt;B.fill=Math.max(0,B.fill-.05*dt);for(const z of B.z)z.z-=z.spd*.35*dt;
+    if(B.left<=0){blazeEnd(false);}return;}
+  if(B.ph==='lit'){B.lit+=dt;if(B.lit>.9){B.ph='cut';startIntro(()=>{state='blaze';B.ph='sweep';B.t=0;ui();last=performance.now();},[TE.t8]);}return;}
+  if(B.ph==='end'){B.endT+=dt;for(const z of B.z)if(z.burn>=0)z.burn+=dt;if(B.endT>1.6){B.ph='done';townEndFinish(B.won,B.crew);}return;}
+  if(B.ph!=='sweep')return;
+  if(B.left2>0&&Math.random()<dt*(HORDE()?6:4.2))bzSpawn();
+  const A=B.aim;if(B.fire&&Math.random()<dt*40){const zz=200+Math.random()*900;R.pa.push({x:A*zz/BZ_ZR+(Math.random()-.5)*80,z:zz,h:20+Math.random()*60,vx:(Math.random()-.5)*40,vz:0,vh:60+Math.random()*90,t:.5,col:Math.random()<.5?'#ffb347':'#ff6a2b'});}
+  for(const z of B.z){
+    if(z.burn>=0){z.burn+=dt;if(z.burn<1.1)z.z-=z.spd*.18*dt;if(Math.random()<dt*10&&z.burn<1.6)R.pa.push({x:z.x+(Math.random()-.5)*30,z:z.z,h:30+Math.random()*80,vx:0,vz:0,vh:90,t:.45,col:Math.random()<.5?'#ffb347':'#ff6a2b'});continue;}
+    z.z-=z.spd*dt;
+    if(B.fire&&z.z<BZ_RANGE){const cx=A*z.z/BZ_ZR,w=75+z.z*.06;if(Math.abs(z.x-cx)<w){z.heat+=dt;if(z.heat>.22){z.burn=0;SND.groan((z.x/600)||0,.25);}}}
+    if(z.z<BZ_REACH&&z.burn<0){blazeEnd(false);return;}}
+  B.z=B.z.filter(z=>!(z.burn>3.4));
+  if(B.left2<=0&&!B.z.some(z=>z.burn<0)){B.ph='end';B.won=true;SND.levelUp();}}
+function blazeEnd(won){const B=R.blz;if(B.ph==='end'||B.ph==='done')return;B.fire=false;B.won=won;B.ph='end';B.endT=won?0:.6;R.shake=.5;if(!won){SND.explosion(.3);SND.groan(0,.9);}}
+function blazeTap(gx){const B=R.blz;if(!B)return;
+  if(B.ph==='ign'){B.fill=Math.min(1,B.fill+1/24);B.tapT=.12;SND.click();if(Math.random()<.5)R.pa.push({x:0,z:60,h:40,vx:(Math.random()-.5)*80,vz:0,vh:120,t:.3,col:'#ffe08a'});if(B.fill>=1){B.ph='lit';B.lit=0;SND.whoosh();}return;}
+  if(B.ph==='sweep'){B.dn=true;B.fire=true;blazeAim(gx);}}
+function blazeAim(gx){const B=R.blz;if(!B||B.ph!=='sweep')return;const k=K(BZ_ZR);B.aim=Math.max(-680,Math.min(680,(gx-WW/2)/k));}
+function blazeUp(){const B=R.blz;if(!B)return;B.dn=false;B.fire=false;}
+function bzRect(n){return BLZM[n];}
+function bzDraw(n,x,y,h,anchor,alpha,rot){const r=BLZM[n];if(!r||!blzReady)return;const sc=h/r[3],w=r[2]*sc;ctx.save();ctx.globalAlpha=alpha==null?1:alpha;ctx.translate(x,y);if(rot)ctx.rotate(rot);
+  const ax=anchor&&anchor[0]!=null?anchor[0]:.5,ay=anchor&&anchor[1]!=null?anchor[1]:1;const q=BLZIMG.naturalWidth/2048;ctx.drawImage(BLZIMG,r[0]*q,r[1]*q,r[2]*q,r[3]*q,-w*ax,-h*ay,w,h);ctx.restore();}
+function drawBlaze(){const B=R.blz;if(!B)return;
+  // zombies far to near
+  const L=B.z.slice().sort((a,b)=>b.z-a.z);
+  for(const z of L){const[sx,sy,k]=P(z.x,z.z);const fade=Math.max(0,Math.min(1,(2900-z.z)/400));
+    if(z.burn<0){if(atlasReady&&META[z.type])drawEnemySprite(z,sx,sy,k,fade);continue;}
+    const H=z.r*EH*k*1.25,f=z.burn<1.1?'bz'+(Math.floor(z.burn*8+z.wob)%4):z.burn<1.35?'bz4':z.burn<1.6?'bz5':'bz6',a=z.burn<2.4?1:Math.max(0,(3.4-z.burn));
+    ctx.fillStyle='rgba(0,0,0,.35)';ctx.beginPath();ctx.ellipse(sx,sy,z.r*1.1*k,z.r*.3*k,0,0,6.283);ctx.fill();
+    bzDraw(f,sx,sy,H*BLZM[f][3]/BLZM.bz0[3],[.5,1],a);
+    if(z.burn<1.6){ctx.globalCompositeOperation='lighter';const g=ctx.createRadialGradient(sx,sy-H*.5,0,sx,sy-H*.5,H*.8);g.addColorStop(0,'rgba(255,140,50,.35)');g.addColorStop(1,'rgba(255,140,50,0)');ctx.fillStyle=g;ctx.fillRect(sx-H,sy-H*1.3,H*2,H*1.6);ctx.globalCompositeOperation='source-over';}}
+  for(const p of R.pa){const[x,y,k]=P(p.x,p.z,p.h);ctx.globalAlpha=Math.max(0,Math.min(1,p.t*2));ctx.fillStyle=p.col;const s=Math.max(1.5,6*k);ctx.fillRect(x-s/2,y-s/2,s,s);}ctx.globalAlpha=1;
+  // viewmodel + flame
+  const vmH=WH*.5,sway=B.ph==='sweep'?B.aim/680:0,bob=Math.sin(t*2.2)*2+(B.fire?Math.sin(t*40)*1.5:0),vx=WW/2+sway*70,vy=WH+6+bob;
+  const fr=B.ph==='ign'?(B.tapT>0?'vm1':'vm0'):B.fire?'vm3':'vm2',rot=sway*.12;
+  if(B.fire){const pf=[];for(let i=0;i<12;i++){const z=170+((i*110+t*900)%1260);pf.push(z);}pf.sort((a,b)=>b-a);
+    ctx.globalCompositeOperation='lighter';for(const z of pf){const[px,py,k]=P(B.aim*z/BZ_ZR,z,40),h=Math.max(12,300*k),a=Math.min(1,(1500-z)/400);
+      bzDraw('fl'+(Math.floor(t*14+z)%4),px,py+h*.5,h,[.5,1],a*.85,0);}ctx.globalCompositeOperation='source-over';}
+  bzDraw(fr,vx,vy,vmH,[.5,1],1,rot);
+  // HUD
+  ctx.textAlign='center';
+  if(B.ph==='ign'||B.ph==='lit'){const w=Math.min(300,WW*.5),x0=WW/2-w/2,y0=36;ctx.fillStyle='#0d1016cc';ctx.fillRect(x0-12,y0-26,w+24,58);
+    ctx.fillStyle='#ffc53d';ctx.font='15px Bungee, Impact, sans-serif';ctx.fillText(B.ph==='lit'?'LIT!':'SPARK THE IGNITER! TAP!',WW/2,y0-6);
+    ctx.fillStyle='#2a1f33';ctx.fillRect(x0,y0+4,w,12);ctx.fillStyle=B.ph==='lit'?'#b6f23a':'#ff6a2b';ctx.fillRect(x0,y0+4,w*B.fill,12);
+    ctx.fillStyle='#efe6dc';ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='right';ctx.fillText(Math.max(0,B.left).toFixed(1),x0+w+8,y0-6);ctx.textAlign='center';}
+  if(B.ph==='sweep'){const n=B.z.filter(z=>z.burn<0).length+B.left2;ctx.fillStyle='#0d1016aa';ctx.fillRect(WW/2-90,10,180,26);ctx.fillStyle='#ffc53d';ctx.font='13px Bungee, Impact, sans-serif';ctx.fillText(n+' LEFT',WW/2,28);
+    if(B.t<3.5&&!B.fire){ctx.globalAlpha=Math.min(1,(3.5-B.t));ctx.fillStyle='#efe6dc';ctx.font='15px Bungee, Impact, sans-serif';ctx.fillText('HOLD AND SLIDE TO BURN THEM',WW/2,HOR+20);ctx.globalAlpha=1;}}
+}
 
 /* ---------- ABILITIES & SUPERS ---------- */
 const SUP_KILLS={cmd:40,bruno:45,rook:90,hex:40,blaze:60,volt:50,frost:50,nova:35},SUP_TRICKLE={rook:200};
@@ -1567,12 +1695,13 @@ function draw(){
   for(const bo of R.bolts){if(bo.tr){const[a,b]=P(...bo.pts[0]),[c,d]=P(...bo.pts[1]);ctx.strokeStyle=bo.col;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(a,b);ctx.lineTo(c,d);ctx.stroke();continue;}ctx.strokeStyle=bo.col;ctx.lineWidth=2.5;ctx.shadowColor='#6aa8ff';ctx.shadowBlur=10;ctx.beginPath();
     bo.pts.forEach((p,i)=>{const[x,y]=P(p[0],p[1],p[2]);if(!i)ctx.moveTo(x,y);else{const[qx,qy]=P(bo.pts[i-1][0],bo.pts[i-1][1],bo.pts[i-1][2]);ctx.lineTo((x+qx)/2+(Math.random()-.5)*18,(y+qy)/2+(Math.random()-.5)*18);ctx.lineTo(x,y);}});ctx.stroke();ctx.shadowBlur=0;}
   for(const p of R.pa){const[x,y,k]=P(p.x,p.z,p.h);ctx.globalAlpha=Math.max(0,p.t*2);ctx.fillStyle=p.col;const s=Math.max(1.5,5*k);ctx.fillRect(x-s/2,y-s/2,s,s);}ctx.globalAlpha=1;
-  const lay=near.map(i=>[i[0],i[1],i[2]]);for(const s of squad())lay.push([s.z+16,9,s]);if(R.civ)for(const c of R.civ){if(c.hp>0)lay.push([c.z+12,10,c]);if(R.forest&&c.van!=null&&c.van<.9)lay.push([c.z+11,14,c]);}
+  const lay=near.map(i=>[i[0],i[1],i[2]]);if(!R.blz)for(const s of squad())lay.push([s.z+16,9,s]);if(R.civ&&!R.civHide)for(const c of R.civ){if(c.hp>0)lay.push([c.z+12,10,c]);if(R.forest&&c.van!=null&&c.van<.9)lay.push([c.z+11,14,c]);}
   lay.sort((a,b)=>b[0]-a[0]);
   if(R.slashes)for(const s of R.slashes)drawSlash(s);
   for(const[,ty,o]of lay){if(ty===14)drawVanish(o);else if(ty===10)drawCiv(o);else if(ty===9)drawSquadMember(o);else if(ty===0)drawEnemy(o);else drawCorpse(o);}
   for(const x of R.tx){ctx.globalAlpha=Math.min(1,x.t);ctx.fillStyle=x.col;ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText(x.txt,x.x,x.y);}ctx.globalAlpha=1;
   if(R.forest)drawStuns();
+  if(R.blz)drawBlaze();
   drawBossBar();
   if(R.cine)drawCine();
   if(R.banner&&!R.cine){const b=R.banner;ctx.globalAlpha=Math.min(1,b.t*2);ctx.fillStyle='#0d1016cc';ctx.fillRect(0,HOR+30,WW,44);
@@ -1585,8 +1714,8 @@ function draw(){
 let last=performance.now();
 function loop(now){
   const dt=Math.min(.033,(now-last)/1000);last=now;
-  if(state==='play')update(dt);else{t+=dt*.3;}
-  SND.setTrack(state==='intro'?'cine':(state==='play'||state==='pause'||state==='inter')?'combat':state==='over'?null:state==='win'?'title':'title');SND.setPause(state==='pause'||state==='inter');
+  if(state==='play')update(dt);else if(state==='blaze')blazeUpdate(dt);else{t+=dt*.3;}
+  SND.setTrack(state==='intro'?'cine':(state==='play'||state==='blaze'||state==='pause'||state==='inter')?'combat':state==='over'?null:state==='win'?'title':'title');SND.setPause(state==='pause'||state==='inter');
   draw();requestAnimationFrame(loop);
 }
 function resize(){
@@ -1600,9 +1729,9 @@ window.addEventListener('resize',resize);
 
 /* ---------- INPUT ---------- */
 let drag=null,tap0=null;
-cv.addEventListener('pointerdown',e=>{if(state!=='play'||(R&&R.cine))return;const rc=cv.getBoundingClientRect();if(tapJeep((e.clientX-rc.left-ox)/scale,(e.clientY-rc.top-oy)/scale))return;tap0={x:e.clientX,y:e.clientY,t:performance.now(),gx:(e.clientX-rc.left-ox)/scale,gy:(e.clientY-rc.top-oy)/scale};drag=e.clientX;cv.setPointerCapture(e.pointerId);});
-cv.addEventListener('pointermove',e=>{if(drag===null)return;if(stunned('cmd')){drag=e.clientX;return;}SX+=(e.clientX-drag)/scale*1.25;drag=e.clientX;const l=sxLimit();SX=Math.max(-l,Math.min(l,SX));});
-const endDrag=()=>drag=null;cv.addEventListener('pointerup',e=>{if(tap0&&state==='play'&&Math.hypot(e.clientX-tap0.x,e.clientY-tap0.y)<14&&performance.now()-tap0.t<400)tapSuper(tap0.gx,tap0.gy);tap0=null;});cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointercancel',endDrag);
+cv.addEventListener('pointerdown',e=>{if(state==='blaze'){const rc=cv.getBoundingClientRect();blazeTap((e.clientX-rc.left-ox)/scale);try{cv.setPointerCapture(e.pointerId);}catch(_){}return;}if(state!=='play'||(R&&R.cine))return;const rc=cv.getBoundingClientRect();if(tapJeep((e.clientX-rc.left-ox)/scale,(e.clientY-rc.top-oy)/scale))return;tap0={x:e.clientX,y:e.clientY,t:performance.now(),gx:(e.clientX-rc.left-ox)/scale,gy:(e.clientY-rc.top-oy)/scale};drag=e.clientX;cv.setPointerCapture(e.pointerId);});
+cv.addEventListener('pointermove',e=>{if(state==='blaze'){const rc=cv.getBoundingClientRect();blazeAim((e.clientX-rc.left-ox)/scale);return;}if(drag===null)return;if(stunned('cmd')){drag=e.clientX;return;}SX+=(e.clientX-drag)/scale*1.25;drag=e.clientX;const l=sxLimit();SX=Math.max(-l,Math.min(l,SX));});
+const endDrag=()=>drag=null;cv.addEventListener('pointerup',e=>{if(tap0&&state==='play'&&Math.hypot(e.clientX-tap0.x,e.clientY-tap0.y)<14&&performance.now()-tap0.t<400)tapSuper(tap0.gx,tap0.gy);tap0=null;});cv.addEventListener('pointerup',endDrag);cv.addEventListener('pointerup',()=>{if(state==='blaze')blazeUp();});cv.addEventListener('pointercancel',()=>{if(state==='blaze')blazeUp();});cv.addEventListener('pointercancel',endDrag);
 const keys={};
 window.addEventListener('keydown',e=>{keys[e.key]=1;});window.addEventListener('keyup',e=>{keys[e.key]=0;});
 setInterval(()=>{if(state!=='play'||stunned('cmd'))return;const l=sxLimit();if(keys.ArrowLeft)SX=Math.max(-l,SX-9);if(keys.ArrowRight)SX=Math.min(l,SX+9);},16);
@@ -1660,7 +1789,7 @@ function drawPortraits(){drawEnemyThumbs();
 }
 function ui(){
   hud.hidden=!(state==='play'||state==='pause');
-  ov.hidden=state==='play'||state==='intro';
+  ov.hidden=state==='play'||state==='intro'||state==='blaze';
   resize();
   let html='';
   ov.classList.toggle('title-mode',state==='menu'||state==='splash');
@@ -1719,6 +1848,7 @@ function ui(){
     <h3>Rook arrives</h3><div class="btns">${G('s2','Whole squad')}${G('s2b','Bruno fallen')}</div>
     <h3>The fork in the road</h3><p class="sub">The first two pick a road at the choice.</p><div class="btns">${G('f','Whole squad')}${G('fr','Rook fallen')}${G('fb','Bruno fallen')}${G('fbr','Bruno and Rook fallen')}</div>
     <h3>The forest</h3><p class="sub">The first one includes the Hex mini-game.</p><div class="btns">${G('fc1','Something in the trees')}${G('fc1r','Same, Rook fallen')}${G('fc2','Screeches')}${G('fc3','Momma')}</div>
+    <h3>The town ending</h3><p class="sub">The mini-game is skipped here and its result plays.</p><div class="btns">${G('tw','Blaze makes it')}${G('twr','Same, Rook fallen')}${G('twb','Same, Bruno fallen')}${G('twbr','Same, both fallen')}${G('tl','Blaze is overrun')}${G('tlr','Same, Rook fallen')}${G('tlb','Same, Bruno fallen')}${G('tlbr','Same, both fallen')}</div>
     <button class="btn ghost" data-act="options">Back</button>`;
   }else if(state==='credits'){
     html=`<h2>Credits</h2><div class="stripe"></div>
@@ -1772,6 +1902,7 @@ function ui(){
     const alive=['cmd',...save.active].length;
     html=`<h1 class="title">STAGE 3<span>COMPLETE</span></h1><div class="stripe"></div>
     <p class="sub">The horde broke against the squad in the middle of main street. ${(save.townSaved||0)===CIV_N?'Every survivor made it through the town.':(save.townSaved||0)+' of '+CIV_N+' survivors made it through the town.'}</p>
+    ${save.blaze==='joined'?'<p class="sub"><b>Blaze</b> torched the swarm and walked through the gates of Cyber Future with the squad.</p>':save.blaze==='lost'?'<p class="sub">Blaze was overrun in the street.'+(save.blazeBruno?' Bruno went in after her.':'')+'</p>':''}
     <div class="row"><span class="sub">Survivors saved</span><span class="big">${(save.townSaved||0)} / ${CIV_N}</span></div>
     <div class="row"><span class="sub">Squad standing</span><span class="big">${alive}</span></div>
     <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
@@ -1797,7 +1928,7 @@ ov.addEventListener('click',e=>{
   else if(a==='gallery'){state='gallery';ui();return;}
   else if(a==='gal'){const k=b.dataset.k,back=()=>{CREW_VIEW=null;state='gallery';ui();};
     CREW_VIEW={bruno:!/b/.test(k.slice(1)),rook:!/r/.test(k.slice(1))};
-    if(k.startsWith('fc'))startForestCut(+k[2],back,false);else if(k==='intro')startIntro(back);else if(k[0]==='s'&&k[1]==='1')startIntro(back,SHOTS2);else if(k[0]==='s')startIntro(back,SHOTS3);else startFork(back,false);return;}
+    if(k.startsWith('fc'))startForestCut(+k[2],back,false);else if(k[0]==='t')townEndGallery(k[1]==='w',back);else if(k==='intro')startIntro(back);else if(k[0]==='s'&&k[1]==='1')startIntro(back,SHOTS2);else if(k[0]==='s')startIntro(back,SHOTS3);else startFork(back,false);return;}
   else if(a==='intro4'){const rec=!save.route;startFork(()=>{state='options';ui();},rec);}
   else if(a==='intro3'){startIntro(()=>{state='options';ui();},SHOTS3);}
   else if(a==='intro2'){startIntro(()=>{state='options';ui();},SHOTS2);}
@@ -1823,7 +1954,7 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();
 
 /* ---------- INTRO CUTSCENE: riso-print panels with partial animation ---------- */
 const CINE_META={"gas": {"n": 6, "fw": 330.4, "fh": 248.49999999999997}, "crowd": {"n": 6, "fw": 237.99999999999997, "fh": 239.39999999999998}, "arm": {"n": 6, "fw": 209.4, "fh": 288.0}, "shadow": {"n": 6, "fw": 268, "fh": 102.0}, "wave": {"n": 4, "fw": 411, "fh": 117.0}, "lift": {"n": 4, "fw": 402.0, "fh": 492.0}, "bike": {"n": 4, "fw": 332.0, "fh": 300.8}, "leap": {"n": 4, "fw": 247.20000000000002, "fh": 326.40000000000003}, "bikef": {"n": 4, "fw": 350.40000000000003, "fh": 324.0}, "c3horde": {"n": 8, "fw": 320.4, "fh": 175.79999999999998}, "c3truck": {"n": 8, "fw": 137.5, "fh": 128.0}, "c3smoke": {"n": 8, "fw": 164.4, "fh": 103.2}, "c3peek": {"n": 8, "fw": 164.4, "fh": 121.8}, "c3beam": {"n": 8, "fw": 191.79999999999998, "fh": 72.8}, "c3fog": {"n": 8, "fw": 411.20000000000005, "fh": 192.8}, "c3spark": {"n": 8, "fw": 306.0, "fh": 162.0}, "c3fire": {"n": 8, "fw": 175.5, "fh": 210.6}, "c3ember": {"n": 8, "fw": 156.0, "fh": 160.0}, "c3flash": {"n": 8, "fw": 175.5, "fh": 176.4}, "c4ring": {"n": 4, "fw": 389.75, "fh": 140}, "c4spark": {"n": 4, "fw": 389.75, "fh": 210}, "c4fog": {"n": 4, "fw": 389.75, "fh": 140}, "c4burst": {"n": 4, "fw": 389.75, "fh": 255}};
-const CINE_SRC={"s1": "assets/cine/s1.webp?v=243c333768", "s2": "assets/cine/s2.webp?v=550e74da9a", "s3": "assets/cine/s3.webp?v=70cc779e19", "s4": "assets/cine/s4.webp?v=a7032a396c", "s5": "assets/cine/s5.webp?v=d9c16aae06", "s6": "assets/cine/s6.webp?v=7be0ebed55", "s7": "assets/cine/s7.webp?v=fc9f6ba24a", "s8": "assets/cine/s8.webp?v=1621073ea0", "gas": "assets/cine/gas.webp?v=315d27fe85", "crowd": "assets/cine/crowd.webp?v=63ce1e7073", "arm": "assets/cine/arm.webp?v=6bf76ce38f", "shadow": "assets/cine/shadow.webp?v=d6f37fc102", "wave": "assets/cine/wave.webp?v=23e8a4a53d", "w1": "assets/cine/w1.webp?v=c8f04b9c22", "w2": "assets/cine/w2.webp?v=0ed40fe71c", "w3": "assets/cine/w3.webp?v=70c8685020", "w4": "assets/cine/w4.webp?v=dbcff62397", "w5": "assets/cine/w5.webp?v=b5b30b1db7", "w6": "assets/cine/w6.webp?v=af200e06c2", "w7": "assets/cine/w7.webp?v=3950081f16", "w8": "assets/cine/w8.webp?v=f8d626832c", "lift": "assets/cine/lift.webp?v=370ce17c98", "r1": "assets/cine/r1.webp?v=3e4ef51c5c", "r2": "assets/cine/r2.webp?v=897e15e59c", "r3": "assets/cine/r3.webp?v=8a0a030f90", "r4": "assets/cine/r4.webp?v=a3521f3cb0", "r5": "assets/cine/r5.webp?v=97fb173298", "r6": "assets/cine/r6.webp?v=3ac4fdbb0d", "bike": "assets/cine/bike.webp?v=c67a4ad3e0", "leap": "assets/cine/leap.webp?v=970a293fe8", "bikef": "assets/cine/bikef.webp?v=ee94861b81", "b1": "assets/cine/b1.webp?v=ec2cd2723f", "b2": "assets/cine/b2.webp?v=01cf7f9c7b", "b6": "assets/cine/b6.webp?v=b63e26f414", "b7": "assets/cine/b7.webp?v=b6c3b43136", "b8": "assets/cine/b8.webp?v=f269e85dc3", "br1": "assets/cine/br1.webp?v=26cde8d39b", "x01": "assets/cine/x01.webp?v=57c1a8b59a", "x02": "assets/cine/x02.webp?v=278ed750fd", "xa3": "assets/cine/xa3.webp?v=63f1e488b3", "xa4": "assets/cine/xa4.webp?v=e283c3e464", "xa5": "assets/cine/xa5.webp?v=c231911ed0", "xa6": "assets/cine/xa6.webp?v=5d44e267c6", "xa7": "assets/cine/xa7.webp?v=d1a42b40c1", "xb3": "assets/cine/xb3.webp?v=759b78c0b1", "xb4": "assets/cine/xb4.webp?v=df36359644", "xb5": "assets/cine/xb5.webp?v=319fbf1c6f", "xb6": "assets/cine/xb6.webp?v=dc55f12004", "xb7": "assets/cine/xb7.webp?v=2603ef086d", "xb8": "assets/cine/xb8.webp?v=213337a3cb", "xv1": "assets/cine/xv1.webp?v=f0b1f7bc58", "xv2": "assets/cine/xv2.webp?v=f08c546b7d", "xv3": "assets/cine/xv3.webp?v=8dfbfd654f", "xv4": "assets/cine/xv4.webp?v=0519294f79", "xv5": "assets/cine/xv5.webp?v=2de26c5075", "xv6": "assets/cine/xv6.webp?v=8bdeb41aa8", "xv7": "assets/cine/xv7.webp?v=457158d6d8", "xf1": "assets/cine/xf1.webp?v=53c018c3db", "xf2": "assets/cine/xf2.webp?v=4ac30cc35b", "xf3": "assets/cine/xf3.webp?v=9db92f2352", "xf4": "assets/cine/xf4.webp?v=5b931210a4", "xf5": "assets/cine/xf5.webp?v=9d2c48c6dc", "xf6": "assets/cine/xf6.webp?v=5b89485ce3", "xw1": "assets/cine/xw1.webp?v=5768e46a45", "xw2": "assets/cine/xw2.webp?v=a02211f1a9", "xw3": "assets/cine/xw3.webp?v=e2a7715eca", "xl1": "assets/cine/xl1.webp?v=61a0c15c27", "xl2": "assets/cine/xl2.webp?v=26078fc2c4", "xrv1": "assets/cine/xrv1.webp?v=f284b5471c", "xrv2": "assets/cine/xrv2.webp?v=03d5736fe6", "xrv3": "assets/cine/xrv3.webp?v=5b2057f074", "xs1": "assets/cine/xs1.webp?v=bb79331e55", "xs2": "assets/cine/xs2.webp?v=f42fff5961", "xs2v": "assets/cine/xs2v.webp?v=17c61849a8", "xm1": "assets/cine/xm1.webp?v=9924e1689b", "c4ring": "assets/cine/c4ring.webp?v=4eac568207", "c4spark": "assets/cine/c4spark.webp?v=f398908cba", "c4fog": "assets/cine/c4fog.webp?v=1bac29ca7d", "c4burst": "assets/cine/c4burst.webp?v=c29024db4d", "c3horde": "assets/cine/c3horde.webp?v=51a1bcd882", "c3truck": "assets/cine/c3truck.webp?v=c3d079edb1", "c3smoke": "assets/cine/c3smoke.webp?v=104b4fcda5", "c3peek": "assets/cine/c3peek.webp?v=f5ee9d072a", "c3beam": "assets/cine/c3beam.webp?v=cf0d9e068c", "c3fog": "assets/cine/c3fog.webp?v=e27d3109d8", "c3spark": "assets/cine/c3spark.webp?v=8ec95a2788", "c3ember": "assets/cine/c3ember.webp?v=386f756069", "c3flash": "assets/cine/c3flash.webp?v=d9e65b2ea5"};
+const CINE_SRC={"s1": "assets/cine/s1.webp?v=243c333768", "s2": "assets/cine/s2.webp?v=550e74da9a", "s3": "assets/cine/s3.webp?v=70cc779e19", "s4": "assets/cine/s4.webp?v=a7032a396c", "s5": "assets/cine/s5.webp?v=d9c16aae06", "s6": "assets/cine/s6.webp?v=7be0ebed55", "s7": "assets/cine/s7.webp?v=fc9f6ba24a", "s8": "assets/cine/s8.webp?v=1621073ea0", "gas": "assets/cine/gas.webp?v=315d27fe85", "crowd": "assets/cine/crowd.webp?v=63ce1e7073", "arm": "assets/cine/arm.webp?v=6bf76ce38f", "shadow": "assets/cine/shadow.webp?v=d6f37fc102", "wave": "assets/cine/wave.webp?v=23e8a4a53d", "w1": "assets/cine/w1.webp?v=c8f04b9c22", "w2": "assets/cine/w2.webp?v=0ed40fe71c", "w3": "assets/cine/w3.webp?v=70c8685020", "w4": "assets/cine/w4.webp?v=dbcff62397", "w5": "assets/cine/w5.webp?v=b5b30b1db7", "w6": "assets/cine/w6.webp?v=af200e06c2", "w7": "assets/cine/w7.webp?v=3950081f16", "w8": "assets/cine/w8.webp?v=f8d626832c", "lift": "assets/cine/lift.webp?v=370ce17c98", "r1": "assets/cine/r1.webp?v=3e4ef51c5c", "r2": "assets/cine/r2.webp?v=897e15e59c", "r3": "assets/cine/r3.webp?v=8a0a030f90", "r4": "assets/cine/r4.webp?v=a3521f3cb0", "r5": "assets/cine/r5.webp?v=97fb173298", "r6": "assets/cine/r6.webp?v=3ac4fdbb0d", "bike": "assets/cine/bike.webp?v=c67a4ad3e0", "leap": "assets/cine/leap.webp?v=970a293fe8", "bikef": "assets/cine/bikef.webp?v=ee94861b81", "b1": "assets/cine/b1.webp?v=ec2cd2723f", "b2": "assets/cine/b2.webp?v=01cf7f9c7b", "b6": "assets/cine/b6.webp?v=b63e26f414", "b7": "assets/cine/b7.webp?v=b6c3b43136", "b8": "assets/cine/b8.webp?v=f269e85dc3", "br1": "assets/cine/br1.webp?v=26cde8d39b", "x01": "assets/cine/x01.webp?v=57c1a8b59a", "x02": "assets/cine/x02.webp?v=278ed750fd", "xa3": "assets/cine/xa3.webp?v=63f1e488b3", "xa4": "assets/cine/xa4.webp?v=e283c3e464", "xa5": "assets/cine/xa5.webp?v=c231911ed0", "xa6": "assets/cine/xa6.webp?v=5d44e267c6", "xa7": "assets/cine/xa7.webp?v=d1a42b40c1", "xb3": "assets/cine/xb3.webp?v=759b78c0b1", "xb4": "assets/cine/xb4.webp?v=df36359644", "xb5": "assets/cine/xb5.webp?v=319fbf1c6f", "xb6": "assets/cine/xb6.webp?v=dc55f12004", "xb7": "assets/cine/xb7.webp?v=2603ef086d", "xb8": "assets/cine/xb8.webp?v=213337a3cb", "xv1": "assets/cine/xv1.webp?v=f0b1f7bc58", "xv2": "assets/cine/xv2.webp?v=f08c546b7d", "xv3": "assets/cine/xv3.webp?v=8dfbfd654f", "xv4": "assets/cine/xv4.webp?v=0519294f79", "xv5": "assets/cine/xv5.webp?v=2de26c5075", "xv6": "assets/cine/xv6.webp?v=8bdeb41aa8", "xv7": "assets/cine/xv7.webp?v=457158d6d8", "xf1": "assets/cine/xf1.webp?v=53c018c3db", "xf2": "assets/cine/xf2.webp?v=4ac30cc35b", "xf3": "assets/cine/xf3.webp?v=9db92f2352", "xf4": "assets/cine/xf4.webp?v=5b931210a4", "xf5": "assets/cine/xf5.webp?v=9d2c48c6dc", "xf6": "assets/cine/xf6.webp?v=5b89485ce3", "xw1": "assets/cine/xw1.webp?v=5768e46a45", "xw2": "assets/cine/xw2.webp?v=a02211f1a9", "xw3": "assets/cine/xw3.webp?v=e2a7715eca", "xl1": "assets/cine/xl1.webp?v=61a0c15c27", "xl2": "assets/cine/xl2.webp?v=26078fc2c4", "xrv1": "assets/cine/xrv1.webp?v=f284b5471c", "xrv2": "assets/cine/xrv2.webp?v=03d5736fe6", "xrv3": "assets/cine/xrv3.webp?v=5b2057f074", "xs1": "assets/cine/xs1.webp?v=bb79331e55", "xs2": "assets/cine/xs2.webp?v=f42fff5961", "xs2v": "assets/cine/xs2v.webp?v=17c61849a8", "xm1": "assets/cine/xm1.webp?v=9924e1689b", "c4ring": "assets/cine/c4ring.webp?v=4eac568207", "c4spark": "assets/cine/c4spark.webp?v=f398908cba", "c4fog": "assets/cine/c4fog.webp?v=1bac29ca7d", "c4burst": "assets/cine/c4burst.webp?v=c29024db4d", "c3horde": "assets/cine/c3horde.webp?v=51a1bcd882", "c3truck": "assets/cine/c3truck.webp?v=c3d079edb1", "c3smoke": "assets/cine/c3smoke.webp?v=104b4fcda5", "c3peek": "assets/cine/c3peek.webp?v=f5ee9d072a", "c3beam": "assets/cine/c3beam.webp?v=cf0d9e068c", "c3fog": "assets/cine/c3fog.webp?v=e27d3109d8", "c3spark": "assets/cine/c3spark.webp?v=8ec95a2788", "c3ember": "assets/cine/c3ember.webp?v=386f756069", "c3flash": "assets/cine/c3flash.webp?v=d9e65b2ea5", "te_t1": "assets/cine/te_t1.webp?v=584d2a9cfa", "te_t2a": "assets/cine/te_t2a.webp?v=fe492bd1ba", "te_t2b": "assets/cine/te_t2b.webp?v=8c05f539fc", "te_t2c": "assets/cine/te_t2c.webp?v=a11a51477b", "te_t2d": "assets/cine/te_t2d.webp?v=26beed7a3f", "te_t3": "assets/cine/te_t3.webp?v=817708c3de", "te_t4": "assets/cine/te_t4.webp?v=aa62671c0f", "te_t5a": "assets/cine/te_t5a.webp?v=5a6a434b7c", "te_t5b": "assets/cine/te_t5b.webp?v=67e35070ec", "te_t5c": "assets/cine/te_t5c.webp?v=d872d33a01", "te_t5d": "assets/cine/te_t5d.webp?v=566666704c", "te_t6": "assets/cine/te_t6.webp?v=c2e101c534", "te_t7": "assets/cine/te_t7.webp?v=9739b7ea64", "te_t8": "assets/cine/te_t8.webp?v=8713b55890", "te_w1": "assets/cine/te_w1.webp?v=753a7795e8", "te_w2a": "assets/cine/te_w2a.webp?v=54150808dc", "te_w2b": "assets/cine/te_w2b.webp?v=bef9b9aeb5", "te_w3": "assets/cine/te_w3.webp?v=cdb71249ca", "te_w4": "assets/cine/te_w4.webp?v=0f3149d82e", "te_w5": "assets/cine/te_w5.webp?v=63e3c99a0b", "te_l1": "assets/cine/te_l1.webp?v=8d2863cb46", "te_l2": "assets/cine/te_l2.webp?v=b3a97f8544", "te_l3": "assets/cine/te_l3.webp?v=3979192544", "te_l4a": "assets/cine/te_l4a.webp?v=b15dc704bb", "te_l4b": "assets/cine/te_l4b.webp?v=17f706673e", "te_e1": "assets/cine/te_e1.webp?v=5b8ed99e63", "te_e2": "assets/cine/te_e2.webp?v=81835e6d77"};
 const CI={};const CINE_FILES=['s1','s2','s3','s4','s5','s6','s7','s8','gas','crowd','arm','shadow','wave','w1','w2','w3','w4','w5','w6','w7','w8','lift','r1','r2','r3','r4','r5','r6','bike','leap','bikef','b1','b2','b6','b7','b8','br1'];
 const CINE_SHEETS=['gas','crowd','arm','shadow','wave','lift','bike','leap','bikef'];
 function cineLoadKeys(keys){for(const k of keys){if(CI[k]||!CINE_SRC[k])continue;const im=new Image();im.decoding='async';im.src=CINE_SRC[k];CI[k]=im;}}
