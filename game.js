@@ -277,7 +277,7 @@ if(!Array.isArray(save.fallen))save.fallen=[];save.gold=Math.floor(save.gold||0)
 save.active=save.active.filter(h=>save.heroes[h]);
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(save));}catch(e){}}
 /* checkpoint: the wave you're on, so Continue drops you back at its start */
-function checkpoint(){if(!R)return;save.ckpt={stage:R.forest?'3f':(R.stage||1),wave:R.stage===2?1:R.wave,hex:!!save.heroes.hex};persist();}
+function checkpoint(){if(!R)return;markReach(R.forest?'3f':String(R.stage||1),R.stage===2?1:R.wave);save.ckpt={stage:R.forest?'3f':(R.stage||1),wave:R.stage===2?1:R.wave,hex:!!save.heroes.hex};persist();}
 function clearCkpt(){if(save.ckpt){delete save.ckpt;persist();}}
 const ckptLabel=c=>c.stage===2?'Stage 2 · The Escape':c.stage===3?(c.wave==='end'?'Stage 3 · The Empty Town, ending':'Stage 3 · The Empty Town, wave '+c.wave):c.stage==='3f'?'Stage 3 · The Forest, wave '+c.wave:'Stage 1 · wave '+c.wave;
 function resumeCkpt(){const c=save.ckpt;if(!c)return;if(!legacy().current)legacyStart(save.mode||'normal');SX=0;camX=0;
@@ -440,11 +440,11 @@ function drawJeep(j){
 
 /* ---------- STAGE 2: THE ESCAPE (truck roof, runners + The Ward) ---------- */
 /* starting a stage directly: heroes the story has already given you join if they're missing (not fallen) */
-function ensureHero(id){if(save.heroes[id]||save.fallen.includes(id))return;if(save.away&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];save.heroes[id].hp=null;if(save.active.length<MAX_ACTIVE)save.active.push(id);}else addHero(id);persist();}
+function ensureHero(id){if(LOADSEL&&!LOADSEL.includes(id))return;if(save.heroes[id]||save.fallen.includes(id))return;if(save.away&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];save.heroes[id].hp=null;if(save.active.length<MAX_ACTIVE)save.active.push(id);}else addHero(id);persist();}
 /* keep only the heroes the story has given you at this point; the rest wait (levels kept) until they join */
 let REVD=[];
 function stageRevive(){if(HORDE()||!save.downed)return;for(const id of Object.keys(save.downed)){const d=save.downed[id];if(save.heroes[id])continue;save.heroes[id]={lv:d.lv,xp:d.xp};save.fallen=save.fallen.filter(h=>h!==id);if(save.active.length<MAX_ACTIVE)save.active.push(id);story('hero_revived',{hero:id,how:'stage_start'});REVD.push(id);setHp(id,maxHp(id)*.5);}save.downed={};persist();}
-function storyParty(allowed){for(const id of Object.keys(save.heroes))if(!allowed.includes(id))stashHero(id);}
+function storyParty(allowed){if(LOADSEL)allowed=LOADSEL;for(const id of Object.keys(save.heroes))if(!allowed.includes(id))stashHero(id);}
 function startStage2(){stageRevive();ensureHero('bruno');storyParty(['bruno']);setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
   R={stage:2,wave:5,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:{txt:'STAGE 2: THE ESCAPE',t:2.6,col:'#ffc53d'},vx:0,prevSX:SX,dead:[],
@@ -840,7 +840,7 @@ function mommaFrame(e){const M=META.momma;if(e.act){const A=M[e.act],q=Math.min(
 
 /* stage flow */
 /* on the backroad Bruno drives off to the lab: kept aside, not in the squad */
-function brunoLeaves(){if(!save.heroes.bruno)return;save.away=save.away||{};save.away.bruno=save.heroes.bruno;delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');persist();}
+function brunoLeaves(){if(LOADSEL)return;if(!save.heroes.bruno)return;save.away=save.away||{};save.away.bruno=save.heroes.bruno;delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');persist();}
 function startForest(){
   stageRevive();ensureHero('rook');if(save.route==='backroad')brunoLeaves();storyParty(['rook']);
   forestLoad();for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
@@ -944,6 +944,47 @@ function startForestCut(n,done,record){cineLoadKeys(FCUT_KEYS);const crew={rook:
   cine.crew=crew;}
 let cineLastMini=null;
 
+/* ---------- LOAD (testing): start any board you've reached, at any wave, with any squad that belongs there ---------- */
+const BOARDS=[
+ {k:'1',name:'Stage 1 · The Outskirts',waves:[1,2,3,4,5],heroes:w=>w>1?['bruno']:[]},
+ {k:'2',name:'Stage 2 · The Escape',waves:[1],heroes:()=>['bruno']},
+ {k:'3',name:'Stage 3 · The Empty Town',waves:[1,2,3,'end'],heroes:()=>['bruno','rook']},
+ {k:'3f',name:'Stage 3 · The Forest',waves:[1,2,3,4],heroes:w=>w>1?['rook','hex']:['rook']}];
+let LSEL=null,LOADSEL=null;
+function reachOf(k){const R0=(save.reach&&save.reach[k])||0,c=save.cleared||0;
+  if(k==='1')return Math.max(R0,c>=1?5:Math.min(5,(save.best||0)+1),1);
+  if(k==='2')return Math.max(R0,c>=1?1:0);
+  if(k==='3')return Math.max(R0,c>=2&&save.route==='highway'?1:0,c>=3&&save.route==='highway'?3:0);
+  if(k==='3f')return Math.max(R0,c>=2&&save.route==='backroad'?1:0,save.forestDone?4:0);return 0;}
+const reachEnd=()=>!!(save.reach&&save.reach['3e'])||((save.cleared||0)>=3&&save.route==='highway');
+const waveOpen=(k,w)=>w==='end'?reachEnd():reachOf(k)>=w;
+function markReach(k,w){save.reach=save.reach||{};if(w==='end'){save.reach['3e']=1;return;}save.reach[k]=Math.max(save.reach[k]||0,w);}
+function loadHTML(){if(!LSEL){const b=BOARDS.find(b=>reachOf(b.k)>0)||BOARDS[0];LSEL={k:b.k,w:1,h:{bruno:1,rook:1,hex:1}};}
+  let h=`<h2>Load</h2><div class="stripe"></div><p class="sub">Testing tool. Start any board you've reached, from any wave, with any squad that belongs there. Mode: ${HORDE()?'Horde':'Normal'}.</p>`;
+  for(const b of BOARDS){const open=reachOf(b.k)>0,sel=LSEL.k===b.k;
+    if(!open){h+=`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">${b.name}<small>Not reached yet</small></div><div class="lv">LOCKED</div></div>`;continue;}
+    h+=`<div class="card" style="grid-template-columns:1fr auto;cursor:pointer;${sel?'border-color:#ff6a2b':''}" data-act="lb" data-k="${b.k}"><div class="cname">${b.name}<small>${sel?'Selected':'Tap to choose'}</small></div><div class="lv">${sel?'●':''}</div></div>`;
+    if(!sel)continue;
+    h+=`<h3>Start from</h3><div class="chips">${b.waves.map(w=>{const ok=waveOpen(b.k,w);return `<button class="chip ${LSEL.w===w?'on':''}" data-act="lw" data-w="${w}" ${ok?'':'disabled style="opacity:.35"'}>${w==='end'?'Ending':b.waves.length>1?'Wave '+w:'Start'}</button>`;}).join('')}</div>`;
+    const hs=b.heroes(LSEL.w);
+    h+=`<h3>Squad</h3><div class="chips"><button class="chip on" disabled>Commander</button>${hs.map(id=>`<button class="chip ${LSEL.h[id]?'on':''}" data-act="lh" data-id="${id}">${HEROES[id].name}</button>`).join('')}${hs.length?'':'<span class="sub">The Commander fights alone here.</span>'}</div>
+    <div class="btns"><button class="btn" data-act="lgo">Start</button></div>`;}
+  return h+`<div class="btns"><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="menu">Back</button></div>`;}
+function loadGo(){const b=BOARDS.find(b=>b.k===LSEL.k),w=LSEL.w,pick=b.heroes(w).filter(id=>LSEL.h[id]);
+  if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:b.k,wave:w,load:true});}
+  save.away=save.away||{};
+  for(const id of pick){if(save.heroes[id])continue;const src=save.away[id]||(save.downed&&save.downed[id]);
+    save.heroes[id]=src?{lv:src.lv,xp:src.xp||0}:{lv:JOIN_LV[id]||1,xp:0};delete save.away[id];if(save.downed)delete save.downed[id];save.fallen=save.fallen.filter(x=>x!==id);}
+  for(const id of Object.keys(save.heroes))if(!pick.includes(id))stashHero(id);
+  save.active=pick.slice(0,MAX_ACTIVE);if(b.k==='3')save.route='highway';if(b.k==='3f')save.route='backroad';
+  LOADSEL=pick;SX=0;camX=0;delete save.ckpt;persist();
+  if(b.k==='1')newRun(w);else if(b.k==='2')startStage2();
+  else if(b.k==='3'){startStage3();if(w==='end'){R.wave=3;startTownEnd();}else if(w>1)startWave3(w);}
+  else{startForest();if(w>1)startWaveF(w);}
+  for(const id of pick)if(!save.heroes[id]&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];}
+  save.active=pick.filter(id=>save.heroes[id]).slice(0,MAX_ACTIVE);for(const id of['cmd',...save.active])setHp(id,maxHp(id));
+  LOADSEL=null;persist();}
+
 /* ---------- STAGE 3A ENDING: the endless swarm, Blaze, the flamethrower mini-game ---------- */
 const TEF='xa7';
 const glowF=(c,tt,u,v,r,a,rgb)=>c.glow(u,v,r,a*(.75+.25*Math.sin(tt*23)*Math.sin(tt*9.7)),rgb||'255,170,80');
@@ -998,7 +1039,7 @@ function teOpen(crew){return[TE.t1,teV(TE.t2,crew),TE.t3,TE.t4,teV(TE.t5,crew),T
 function teEnd(won,crew){const T=TE,out=won?[T.w1].concat(crew.bruno?[crew.rook?T.w2:T.w2b,T.w3]:[T.w4,T.w5]):[T.l1].concat(crew.bruno?[T.l2,T.l3]:[]).concat([crew.rook?T.l4:T.l4b]);return out.concat([T.e1,T.e2]);}
 function teCrew(){const c={bruno:save.active.includes('bruno')&&!!save.heroes.bruno,rook:save.active.includes('rook')&&!!save.heroes.rook};if(CREW_VIEW){c.bruno=CREW_VIEW.bruno;c.rook=CREW_VIEW.rook;}return c;}
 /* the real thing: opening -> igniter -> T8 -> sweep -> ending */
-function startTownEnd(){save.ckpt={stage:3,wave:'end'};persist();cineLoadKeys(TE_KEYS);blzLoad();const crew=teCrew(),L=teOpen(crew),t0=performance.now();
+function startTownEnd(){markReach('3','end');save.ckpt={stage:3,wave:'end'};persist();cineLoadKeys(TE_KEYS);blzLoad();const crew=teCrew(),L=teOpen(crew),t0=performance.now();
   const go=()=>{const ok=L.slice(0,2).every(s=>CI[s.bg]&&CI[s.bg].complete&&CI[s.bg].naturalWidth);if(ok||performance.now()-t0>6000)startIntro(()=>blazeStart(crew),L);else setTimeout(go,100);};go();}
 function townEndFinish(won,crew){
   if(won){save.blaze='joined';story('minigame',{id:'blaze_burn',won:true});}
@@ -1823,12 +1864,7 @@ function ui(){
       <button class="btn" data-act="pickmode" data-mode="horde">Play Horde</button></div>
     <button class="btn ghost" data-act="menu">Back</button>`;
   }else if(state==='load'){
-    html=`<h2>Stages</h2><div class="stripe"></div><p class="sub">Mode: ${HORDE()?'Horde':'Normal'}</p>
-    <div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 1 · The Outskirts<small>${STAGE_WAVES} waves</small></div><div class="lv">${save.best>=STAGE_WAVES?'CLEARED':save.best?'BEST: WAVE '+save.best:'NEW'}</div></div>
-    <div class="btns"><button class="btn" data-act="retry">Play Stage 1 (skip intro)</button></div>
-    ${(save.cleared||0)>=1?`<div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 2 · The Escape<small>Convoy chase</small></div><div class="lv">${(save.cleared||0)>=2?'CLEARED':'OPEN'}</div></div><div class="btns"><button class="btn" data-act="stage2">Play Stage 2</button></div>`:`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">Stage 2 · The Escape<small>Clear Stage 1 to unlock</small></div><div class="lv">LOCKED</div></div>`}
-    ${(save.cleared||0)>=2&&save.route==='highway'?`<div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 3 · The Empty Town<small>3 waves on foot</small></div><div class="lv">${(save.cleared||0)>=3?'CLEARED':'OPEN'}</div></div><div class="btns"><button class="btn" data-act="stage3">Play Stage 3</button></div>`:(save.cleared||0)>=2&&save.route?`<div class="card" style="grid-template-columns:1fr auto"><div class="cname">Stage 3 · The Forest<small>4 waves on foot</small></div><div class="lv">${save.forestDone?'CLEARED':'OPEN'}</div></div><div class="btns"><button class="btn" data-act="stage3f">Play Stage 3</button></div>`:`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">Stage 3<small>Clear Stage 2 to unlock</small></div><div class="lv">LOCKED</div></div>`}
-    <div class="btns"><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="menu">Back</button></div>`;
+    html=loadHTML();
   }else if(state==='options'){
     html=`<h2>Options</h2><div class="stripe"></div>
     <h3>How to play</h3>
@@ -1924,6 +1960,10 @@ ov.addEventListener('click',e=>{
   else if(a==='begin'){state='menu';ui();return;}
   else if(a==='continue'){resumeCkpt();}
   else if(a==='retry'){freshSave();legacyStart(save.mode||'normal');SX=0;camX=0;newRun(1);}
+  else if(a==='lb'){LSEL.k=b.dataset.k;LSEL.w=1;const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
+  else if(a==='lw'){const v=b.dataset.w;LSEL.w=v==='end'?'end':+v;const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
+  else if(a==='lh'){LSEL.h[b.dataset.id]=!LSEL.h[b.dataset.id];const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
+  else if(a==='lgo'){loadGo();return;}
   else if(a==='stage3f'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:3,route:'backroad'});}SX=0;camX=0;startForest();}
   else if(a==='stage3'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:3});}SX=0;camX=0;startStage3();}
   else if(a==='stage2'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:2});}SX=0;camX=0;startStage2();}
