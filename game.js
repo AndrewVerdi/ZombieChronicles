@@ -697,7 +697,7 @@ function drawCiv(c){if(townReady){const[sx,sy,k]=P(c.x,c.z);ctx.fillStyle='rgba(
   const sc=k*CHAR_H*.86/r[3];eDrawA(fr,sx,sy,sc,c.side>0);
   if(c.flash>0){ctx.globalCompositeOperation='lighter';eDrawA(fr,sx,sy,sc,c.side>0,.6);ctx.globalCompositeOperation='source-over';}
 }
-function startStage3(){stageRevive();setTimeout(()=>cineLoadKeys(TE_KEYS),4000);ensureHero('bruno');ensureHero('rook');storyParty(['bruno','rook']);townLoad();
+function startStage3(){stageRevive();setTimeout(()=>{const c=teCrew();cineLoad(teOpen(c).slice(0,2));},4000);ensureHero('bruno');ensureHero('rook');storyParty(['bruno','rook']);townLoad();
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
   roadScroll=0;
   R={stage:3,wave:1,wall:0,wallMax:1,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[],civ:mkCivs(),civLost:0,
@@ -943,6 +943,7 @@ function startForestCut(n,done,record){cineLoadKeys(FCUT_KEYS);const crew={rook:
     done&&done(res);},fcutList(n,crew));
   cine.crew=crew;}
 let cineLastMini=null;
+window.addEventListener('error',e=>{try{let d=document.getElementById('errbox');if(!d){d=document.createElement('div');d.id='errbox';d.style.cssText='position:fixed;left:6px;bottom:6px;right:6px;z-index:99999;background:#300;color:#fff;font:11px monospace;padding:6px;border:1px solid #f55;max-height:30%;overflow:auto;pointer-events:none';document.body.appendChild(d);}d.textContent+=(e.message||'error')+' @'+(e.lineno||'?')+':'+(e.colno||'?')+' ['+state+(R?' s'+R.stage+'w'+R.wave:'')+']\n';}catch(_){}});
 
 /* ---------- LOAD (testing): start any board you've reached, at any wave, with any squad that belongs there ---------- */
 const BOARDS=[
@@ -959,8 +960,8 @@ function reachOf(k){const R0=(save.reach&&save.reach[k])||0,c=save.cleared||0;
 const reachEnd=()=>!!(save.reach&&save.reach['3e'])||((save.cleared||0)>=3&&save.route==='highway');
 const waveOpen=(k,w)=>w==='end'?reachEnd():reachOf(k)>=w;
 function markReach(k,w){save.reach=save.reach||{};if(w==='end'){save.reach['3e']=1;return;}save.reach[k]=Math.max(save.reach[k]||0,w);}
-function loadHTML(){if(!LSEL){const b=BOARDS.find(b=>reachOf(b.k)>0)||BOARDS[0];LSEL={k:b.k,w:1,h:{bruno:1,rook:1,hex:1}};}
-  let h=`<h2>Load</h2><div class="stripe"></div><p class="sub">Testing tool. Start any board you've reached, from any wave, with any squad that belongs there. Mode: ${HORDE()?'Horde':'Normal'}.</p>`;
+function loadHTML(){const BUILD=(window.__VER||'artifact').slice(0,6);if(!LSEL){const b=BOARDS.find(b=>reachOf(b.k)>0)||BOARDS[0];LSEL={k:b.k,w:1,h:{bruno:1,rook:1,hex:1}};}
+  let h=`<h2>Load</h2><div class="stripe"></div><p class="sub">Testing tool. Start any board you've reached, from any wave, with any squad that belongs there. Mode: ${HORDE()?'Horde':'Normal'}. Build ${BUILD}.</p>`;
   for(const b of BOARDS){const open=reachOf(b.k)>0,sel=LSEL.k===b.k;
     if(!open){h+=`<div class="card locked" style="grid-template-columns:1fr auto"><div class="cname">${b.name}<small>Not reached yet</small></div><div class="lv">LOCKED</div></div>`;continue;}
     h+=`<div class="card" style="grid-template-columns:1fr auto;cursor:pointer;${sel?'border-color:#ff6a2b':''}" data-act="lb" data-k="${b.k}"><div class="cname">${b.name}<small>${sel?'Selected':'Tap to choose'}</small></div><div class="lv">${sel?'●':''}</div></div>`;
@@ -1039,7 +1040,7 @@ function teOpen(crew){return[TE.t1,teV(TE.t2,crew),TE.t3,TE.t4,teV(TE.t5,crew),T
 function teEnd(won,crew){const T=TE,out=won?[T.w1].concat(crew.bruno?[crew.rook?T.w2:T.w2b,T.w3]:[T.w4,T.w5]):[T.l1].concat(crew.bruno?[T.l2,T.l3]:[]).concat([crew.rook?T.l4:T.l4b]);return out.concat([T.e1,T.e2]);}
 function teCrew(){const c={bruno:save.active.includes('bruno')&&!!save.heroes.bruno,rook:save.active.includes('rook')&&!!save.heroes.rook};if(CREW_VIEW){c.bruno=CREW_VIEW.bruno;c.rook=CREW_VIEW.rook;}return c;}
 /* the real thing: opening -> igniter -> T8 -> sweep -> ending */
-function startTownEnd(){markReach('3','end');save.ckpt={stage:3,wave:'end'};persist();cineLoadKeys(TE_KEYS);blzLoad();const crew=teCrew(),L=teOpen(crew),t0=performance.now();
+function startTownEnd(){markReach('3','end');save.ckpt={stage:3,wave:'end'};persist();blzLoad();const crew=teCrew(),L=teOpen(crew),t0=performance.now();cineLoad(L);setTimeout(()=>cineLoad([TE.t8].concat(teEnd(true,crew),teEnd(false,crew))),3000);
   const go=()=>{const ok=L.slice(0,2).every(s=>CI[s.bg]&&CI[s.bg].complete&&CI[s.bg].naturalWidth);if(ok||performance.now()-t0>6000)startIntro(()=>blazeStart(crew),L);else setTimeout(go,100);};go();}
 function townEndFinish(won,crew){
   if(won){save.blaze='joined';story('minigame',{id:'blaze_burn',won:true});}
