@@ -714,7 +714,7 @@ function startWave3(w){
   state='play';ui();
 }
 function spawnPace3(){if(R.wave===3){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.22,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(R.wave===1?1.7:1.3)*(.65+Math.random()*.7);}
-function waveClear3(){SND.waveClear();healRecovery();save.gold+=80+R.wave*40;persist();
+function waveClear3(){if(R.ending)return;if(R.wave>=S3_WAVES)R.ending=1;SND.waveClear();healRecovery();save.gold+=80+R.wave*40;persist();
   if(R.wave>=S3_WAVES){const n=civsAlive().length;save.cleared=Math.max(save.cleared||0,3);save.townSaved=n;legacyStage(3);story('survivors_saved',{saved:n,of:CIV_N});legacyEnd('cleared_stage_3');save.gold+=600;persist();startTownEnd();return;}
   state='inter';ui();}
 
