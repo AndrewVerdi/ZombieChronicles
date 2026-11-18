@@ -1420,7 +1420,7 @@ function kill(e,own){addKill(own,e.type);supCharge(own,1/SUP_KILLS[own]);
   if(e.type==='momma'&&R.forest){R.spawnLeft=0;R.queue=[];R.claws=[];R.dag=[];R.swaves=[];if(R.hstun)R.hstun={};SND.explosion(.8);R.shake=.6;
     for(const o of R.en)if(o!==e&&!o.dead){o.dead=1;burst(o.x,o.z,o.r,o.col,8);if(META[o.type])R.dead.push({type:o.type,x:o.x,z:o.z,r:o.r,t:0});}
     R.banner={txt:'MOMMA IS DEAD',t:2.6,col:'#b6f23a'};}
-  save.gold+=Math.round(e.gold*10);SND.die(e.type,e.x/600);
+  const hm=HORDE()&&e.type!=='boss'&&e.type!=='momma'?.5:1;save.gold+=Math.round(e.gold*10);SND.die(e.type,e.x/600);
   if(R.jail)hitJail(R.jail.max*.035);
   if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
   /* XP: the killer gets it all, everyone else in the squad gets a 20% share */
