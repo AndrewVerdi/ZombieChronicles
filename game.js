@@ -1058,7 +1058,7 @@ function blzLoad(){if(!BLZIMG.src)BLZIMG.src="assets/blz.webp?v=f49993378e";}
 const BZ_REACH=120,BZ_ZR=900,BZ_RANGE=1350;
 function blazeStart(crew){blzLoad();state='blaze';camX=0;SX=0;
   R.en=[];R.bu=[];R.pa=[];R.dead=[];R.tx=[];R.cr=[];R.bolts=[];R.slashes=[];R.banner=null;R.civHide=1;
-  const N=HORDE()?70:45;R.blz={ph:'ign',crew,fill:0,left:6,tapT:0,t:0,z:[],left2:N,aim:0,fire:false,dn:false,endT:0,lit:0};
+  const N=HORDE()?80:52;R.blz={ph:'ign',crew,fill:0,left:6,tapT:0,t:0,z:[],left2:N,aim:0,fire:false,dn:false,endT:0,lit:0};
   for(let i=0;i<14;i++)bzSpawn(540+Math.random()*420);
   ui();last=performance.now();}
 function bzSpawn(z){const B=R.blz,fast=Math.random()<.18;B.left2--;const x0=(Math.random()*2-1)*560;B.z.push({x0,type:fast?'runner':'grunt',r:fast?53:64,x:x0,z:z||700+Math.random()*330,spd:fast?130+Math.random()*30:70+Math.random()*35,wob:Math.random()*6,hp:1,max:1,heat:0,burn:-1});}
@@ -1069,12 +1069,12 @@ function blazeUpdate(dt){const B=R.blz;if(!B)return;B.t+=dt;t+=dt;
   if(B.ph==='lit'){B.lit+=dt;if(B.lit>.9){B.ph='cut';startIntro(()=>{state='blaze';B.ph='sweep';B.t=0;ui();last=performance.now();},[TE.t8]);}return;}
   if(B.ph==='end'){B.endT+=dt;for(const z of B.z)if(z.burn>=0)z.burn+=dt;if(B.endT>1.6){B.ph='done';townEndFinish(B.won,B.crew);}return;}
   if(B.ph!=='sweep')return;
-  if(B.left2>0&&Math.random()<dt*(HORDE()?3.8:2.7))bzSpawn();
+  if(B.left2>0&&Math.random()<dt*(HORDE()?4.3:3.1))bzSpawn();
   const A=B.aim;if(B.fire&&Math.random()<dt*40){const zz=200+Math.random()*900;R.pa.push({x:A*zz/BZ_ZR+(Math.random()-.5)*80,z:zz,h:20+Math.random()*60,vx:(Math.random()-.5)*40,vz:0,vh:60+Math.random()*90,t:.5,col:Math.random()<.5?'#ffb347':'#ff6a2b'});}
   for(const z of B.z){
     if(z.burn>=0){z.burn+=dt;if(z.burn<1.1)z.z-=z.spd*.18*dt;if(Math.random()<dt*10&&z.burn<1.6)R.pa.push({x:z.x+(Math.random()-.5)*30,z:z.z,h:30+Math.random()*80,vx:0,vz:0,vh:90,t:.45,col:Math.random()<.5?'#ffb347':'#ff6a2b'});continue;}
     z.z-=z.spd*dt;z.x=z.x0*Math.min(1,z.z/BZ_ZR);
-    if(B.fire&&z.z<BZ_RANGE){const cx=A*z.z/BZ_ZR,w=75+z.z*.06;if(Math.abs(z.x-cx)<w){z.heat+=dt;if(z.heat>.22){z.burn=0;SND.groan((z.x/600)||0,.25);}}}
+    if(B.fire&&z.z<BZ_RANGE){const cx=A*z.z/BZ_ZR,w=75+z.z*.06;if(Math.abs(z.x-cx)<w){z.heat+=dt;if(z.heat>.26){z.burn=0;SND.groan((z.x/600)||0,.25);}}}
     if(z.z<BZ_REACH&&z.burn<0){blazeEnd(false);return;}}
   B.z=B.z.filter(z=>!(z.burn>3.4));
   if(B.left2<=0&&!B.z.some(z=>z.burn<0)){B.ph='end';B.won=true;SND.levelUp();}}
