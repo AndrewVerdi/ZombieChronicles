@@ -442,8 +442,9 @@ function drawJeep(j){
 /* starting a stage directly: heroes the story has already given you join if they're missing (not fallen) */
 function ensureHero(id){if(save.heroes[id]||save.fallen.includes(id))return;if(save.away&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];save.heroes[id].hp=null;if(save.active.length<MAX_ACTIVE)save.active.push(id);}else addHero(id);persist();}
 /* keep only the heroes the story has given you at this point; the rest wait (levels kept) until they join */
+function stageRevive(){if(HORDE()||!save.downed)return;for(const id of Object.keys(save.downed)){const d=save.downed[id];if(save.heroes[id])continue;save.heroes[id]={lv:d.lv,xp:d.xp};save.fallen=save.fallen.filter(h=>h!==id);if(save.active.length<MAX_ACTIVE)save.active.push(id);story('hero_revived',{hero:id,how:'stage_start'});setHp(id,maxHp(id));}save.downed={};persist();}
 function storyParty(allowed){for(const id of Object.keys(save.heroes))if(!allowed.includes(id))stashHero(id);}
-function startStage2(){ensureHero('bruno');storyParty(['bruno']);setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
+function startStage2(){stageRevive();ensureHero('bruno');storyParty(['bruno']);setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   R={stage:2,wave:5,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:{txt:'STAGE 2: THE ESCAPE',t:2.6,col:'#ffc53d'},vx:0,prevSX:SX,dead:[],
     queue:[],kills:0,spawnLeft:99999,spawnTotal:99999,spawnT:2.2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
@@ -695,7 +696,7 @@ function drawCiv(c){if(townReady){const[sx,sy,k]=P(c.x,c.z);ctx.fillStyle='rgba(
   const sc=k*CHAR_H*.86/r[3];eDrawA(fr,sx,sy,sc,c.side>0);
   if(c.flash>0){ctx.globalCompositeOperation='lighter';eDrawA(fr,sx,sy,sc,c.side>0,.6);ctx.globalCompositeOperation='source-over';}
 }
-function startStage3(){ensureHero('bruno');ensureHero('rook');storyParty(['bruno','rook']);townLoad();
+function startStage3(){stageRevive();ensureHero('bruno');ensureHero('rook');storyParty(['bruno','rook']);townLoad();
   for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   roadScroll=0;
   R={stage:3,wave:1,wall:0,wallMax:1,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[],civ:mkCivs(),civLost:0,
@@ -712,8 +713,8 @@ function startWave3(w){
   state='play';ui();
 }
 function spawnPace3(){if(R.wave===3){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.22,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(R.wave===1?1.7:1.3)*(.65+Math.random()*.7);}
-function waveClear3(){SND.waveClear();healRecovery();save.gold+=8+R.wave*4;persist();
-  if(R.wave>=S3_WAVES){const n=civsAlive().length;save.cleared=Math.max(save.cleared||0,3);save.townSaved=n;legacyStage(3);story('survivors_saved',{saved:n,of:CIV_N});legacyEnd('cleared_stage_3');save.gold+=60;persist();startTownEnd();return;}
+function waveClear3(){SND.waveClear();healRecovery();save.gold+=80+R.wave*40;persist();
+  if(R.wave>=S3_WAVES){const n=civsAlive().length;save.cleared=Math.max(save.cleared||0,3);save.townSaved=n;legacyStage(3);story('survivors_saved',{saved:n,of:CIV_N});legacyEnd('cleared_stage_3');save.gold+=600;persist();startTownEnd();return;}
   state='inter';ui();}
 
 /* ---------- STAGE 3B: THE FOREST (backroad). Survivors vanish, Hex ambush, Screechers, Momma ---------- */
@@ -840,7 +841,7 @@ function mommaFrame(e){const M=META.momma;if(e.act){const A=M[e.act],q=Math.min(
 /* on the backroad Bruno drives off to the lab: kept aside, not in the squad */
 function brunoLeaves(){if(!save.heroes.bruno)return;save.away=save.away||{};save.away.bruno=save.heroes.bruno;delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');persist();}
 function startForest(){
-  ensureHero('rook');if(save.route==='backroad')brunoLeaves();storyParty(['rook']);
+  stageRevive();ensureHero('rook');if(save.route==='backroad')brunoLeaves();storyParty(['rook']);
   forestLoad();for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
   roadScroll=0;
   const civ=forestCivs(),ord=[5].concat([0,1,2,3,4,6,7,8,9].sort(()=>Math.random()-.5));
@@ -864,8 +865,8 @@ function startWaveF(w){
 }
 function spawnPaceF(){const w=R.wave;if(w===2){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.24,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(w===1?.8:w===3?.75:2.6)*(.65+Math.random()*.7);}
 function packF(){const w=R.wave;return w===2?1+Math.floor(Math.random()*2.6):w===3&&Math.random()<.35?2:1;}
-function waveClearF(){SND.waveClear();healRecovery();save.gold+=8+R.wave*4;persist();
-  if(R.wave>=F_WAVES){save.cleared=Math.max(save.cleared||0,3);save.forestDone=1;legacyStage(3);story('stage_clear_forest',{hex:!!save.heroes.hex});legacyEnd('cleared_stage_3');save.gold+=60;delete save.ckpt;persist();state='win3f';ui();return;}
+function waveClearF(){SND.waveClear();healRecovery();save.gold+=80+R.wave*40;persist();
+  if(R.wave>=F_WAVES){save.cleared=Math.max(save.cleared||0,3);save.forestDone=1;legacyStage(3);story('stage_clear_forest',{hex:!!save.heroes.hex});legacyEnd('cleared_stage_3');save.gold+=600;delete save.ckpt;persist();state='win3f';ui();return;}
   state='inter';ui();}
 function forestNext(){const w=R.wave+1;startForestCut(w-1,()=>{startWaveF(w);},true);}
 
@@ -1001,7 +1002,7 @@ function startTownEnd(){save.ckpt={stage:3,wave:'end'};persist();cineLoadKeys(TE
 function townEndFinish(won,crew){
   if(won){save.blaze='joined';story('minigame',{id:'blaze_burn',won:true});}
   else{save.blaze='lost';story('minigame',{id:'blaze_burn',won:false});
-    if(crew.bruno&&save.heroes.bruno){if(!HORDE()){save.downed=save.downed||{};save.downed.bruno={lv:save.heroes.bruno.lv,xp:save.heroes.bruno.xp};}
+    if(crew.bruno&&save.heroes.bruno){
       save.blazeBruno=1;story(HORDE()?'hero_died':'hero_down',{hero:'bruno',how:'overrun_with_blaze'});delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');if(!save.fallen.includes('bruno'))save.fallen.push('bruno');}}
   persist();
   startIntro(()=>{delete save.ckpt;persist();R.blz=null;state='win3';ui();},teEnd(won,crew));}
@@ -1062,6 +1063,8 @@ function drawBlaze(){const B=R.blz;if(!B)return;
   bzDraw(fr,vx,vy,vmH,[.5,1],1,rot);
   // HUD
   ctx.textAlign='center';
+  if(B.ph==='ign'){const pu=.5+.5*Math.sin(B.t*10),sz=26+pu*8+(B.tapT>0?6:0);ctx.save();ctx.font=sz+'px Bungee, Impact, sans-serif';ctx.lineWidth=5;ctx.strokeStyle='#0d1016';ctx.fillStyle=B.tapT>0?'#ffffff':'#ffc53d';ctx.globalAlpha=.55+.45*pu;const ty=WH-vmH*.62;ctx.strokeText('TAP!',vx,ty);ctx.fillText('TAP!',vx,ty);ctx.restore();
+    if(B.t<2.5){ctx.globalAlpha=Math.min(1,2.5-B.t);ctx.fillStyle='#efe6dc';ctx.font='12px Bungee, Impact, sans-serif';ctx.fillText('TAP FAST TO LIGHT THE FLAMETHROWER',WW/2,HOR+40);ctx.globalAlpha=1;}}
   if(B.ph==='ign'||B.ph==='lit'){const w=Math.min(300,WW*.5),x0=WW/2-w/2,y0=36;ctx.fillStyle='#0d1016cc';ctx.fillRect(x0-12,y0-26,w+24,58);
     ctx.fillStyle='#ffc53d';ctx.font='15px Bungee, Impact, sans-serif';ctx.fillText(B.ph==='lit'?'LIT!':'SPARK THE IGNITER! TAP!',WW/2,y0-6);
     ctx.fillStyle='#2a1f33';ctx.fillRect(x0,y0+4,w,12);ctx.fillStyle=B.ph==='lit'?'#b6f23a':'#ff6a2b';ctx.fillRect(x0,y0+4,w*B.fill,12);
@@ -1363,7 +1366,7 @@ function buildHTML(id){const S_=st(id),p=pts(id),free=ptsFree(id),lv=lvOf(id),b=
   h+=`<div class="srowb"><div class="sname">Super ability<small>${p.sup?'Unlocked':lv>=25?'Ready to unlock':'Unlocks at level 25'}</small></div><div class="pips"><i class="${p.sup?'on':''}"></i></div>
     <button class="plus" data-act="pt" data-id="${id}" data-k="sup" ${p.sup||lv<25||!free?'disabled':''}>${p.sup?'Done':'Unlock'}</button></div></div>
     <p class="sub">${cmTxt}. Health also grows 2% every level.</p>
-    <div class="btns"><button class="btn ghost" data-act="respec" data-id="${id}" ${!ptsUsed(id)||save.gold<respecCost(id)?'disabled':''}>Reset points · ${respecCost(id)}g</button></div>`;
+    `;
   return h;}
 function drawEnemyThumbs(){
   if(!atlasReady)return;
@@ -1374,7 +1377,7 @@ function kill(e,own){addKill(own,e.type);supCharge(own,1/SUP_KILLS[own]);
   if(e.type==='momma'&&R.forest){R.spawnLeft=0;R.queue=[];R.claws=[];R.dag=[];R.swaves=[];if(R.hstun)R.hstun={};SND.explosion(.8);R.shake=.6;
     for(const o of R.en)if(o!==e&&!o.dead){o.dead=1;burst(o.x,o.z,o.r,o.col,8);if(META[o.type])R.dead.push({type:o.type,x:o.x,z:o.z,r:o.r,t:0});}
     R.banner={txt:'MOMMA IS DEAD',t:2.6,col:'#b6f23a'};}
-  const hm=HORDE()&&e.type!=='boss'&&e.type!=='momma'?.5:1;R.gc=(R.gc||0)+e.gold*hm;const gw=Math.floor(R.gc+1e-9);if(gw>0){save.gold+=gw;R.gc-=gw;}SND.die(e.type,e.x/600);
+  save.gold+=Math.round(e.gold*10);SND.die(e.type,e.x/600);
   if(R.jail)hitJail(R.jail.max*.035);
   if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
   /* XP: the killer gets it all, everyone else in the squad gets a 20% share */
@@ -1409,7 +1412,7 @@ function unlock(rw,x,z){
   burst(x,z,30,'#ffc53d',34);
   if(rw.type==='hero'){save.heroes[rw.id]={lv:1,xp:0};R.banner={txt:'NEW HERO: '+HEROES[rw.id].name.toUpperCase(),t:2.4,col:HEROES[rw.id].color};}
   else if(rw.type==='weapon'){save.weapons.push(rw.id);save.equip=rw.id;R.banner={txt:'NEW WEAPON: '+WEAPONS[rw.id].name.toUpperCase(),t:2.4,col:'#ffffff'};}
-  else{Object.keys(save.heroes).forEach(h=>giveXp(h,60+R.wave*12));save.gold+=40;R.banner={txt:'SUPPLY DROP: SQUAD XP',t:2,col:'#ffc53d'};}
+  else{Object.keys(save.heroes).forEach(h=>giveXp(h,60+R.wave*12));save.gold+=400;R.banner={txt:'SUPPLY DROP: SQUAD XP',t:2,col:'#ffc53d'};}
   persist();
 }
 
@@ -1500,7 +1503,7 @@ function update(dt){
     if(b.life>0&&R.stage===2&&R.proj)for(const q of R.proj){
       if(q.done||b.hit.has(q)||q.t/q.T>.92)continue;
       if((q.x-b.x)**2+(q.z-b.z)**2<(46+b.r)**2){b.hit.add(q);q.hp-=b.dmg;q.flash=.08;SND.hit(q.x/600);
-        if(q.hp<=0){q.done=1;q.shot=1;R.bfx=R.bfx||[];R.bfx.push({set:'pimpact',x:q.x,z:q.z,t:0});burst(q.x,q.z,q.h,'#c9a46a',14);SND.explosion(.25);save.gold+=2;const[px,py]=P(q.x,q.z,q.h+20);R.tx.push({x:px,y:py,txt:'+2g',col:'#ffc53d',t:1});}
+        if(q.hp<=0){q.done=1;q.shot=1;R.bfx=R.bfx||[];R.bfx.push({set:'pimpact',x:q.x,z:q.z,t:0});burst(q.x,q.z,q.h,'#c9a46a',14);SND.explosion(.25);save.gold+=20;const[px,py]=P(q.x,q.z,q.h+20);R.tx.push({x:px,y:py,txt:'+20',col:'#ffc53d',t:1});}
         if(--b.pierce<=0){b.life=0;break;}}}
     if(b.life>0&&!b.flame)for(const c of R.cr){
       if(c.dead||b.hit.has(c))continue;
@@ -1522,7 +1525,7 @@ function update(dt){
   R.en=R.en.filter(e=>!e.dead);R.bu=R.bu.filter(b=>b.life>0);R.cr=R.cr.filter(c=>!c.dead);
   R.pa=R.pa.filter(p=>p.t>0);R.bolts=R.bolts.filter(b=>b.life>0);R.tx=R.tx.filter(x=>x.t>0);
   if(R.over)return;
-  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);save.gold+=60;persist();startFork(()=>{save.ckpt={stage:save.route==='highway'?3:'3f',wave:1};persist();state='win2';ui();},true);return;}}
+  if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);save.gold+=600;persist();startFork(()=>{save.ckpt={stage:save.route==='highway'?3:'3f',wave:1};persist();state='win2';ui();},true);return;}}
   R.scatter=R.wall<=0?R.scatter+dt:Math.max(0,R.scatter-dt*.4);
   if(R.mflash)for(const k in R.mflash)R.mflash[k]-=dt;
   if(R.spawnLeft<=0&&!R.bossPending&&R.en.length===0&&R.cr.length===0&&!R.cinePending&&!R.cine&&!(R.proj&&R.proj.length)&&!(R.jeep&&R.jeep.phase!=='lost'&&R.jeep.phase!=='freed'))waveClear();
@@ -1739,8 +1742,8 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
-function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold+'g';}
-function waveClear(){if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healRecovery();save.gold+=5+R.wave*2;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{save.ckpt={stage:2,wave:1};persist();state='win';ui();},SHOTS2);return;}state='inter';ui();}
+function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();}
+function waveClear(){if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healRecovery();save.gold+=50+R.wave*20;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{save.ckpt={stage:2,wave:1};persist();state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){clearCkpt();SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
 function freshSave(){legacy();const LG=save.legacy;save={legacy:LG,mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
@@ -1749,15 +1752,14 @@ function rosterHTML(){
   const cc=trainCost(save.cmd);
   h+=`<div class="cards"><div class="card"><div class="badge"><canvas width="128" height="128" data-por="cmd"></canvas></div><div class="cname">You<small>${WEAPONS[save.equip].name}</small></div><div class="lv">LV ${save.cmd}</div><div class="xp"><i style="width:${save.cmd>=MAXLV?100:Math.min(100,(save.cmdXp||0)/xpNeed(save.cmd)*100)}%"></i></div>
   <div class="perks">${CMD_PERKS.map((p,i)=>`<span class="perk ${save.cmd>=PERK_LV[i]?'on':''}">Lv${PERK_LV[i]} ${p}</span>`).join('')}</div>
-  <button class="train" data-act="stat" data-id="cmd">${ptsFree('cmd')?'Stats · '+ptsFree('cmd')+' points to spend':'Stats & points'}</button>
-  <button class="train" data-act="cmd" ${save.cmd>=MAXLV||save.gold<cc?'disabled':''}>${save.cmd>=MAXLV?'Max level':'Train to Lv '+(save.cmd+1)+' · '+cc+'g'}</button></div></div>`;
+  <button class="train" data-act="stat" data-id="cmd">${ptsFree('cmd')?'Stats · '+ptsFree('cmd')+' points to spend':'Stats & points'}</button></div></div>`;
   if(save.weapons.length>1)h+='<h3>Weapons · tap to equip</h3><div class="chips">'+WEAPON_ORDER.map(w=>save.weapons.includes(w)?`<button class="chip ${save.equip===w?'on':''}" data-act="eq" data-id="${w}">${WEAPONS[w].name}</button>`:`<span class="chip locked">Locked</span>`).join('')+'</div>';
   h+=`<h3>Squad · ${save.active.length}/${MAX_ACTIVE} heroes deployed with you</h3><div class="cards">`;
   const rk=id=>save.heroes[id]?0:save.away&&save.away[id]?1:save.fallen.includes(id)?2:3;
   for(const id of HERO_ORDER.slice().sort((a,b)=>rk(a)-rk(b))){
     const H=HEROES[id],s=save.heroes[id];
     if(!s&&save.away&&save.away[id]){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>Away</small></div><div class="lv">LV ${save.away[id].lv}</div><div class="xp"></div><div class="perks"><span class="perk">${id==='bruno'?'Gone ahead to Cyber Future':'Rejoins later in the story'}</span></div></div>`;continue;}
-    if(!s&&save.fallen.includes(id)){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="fallen" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${HORDE()?'Fallen':'Down'}</small></div><div class="lv">†</div><div class="xp"></div><div class="perks"><span class="perk">${HORDE()?'Lost for good. Horde mode has no revives.':'Revive for gold to bring them back at half health.'}</span></div>${!HORDE()&&save.downed&&save.downed[id]?`<button class="train" data-act="revive" data-id="${id}" ${save.gold<reviveCost(id)?'disabled':''}>Revive · ${reviveCost(id)}g</button>`:''}<button class="train" data-act="stat" data-id="${id}">Stats</button></div>`;continue;}
+    if(!s&&save.fallen.includes(id)){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="fallen" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${HORDE()?'Fallen':'Down'}</small></div><div class="lv">†</div><div class="xp"></div><div class="perks"><span class="perk">${HORDE()?'Lost for good. Horde mode has no revives.':(save.downed&&save.downed[id]?'Back on their feet when the next stage starts.':'Lost for good.')}</span></div><button class="train" data-act="stat" data-id="${id}">Stats</button></div>`;continue;}
     if(!s){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="locked" data-por="${id}"></canvas></div><div class="cname">Unknown hero</div><div class="lv"></div><div class="xp"></div><div class="perks"><span class="perk">Joins later in the story</span></div></div>`;continue;}
     const need=xpNeed(s.lv),cost=trainCost(s.lv),mx=s.lv>=MAXLV,act=save.active.includes(id),hpf=Math.max(0,getHp(id)/maxHp(id));
     h+=`<div class="card" style="${act?'border-color:var(--hazard)':''}"><div class="badge" style="box-shadow:inset 0 0 0 2px ${H.color}"><canvas width="128" height="128" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${H.role}</small></div><div class="lv">LV ${s.lv}</div>
@@ -1765,8 +1767,7 @@ function rosterHTML(){
     <div class="xp"><i style="width:${mx?100:Math.min(100,s.xp/need*100)}%"></i></div>
     <div class="perks">${perksOf(id).map((p,i)=>`<span class="perk ${s.lv>=PERK_LV[i]?'on':''}">Lv${PERK_LV[i]} ${p}</span>`).join('')}</div>
     <button class="train" data-act="stat" data-id="${id}">${ptsFree(id)?'Stats · '+ptsFree(id)+' points to spend':'Stats & points'}</button>
-    <button class="train" data-act="${act?'bench':'deploy'}" data-id="${id}" ${!act&&save.active.length>=MAX_ACTIVE?'disabled':''}>${act?'In squad · move to reserve':save.active.length>=MAX_ACTIVE?'Reserve · squad is full':'Reserve · add to squad'}</button>
-    <button class="train" data-act="train" data-id="${id}" ${mx||save.gold<cost?'disabled':''}>${mx?'Max level':'Train to Lv '+(s.lv+1)+' · '+cost+'g'}</button></div>`;
+    <button class="train" data-act="${act?'bench':'deploy'}" data-id="${id}" ${!act&&save.active.length>=MAX_ACTIVE?'disabled':''}>${act?'In squad · move to reserve':save.active.length>=MAX_ACTIVE?'Reserve · squad is full':'Reserve · add to squad'}</button></div>`;
   }
   return h+'</div>';
 }
@@ -1814,7 +1815,7 @@ function ui(){
   if(state==='modes'){
     html=`<h2>Choose your mode</h2><div class="stripe"></div>
     <div class="card" style="grid-template-columns:1fr"><div class="cname">Normal<small>For the story</small></div>
-      <div class="perks"><span class="perk on">Fallen heroes can be revived with gold</span><span class="perk">Standard enemy numbers and damage</span></div>
+      <div class="perks"><span class="perk on">Downed heroes return when the next stage starts</span><span class="perk">Standard enemy numbers and damage</span></div>
       <button class="btn" data-act="pickmode" data-mode="normal">Play Normal</button></div>
     <div class="card" style="grid-template-columns:1fr"><div class="cname">Horde<small>No second chances</small></div>
       <div class="perks"><span class="perk" style="border-color:var(--blood);color:var(--blood)">Permadeath: fallen heroes are gone</span><span class="perk" style="border-color:var(--blood);color:var(--blood)">Enemies deal 15% more damage</span><span class="perk" style="border-color:var(--blood);color:var(--blood)">Twice as many enemies</span></div>
@@ -1830,7 +1831,7 @@ function ui(){
   }else if(state==='options'){
     html=`<h2>Options</h2><div class="stripe"></div>
     <h3>How to play</h3>
-    <ul class="how"><li>Drag left and right to move the squad behind the wall</li><li>You fire straight down the road, so line up with your target</li><li>Heroes auto-target the horde</li><li>When Bruno's jeep flips, tap it fast to pull him out before the horde wrecks it</li><li>New heroes join as the story unfolds. If one falls, they are gone for the rest of the run</li><li>Hold for 5 waves to secure the Outskirts</li><li>Spend gold between waves to train. Best played with your phone sideways</li></ul>
+    <ul class="how"><li>Drag left and right to move the squad behind the wall</li><li>You fire straight down the road, so line up with your target</li><li>Heroes auto-target the horde</li><li>When Bruno's jeep flips, tap it fast to pull him out before the horde wrecks it</li><li>New heroes join as the story unfolds. If one falls, they are gone for the rest of the run</li><li>Hold for 5 waves to secure the Outskirts</li><li>Spend stat points between waves. Best played with your phone sideways</li></ul>
     <h3>Sound</h3>
     <div class="btns"><button class="btn ghost" data-act="mus">Music: ${SND.pref.music?'On':'Off'}</button><button class="btn ghost" data-act="sfx">Sound effects: ${SND.pref.sfx?'On':'Off'}</button></div>
     <h3>Story</h3>
@@ -1862,10 +1863,10 @@ function ui(){
     <p class="sub">The squad holds until you get back, Commander. Close this tab or swipe the app away to leave.</p>
     <button class="btn ghost" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button>`;
   }else if(state==='inter'){
-    html=`<div class="row"><h2>Wave ${R.wave} held</h2><span class="big">${save.gold}g</span></div><div class="stripe"></div>${rosterHTML()}
+    html=`<div class="row"><h2>Wave ${R.wave} held</h2><span class="big"><small style="font-size:.55em;opacity:.7">SCORE </small>${save.gold.toLocaleString()}</span></div><div class="stripe"></div>${rosterHTML()}
     <div class="btns"><button class="btn" data-act="next">Next wave</button></div>`;
   }else if(state==='roster'){
-    html=`<div class="row"><h2>Squad</h2><span class="big">${save.gold}g</span></div><div class="stripe"></div>${rosterHTML()}<div class="btns"><button class="btn ghost" data-act="rosterback">Back</button></div>`;
+    html=`<div class="row"><h2>Squad</h2><span class="big"><small style="font-size:.55em;opacity:.7">SCORE </small>${save.gold.toLocaleString()}</span></div><div class="stripe"></div>${rosterHTML()}<div class="btns"><button class="btn ghost" data-act="rosterback">Back</button></div>`;
   }else if(state==='pause'){
     html=`<h2 style="margin-top:6vh">Paused</h2><div class="btns"><button class="btn" data-act="resume">Resume</button><button class="btn ghost" data-act="quit">Quit to menu</button></div>`;
   }else if(state==='over'){
@@ -1879,7 +1880,7 @@ function ui(){
     <p class="sub">The Outskirts base has fallen, but the convoy got out. The squad holds the road as the trucks head into the night.</p>
     <div class="row"><span class="sub">Squad standing</span><span class="big">${alive}</span></div>
     ${lost?`<div class="row"><span class="sub">Fallen</span><span class="big" style="color:var(--blood)">${save.fallen.map(h=>HEROES[h].name).join(', ')}</span></div>`:''}
-    <div class="row"><span class="sub">Gold earned</span><span class="big">${save.gold}g</span></div>
+    <div class="row"><span class="sub">Score</span><span class="big">${save.gold.toLocaleString()}</span></div>
     <div class="btns"><button class="btn" data-act="stage2">Continue to Stage 2</button><button class="btn ghost" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button></div>`;
   }else if(state==='stat'){
     html=statHTML(statId);
@@ -1887,7 +1888,7 @@ function ui(){
     html=`<h1 class="title">STAGE 2<span>COMPLETE</span></h1><div class="stripe"></div>
     <p class="sub">The Ward went down in the road behind them. The convoy floors it into the night, with ${['cmd',...save.active].length===1?'the Commander alone':['cmd',...save.active].length+' fighters'} on the roof of the last truck.</p>
     <div class="row"><span class="sub">Squad standing</span><span class="big">${['cmd',...save.active].length}</span></div>
-    <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
+    <div class="row"><span class="sub">Score</span><span class="big">${save.gold.toLocaleString()}</span></div>
     ${save.route?`<p class="sub">${save.route==='highway'?'The convoy stayed on the highway together.':(save.heroes.bruno?'The convoy took the backroad into the forest. Bruno went on alone toward Cyber Future.':'The convoy took the backroad into the forest.')}</p>`:''}
     <div class="btns"><button class="btn" data-act="${save.route==='highway'?'stage3':'stage3f'}">Continue to Stage 3</button><button class="btn ghost" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="stage2">Play Stage 2 again</button></div>`;
   }else if(state==='win3f'){
@@ -1895,7 +1896,7 @@ function ui(){
     html=`<h1 class="title">STAGE 3<span>COMPLETE</span></h1><div class="stripe"></div>
     <p class="sub">Momma fell, and the forest finally went quiet. ${hx?'Hex walks with the squad now, whether she likes it or not.':'Whoever moved the survivors never showed their face again.'}</p>
     <div class="row"><span class="sub">Squad standing</span><span class="big">${['cmd',...save.active].length}</span></div>
-    <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
+    <div class="row"><span class="sub">Score</span><span class="big">${save.gold.toLocaleString()}</span></div>
     <p class="sub">Stage 4 is coming soon.</p>
     <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="stage3f">Play Stage 3 again</button></div>`;
   }else if(state==='win3'){
@@ -1905,7 +1906,7 @@ function ui(){
     ${save.blaze==='joined'?'<p class="sub"><b>Blaze</b> torched the swarm and walked through the gates of Cyber Future with the squad.</p>':save.blaze==='lost'?'<p class="sub">Blaze was overrun in the street.'+(save.blazeBruno?' Bruno went in after her.':'')+'</p>':''}
     <div class="row"><span class="sub">Survivors saved</span><span class="big">${(save.townSaved||0)} / ${CIV_N}</span></div>
     <div class="row"><span class="sub">Squad standing</span><span class="big">${alive}</span></div>
-    <div class="row"><span class="sub">Gold</span><span class="big">${save.gold}g</span></div>
+    <div class="row"><span class="sub">Score</span><span class="big">${save.gold.toLocaleString()}</span></div>
     <p class="sub">Stage 4 is coming soon.</p>
     <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="stage3">Play Stage 3 again</button></div>`;
   }
@@ -1941,14 +1942,14 @@ ov.addEventListener('click',e=>{
   else if(a==='load'||a==='options'||a==='credits'||a==='bye'){state=a;ui();}
   else if(a==='reset'){if(b.dataset.armed){save={heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:0,cmd:1,active:[],fallen:[]};persist();ui();}else{b.dataset.armed='1';b.textContent='Tap again to erase everything';}}
   else if(a==='eq'){save.equip=b.dataset.id;persist();ui();}
-  else if(a==='cmd'){const c=trainCost(save.cmd);if(save.gold>=c&&save.cmd<MAXLV){save.gold-=c;save.cmd++;save.cmdXp=0;persist();ui();}}
+  
   else if(a==='stat'){statId=b.dataset.id;statBack=state;state='stat';ui();ov.scrollTop=0;}
   else if(a==='pt'){const id=b.dataset.id,k=b.dataset.k,p=pts(id);if(ptsFree(id)>0&&(k==='sup'?(!p.sup&&lvOf(id)>=25):p[k]<STAT_CAP)){const hpOld=k==='hp'?maxHp(id):0;p[k]++;if(k==='hp'&&(id==='cmd'||save.heroes[id]))setHp(id,getHp(id)+maxHp(id)-hpOld);SND.click();persist();const y=ov.scrollTop;ui();ov.scrollTop=y;}}
   else if(a==='respec'){const id=b.dataset.id,c=respecCost(id);if(save.gold>=c&&ptsUsed(id)){save.gold-=c;save.pts[id]={hp:0,dmg:0,rec:0,crit:0,sup:0};persist();const y=ov.scrollTop;ui();ov.scrollTop=y;}}
   else if(a==='statback'){state=statBack||'roster';ui();}
   else if(a==='bench'){save.active=save.active.filter(h=>h!==b.dataset.id);persist();ui();}
   else if(a==='deploy'){if(save.active.length<MAX_ACTIVE&&!save.active.includes(b.dataset.id))save.active.push(b.dataset.id);persist();ui();}
-  else if(a==='train'){const s=save.heroes[b.dataset.id],c=trainCost(s.lv);if(save.gold>=c&&s.lv<MAXLV){save.gold-=c;s.xp=0;s.lv++;persist();ui();}}
+  
 });
 document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();if(state==='play'){state='pause';ui();}}});window.addEventListener('pagehide',()=>persist());
 
