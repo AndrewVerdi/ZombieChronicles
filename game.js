@@ -291,7 +291,7 @@ let R=null,state='splash',SX=0,t=0;
 const LANE_E=300;
 function sxLimit(){return LANE_E;}
 function newRun(startWave){setTimeout(()=>cineLoad(SHOTS2),20000);storyParty(startWave>1?['bruno']:[]);
-  for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
+  for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
   R={wave:startWave,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[]};
   startWave_(startWave);
 }
@@ -442,10 +442,11 @@ function drawJeep(j){
 /* starting a stage directly: heroes the story has already given you join if they're missing (not fallen) */
 function ensureHero(id){if(save.heroes[id]||save.fallen.includes(id))return;if(save.away&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];save.heroes[id].hp=null;if(save.active.length<MAX_ACTIVE)save.active.push(id);}else addHero(id);persist();}
 /* keep only the heroes the story has given you at this point; the rest wait (levels kept) until they join */
-function stageRevive(){if(HORDE()||!save.downed)return;for(const id of Object.keys(save.downed)){const d=save.downed[id];if(save.heroes[id])continue;save.heroes[id]={lv:d.lv,xp:d.xp};save.fallen=save.fallen.filter(h=>h!==id);if(save.active.length<MAX_ACTIVE)save.active.push(id);story('hero_revived',{hero:id,how:'stage_start'});setHp(id,maxHp(id));}save.downed={};persist();}
+let REVD=[];
+function stageRevive(){if(HORDE()||!save.downed)return;for(const id of Object.keys(save.downed)){const d=save.downed[id];if(save.heroes[id])continue;save.heroes[id]={lv:d.lv,xp:d.xp};save.fallen=save.fallen.filter(h=>h!==id);if(save.active.length<MAX_ACTIVE)save.active.push(id);story('hero_revived',{hero:id,how:'stage_start'});REVD.push(id);setHp(id,maxHp(id)*.5);}save.downed={};persist();}
 function storyParty(allowed){for(const id of Object.keys(save.heroes))if(!allowed.includes(id))stashHero(id);}
 function startStage2(){stageRevive();ensureHero('bruno');storyParty(['bruno']);setTimeout(()=>cineLoad(SHOTS3),8000);setTimeout(()=>cineLoadKeys(FORK_KEYS),20000);setTimeout(townLoad,30000);
-  for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
+  for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
   R={stage:2,wave:5,wall:WALL_MAX,wallMax:WALL_MAX,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:{txt:'STAGE 2: THE ESCAPE',t:2.6,col:'#ffc53d'},vx:0,prevSX:SX,dead:[],
     queue:[],kills:0,spawnLeft:99999,spawnTotal:99999,spawnT:2.2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
   SND.alarm();spawnBoss();const b=R.en[R.en.length-1];b.z=ZFAR+60;setTimeout(checkpoint,0);
@@ -696,8 +697,8 @@ function drawCiv(c){if(townReady){const[sx,sy,k]=P(c.x,c.z);ctx.fillStyle='rgba(
   const sc=k*CHAR_H*.86/r[3];eDrawA(fr,sx,sy,sc,c.side>0);
   if(c.flash>0){ctx.globalCompositeOperation='lighter';eDrawA(fr,sx,sy,sc,c.side>0,.6);ctx.globalCompositeOperation='source-over';}
 }
-function startStage3(){stageRevive();ensureHero('bruno');ensureHero('rook');storyParty(['bruno','rook']);townLoad();
-  for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
+function startStage3(){stageRevive();setTimeout(()=>cineLoadKeys(TE_KEYS),4000);ensureHero('bruno');ensureHero('rook');storyParty(['bruno','rook']);townLoad();
+  for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
   roadScroll=0;
   R={stage:3,wave:1,wall:0,wallMax:1,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[],civ:mkCivs(),civLost:0,
     queue:[],kills:0,spawnLeft:0,spawnTotal:0,spawnT:2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
@@ -842,7 +843,7 @@ function mommaFrame(e){const M=META.momma;if(e.act){const A=M[e.act],q=Math.min(
 function brunoLeaves(){if(!save.heroes.bruno)return;save.away=save.away||{};save.away.bruno=save.heroes.bruno;delete save.heroes.bruno;save.active=save.active.filter(h=>h!=='bruno');persist();}
 function startForest(){
   stageRevive();ensureHero('rook');if(save.route==='backroad')brunoLeaves();storyParty(['rook']);
-  forestLoad();for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));
+  forestLoad();for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
   roadScroll=0;
   const civ=forestCivs(),ord=[5].concat([0,1,2,3,4,6,7,8,9].sort(()=>Math.random()-.5));
   R={stage:3,forest:1,wave:1,wall:0,wallMax:1,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[],civ,vorder:ord,
@@ -997,8 +998,8 @@ function teOpen(crew){return[TE.t1,teV(TE.t2,crew),TE.t3,TE.t4,teV(TE.t5,crew),T
 function teEnd(won,crew){const T=TE,out=won?[T.w1].concat(crew.bruno?[crew.rook?T.w2:T.w2b,T.w3]:[T.w4,T.w5]):[T.l1].concat(crew.bruno?[T.l2,T.l3]:[]).concat([crew.rook?T.l4:T.l4b]);return out.concat([T.e1,T.e2]);}
 function teCrew(){const c={bruno:save.active.includes('bruno')&&!!save.heroes.bruno,rook:save.active.includes('rook')&&!!save.heroes.rook};if(CREW_VIEW){c.bruno=CREW_VIEW.bruno;c.rook=CREW_VIEW.rook;}return c;}
 /* the real thing: opening -> igniter -> T8 -> sweep -> ending */
-function startTownEnd(){save.ckpt={stage:3,wave:'end'};persist();cineLoadKeys(TE_KEYS);blzLoad();const crew=teCrew();
-  startIntro(()=>blazeStart(crew),teOpen(crew));}
+function startTownEnd(){save.ckpt={stage:3,wave:'end'};persist();cineLoadKeys(TE_KEYS);blzLoad();const crew=teCrew(),L=teOpen(crew),t0=performance.now();
+  const go=()=>{const ok=L.slice(0,2).every(s=>CI[s.bg]&&CI[s.bg].complete&&CI[s.bg].naturalWidth);if(ok||performance.now()-t0>6000)startIntro(()=>blazeStart(crew),L);else setTimeout(go,100);};go();}
 function townEndFinish(won,crew){
   if(won){save.blaze='joined';story('minigame',{id:'blaze_burn',won:true});}
   else{save.blaze='lost';story('minigame',{id:'blaze_burn',won:false});
@@ -1007,7 +1008,7 @@ function townEndFinish(won,crew){
   persist();
   startIntro(()=>{delete save.ckpt;persist();R.blz=null;state='win3';ui();},teEnd(won,crew));}
 /* gallery: cutscenes only, the mini-game is replaced by its result */
-function townEndGallery(won,back){const crew=teCrew();cineLoadKeys(TE_KEYS);startIntro(back,teOpen(crew).concat(won?[TE.t8]:[]).concat(teEnd(won,crew)));}
+function townEndGallery(won,back){const crew=teCrew();cineLoadKeys(TE_KEYS);const t0=performance.now(),go=()=>{const i=CI.te_t1;if((i&&i.complete&&i.naturalWidth)||performance.now()-t0>6000)go2();else setTimeout(go,100);},go2=()=>startIntro(back,teOpen(crew).concat(won?[TE.t8]:[]).concat(teEnd(won,crew)));go();}
 
 /* the mini-game, played on the town street in first person */
 const BLZM={"vm0": [0, 0, 326, 434], "vm1": [328, 0, 326, 434], "vm2": [656, 0, 326, 434], "vm3": [984, 0, 326, 434], "fl0": [1312, 0, 275, 371], "fl1": [1589, 0, 280, 374], "fl2": [0, 436, 281, 374], "fl3": [283, 436, 275, 372], "bz0": [560, 436, 167, 320], "bz1": [729, 436, 163, 287], "bz2": [894, 436, 153, 299], "bz3": [1049, 436, 180, 272], "bz4": [1231, 436, 176, 235], "bz5": [1409, 436, 155, 203], "bz6": [1566, 436, 188, 211]},BLZIMG=new Image();let blzReady=false;BLZIMG.onload=()=>{blzReady=true;};
@@ -1759,7 +1760,7 @@ function rosterHTML(){
   for(const id of HERO_ORDER.slice().sort((a,b)=>rk(a)-rk(b))){
     const H=HEROES[id],s=save.heroes[id];
     if(!s&&save.away&&save.away[id]){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>Away</small></div><div class="lv">LV ${save.away[id].lv}</div><div class="xp"></div><div class="perks"><span class="perk">${id==='bruno'?'Gone ahead to Cyber Future':'Rejoins later in the story'}</span></div></div>`;continue;}
-    if(!s&&save.fallen.includes(id)){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="fallen" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${HORDE()?'Fallen':'Down'}</small></div><div class="lv">†</div><div class="xp"></div><div class="perks"><span class="perk">${HORDE()?'Lost for good. Horde mode has no revives.':(save.downed&&save.downed[id]?'Back on their feet when the next stage starts.':'Lost for good.')}</span></div><button class="train" data-act="stat" data-id="${id}">Stats</button></div>`;continue;}
+    if(!s&&save.fallen.includes(id)){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="fallen" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${HORDE()?'Fallen':'Down'}</small></div><div class="lv">†</div><div class="xp"></div><div class="perks"><span class="perk">${HORDE()?'Lost for good. Horde mode has no revives.':(save.downed&&save.downed[id]?'Back at half health when the next stage starts.':'Lost for good.')}</span></div><button class="train" data-act="stat" data-id="${id}">Stats</button></div>`;continue;}
     if(!s){h+=`<div class="card locked"><div class="badge"><canvas width="128" height="128" data-st="locked" data-por="${id}"></canvas></div><div class="cname">Unknown hero</div><div class="lv"></div><div class="xp"></div><div class="perks"><span class="perk">Joins later in the story</span></div></div>`;continue;}
     const need=xpNeed(s.lv),cost=trainCost(s.lv),mx=s.lv>=MAXLV,act=save.active.includes(id),hpf=Math.max(0,getHp(id)/maxHp(id));
     h+=`<div class="card" style="${act?'border-color:var(--hazard)':''}"><div class="badge" style="box-shadow:inset 0 0 0 2px ${H.color}"><canvas width="128" height="128" data-por="${id}"></canvas></div><div class="cname">${H.name}<small>${H.role}</small></div><div class="lv">LV ${s.lv}</div>
@@ -1815,7 +1816,7 @@ function ui(){
   if(state==='modes'){
     html=`<h2>Choose your mode</h2><div class="stripe"></div>
     <div class="card" style="grid-template-columns:1fr"><div class="cname">Normal<small>For the story</small></div>
-      <div class="perks"><span class="perk on">Downed heroes return when the next stage starts</span><span class="perk">Standard enemy numbers and damage</span></div>
+      <div class="perks"><span class="perk on">Downed heroes return at half health when the next stage starts</span><span class="perk">Standard enemy numbers and damage</span></div>
       <button class="btn" data-act="pickmode" data-mode="normal">Play Normal</button></div>
     <div class="card" style="grid-template-columns:1fr"><div class="cname">Horde<small>No second chances</small></div>
       <div class="perks"><span class="perk" style="border-color:var(--blood);color:var(--blood)">Permadeath: fallen heroes are gone</span><span class="perk" style="border-color:var(--blood);color:var(--blood)">Enemies deal 15% more damage</span><span class="perk" style="border-color:var(--blood);color:var(--blood)">Twice as many enemies</span></div>
