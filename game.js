@@ -1059,12 +1059,12 @@ const BZ_REACH=120,BZ_ZR=900,BZ_RANGE=1350;
 function blazeStart(crew){blzLoad();state='blaze';camX=0;SX=0;
   R.en=[];R.bu=[];R.pa=[];R.dead=[];R.tx=[];R.cr=[];R.bolts=[];R.slashes=[];R.banner=null;R.civHide=1;
   const N=HORDE()?80:52;R.blz={ph:'ign',crew,fill:0,left:6,tapT:0,t:0,z:[],left2:N,aim:0,fire:false,dn:false,endT:0,lit:0};
-  for(let i=0;i<14;i++)bzSpawn(540+Math.random()*420);
+  for(let i=0;i<14;i++)bzSpawn(900+Math.random()*520);
   ui();last=performance.now();}
 function bzSpawn(z){const B=R.blz,fast=Math.random()<.18;B.left2--;const x0=(Math.random()*2-1)*560;B.z.push({x0,type:fast?'runner':'grunt',r:fast?53:64,x:x0,z:z||700+Math.random()*330,spd:fast?130+Math.random()*30:70+Math.random()*35,wob:Math.random()*6,hp:1,max:1,heat:0,burn:-1});}
 function blazeUpdate(dt){const B=R.blz;if(!B)return;B.t+=dt;t+=dt;
   for(const p of R.pa){p.x+=(p.vx||0)*dt;p.z+=(p.vz||0)*dt;p.h+=(p.vh||0)*dt;p.t-=dt;}R.pa=R.pa.filter(p=>p.t>0);if(R.shake>0)R.shake-=dt;
-  if(B.ph==='ign'){B.left-=dt;B.tapT-=dt;B.fill=Math.max(0,B.fill-.05*dt);for(const z of B.z){z.z=Math.max(290+z.wob*12,z.z-z.spd*.3*dt);z.x=z.x0*Math.min(1,z.z/BZ_ZR);}
+  if(B.ph==='ign'){B.left-=dt;B.tapT-=dt;B.fill=Math.max(0,B.fill-.05*dt);for(const z of B.z){z.z=Math.max(300+z.wob*14,z.z-(z.type==='runner'?.55:.85)*z.spd*dt);z.x=z.x0*Math.min(1,z.z/BZ_ZR);}
     if(B.left<=0){blazeEnd(false);}return;}
   if(B.ph==='lit'){B.lit+=dt;if(B.lit>.9){B.ph='cut';startIntro(()=>{state='blaze';B.ph='sweep';B.t=0;ui();last=performance.now();},[TE.t8]);}return;}
   if(B.ph==='end'){B.endT+=dt;for(const z of B.z)if(z.burn>=0)z.burn+=dt;if(B.endT>1.6){B.ph='done';townEndFinish(B.won,B.crew);}return;}
