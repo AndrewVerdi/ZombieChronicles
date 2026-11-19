@@ -642,7 +642,7 @@ function drawFacadeSide(side){const BLD_SEG=R&&R.cfb?645:430;
 function drawTownWorld(dt){
   if(state==='play'&&!(R&&R.cfb))roadScroll+=dt*WALK;
   ctx.save();ctx.imageSmoothingEnabled=false;
-  if(sky3Ready){ctx.imageSmoothingEnabled=true;let sh=152,sw=sh*SKY3IMG.width/SKY3IMG.height;if(R&&R.cfb){sh=170;sw=sh*SKY3IMG.width/SKY3IMG.height;}ctx.fillStyle='#120a1a';ctx.fillRect(-20,-20,WW+40,HOR+30);const sx0=WW/2-sw/2,sy0=HOR+5-sh;ctx.drawImage(SKY3IMG,sx0,sy0,sw,sh);
+  if(sky3Ready){ctx.imageSmoothingEnabled=true;let sh=152,sw=sh*SKY3IMG.width/SKY3IMG.height;if(R&&R.cfb){sh=230;sw=sh*SKY3IMG.width/SKY3IMG.height;}ctx.fillStyle='#120a1a';ctx.fillRect(-20,-20,WW+40,HOR+30);const sx0=R&&R.cfb?WW/2-.518*sw:WW/2-sw/2,sy0=R&&R.cfb?HOR+4-.835*sh:HOR+5-sh;ctx.drawImage(SKY3IMG,sx0,sy0,sw,sh);
   if(R&&R.cfb&&!SKY4WIDE){for(const d of[-1,1]){ctx.save();ctx.translate(sx0+(d>0?sw*2:0),0);ctx.scale(-1,1);ctx.drawImage(SKY3IMG,d>0?0:0,sy0,sw,sh);ctx.restore();}const g=ctx.createLinearGradient(0,0,0,HOR+5);g.addColorStop(0,'rgba(18,10,26,0)');g.addColorStop(1,'rgba(18,10,26,.35)');ctx.fillStyle=g;ctx.fillRect(0,0,sx0,HOR+5);ctx.fillRect(sx0+sw,0,WW,HOR+5);}ctx.imageSmoothingEnabled=false;}
   else{const sh=HOR+4,sw=Math.max(WW+20,sh*SKY3.width/SKY3.height);ctx.drawImage(SKY3,WW/2-sw/2,HOR+4-sh,sw,sh);}
   if(street3Ready){const HWs=647,TL=HWs*2*STREET3.height/STREET3.width,Wt=STREET3.width,Ht=STREET3.height;ctx.fillStyle='#1a1220';ctx.fillRect(-20,HOR,WW+40,WH);
@@ -660,7 +660,7 @@ function drawTownWorld(dt){
   if(townReady)wrap(200,370).forEach((z,i)=>{const g=Math.floor((roadScroll+z)/370);if(hash3(g*13)<.35)return;items.push([z,'prop',hash3(g*7)<.5?-1:1,g]);});
   items.sort((a,b)=>b[0]-a[0]);
   for(const it of items){const[z,kind,s,i]=it;if(z>3300)continue;ctx.globalAlpha=Math.min(1,(3300-z)/900);
-    if(kind==='lamp'&&townReady){const g=Math.floor((roadScroll+z)/620),dead=hash3(g*7)<.3,ph=(t*.9+hash3(i+g)*5)%3,on=!dead&&!(ph>2.6&&ph<2.68)&&!(ph>2.75&&ph<2.8);
+    if(kind==='lamp'&&townReady){const g=Math.floor((roadScroll+z)/620),dead=hash3(g*7)<.3,ph=(t*.9+hash3(i+g)*5)%3,on=!dead&&(!!(R&&R.cfb)||(!(ph>2.6&&ph<2.68)&&!(ph>2.75&&ph<2.8)));
       const d=tSprite(on?'lampOn':'lampOff',s*560,z,300,false,s>0,ctx.globalAlpha);
       if(d&&on){const lx=d.sx-s*d.w*.36,ly=d.sy-d.h*.7,k=d.k;ctx.globalCompositeOperation='lighter';const gr=ctx.createRadialGradient(lx,ly,0,lx,ly,46*k);gr.addColorStop(0,'rgba(255,170,90,.7)');gr.addColorStop(1,'rgba(255,170,90,0)');ctx.fillStyle=gr;ctx.fillRect(lx-46*k,ly-46*k,92*k,92*k);
         const pg=ctx.createRadialGradient(lx,d.sy,0,lx,d.sy,120*k);pg.addColorStop(0,'rgba(255,150,80,.2)');pg.addColorStop(1,'rgba(255,150,80,0)');ctx.fillStyle=pg;ctx.fillRect(lx-120*k,d.sy-40*k,240*k,80*k);ctx.globalCompositeOperation='source-over';}}
