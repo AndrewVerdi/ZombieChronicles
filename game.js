@@ -279,11 +279,11 @@ function persist(){try{localStorage.setItem(KEY,JSON.stringify(save));}catch(e){
 /* checkpoint: the wave you're on, so Continue drops you back at its start */
 function checkpoint(){if(!R)return;markReach(R.forest?'3f':String(R.stage||1),R.stage===2?1:R.wave);save.ckpt={stage:R.forest?'3f':(R.stage||1),wave:R.stage===2?1:R.wave,hex:!!save.heroes.hex};persist();}
 function clearCkpt(){if(save.ckpt){delete save.ckpt;persist();}}
-const ckptLabel=c=>c.stage===2?'Stage 2 · The Escape':c.stage===3?(c.wave==='end'?'Stage 3 · The Empty Town, ending':'Stage 3 · The Empty Town, wave '+c.wave):c.stage==='3f'?'Stage 3 · The Forest, wave '+c.wave:'Stage 1 · wave '+c.wave;
+const ckptLabel=c=>c.stage===2?'Stage 2 · The Escape':c.stage===3?(c.wave==='end'?'Stage 3 · The Empty Town, ending':'Stage 3 · The Empty Town, wave '+c.wave):c.stage==='3f'?(c.wave==='end'?'Stage 3 · The Forest, ending':'Stage 3 · The Forest, wave '+c.wave):'Stage 1 · wave '+c.wave;
 function resumeCkpt(){const c=save.ckpt;if(!c)return;if(!legacy().current)legacyStart(save.mode||'normal');SX=0;camX=0;
   if(c.stage===2)startStage2();
   else if(c.stage===3){startStage3();if(c.wave==='end'){R.wave=3;startTownEnd();}else if(c.wave>1)startWave3(c.wave);}
-  else if(c.stage==='3f'){startForest();if(c.wave>1){if(c.hex&&save.away&&save.away.hex){save.heroes.hex=save.away.hex;delete save.away.hex;if(save.active.length<MAX_ACTIVE)save.active.push('hex');}startWaveF(c.wave);}}
+  else if(c.stage==='3f'){startForest();if(c.wave==='end'){if(c.hex&&save.away&&save.away.hex){save.heroes.hex=save.away.hex;delete save.away.hex;if(save.active.length<MAX_ACTIVE)save.active.push('hex');}R.wave=4;startForestEnd();}else if(c.wave>1){if(c.hex&&save.away&&save.away.hex){save.heroes.hex=save.away.hex;delete save.away.hex;if(save.active.length<MAX_ACTIVE)save.active.push('hex');}startWaveF(c.wave);}}
   else newRun(c.wave);}
 
 /* ---------- RUN STATE ---------- */
@@ -857,7 +857,7 @@ function startWaveF(w){
   if(w===1){add('grunt',40);add('runner',20);add('armored',5);shuf(q);}
   else if(w===2)add('grunt',150);
   else if(w===3){add('screecher',10);add('grunt',50);add('runner',20);add('armored',10);shuf(q);}
-  else{add('screecher',20);spawnMomma();}
+  else{add('screecher',20);spawnMomma();setTimeout(()=>{if(R&&R.forest)cineLoad(feOpen(feCrew()).slice(0,2));},5000);}
   if(w>=2&&R.civ&&R.civ.some(c=>c.safe)){for(const c of R.civ){c.hp=c.max=30;c.safe=0;c.van=null;c.x=c.ox;c.z=c.oz;}}
   R.queue=q;R.kills=0;R.spawnLeft=q.length;R.spawnTotal=q.length;R.spawnT=w===4?3:2.4;R.say=null;
   R.banner=w===2?{txt:'THEY ARE EVERYWHERE',t:2.6,col:'#ff4d5e'}:w===4?null:{txt:(w===1?'STAGE 3: THE FOREST · ':'')+'WAVE '+w,t:2.4,col:'#ffc53d'};
@@ -867,7 +867,7 @@ function startWaveF(w){
 function spawnPaceF(){const w=R.wave;if(w===2){const p=1-R.spawnLeft/R.spawnTotal;return lerp(.5,.24,Math.min(1,p*1.8))*(.75+Math.random()*.5);}return(w===1?.8:w===3?.75:2.6)*(.65+Math.random()*.7);}
 function packF(){const w=R.wave;return w===2?1+Math.floor(Math.random()*2.6):w===3&&Math.random()<.35?2:1;}
 function waveClearF(){SND.waveClear();healRecovery();save.gold+=80+R.wave*40;persist();
-  if(R.wave>=F_WAVES){save.cleared=Math.max(save.cleared||0,3);save.forestDone=1;legacyStage(3);story('stage_clear_forest',{hex:!!save.heroes.hex});legacyEnd('cleared_stage_3');save.gold+=600;delete save.ckpt;persist();state='win3f';ui();return;}
+  if(R.wave>=F_WAVES){if(R.ending)return;R.ending=1;persist();startForestEnd();return;}
   state='inter';ui();}
 function forestNext(){const w=R.wave+1;startForestCut(w-1,()=>{startWaveF(w);},true);}
 
@@ -923,15 +923,18 @@ function fcutList(n,crew){const rook=crew.rook,C=FC;
   if(n===1)return rook?[C.f1,C.f2,C.f3,C.f4,C.f5]:[C.rv1,C.f3,C.f4,C.f5];
   if(n===2)return crew.hex&&rook?[C.s1,C.s2]:[crew.hex?C.s2:C.s2v];
   return[C.m1];}
-function miniShow(){if(clayer.querySelector('.cmini'))return;cine.mg={fill:0,left:6};const d=document.createElement('div');d.className='cmini';
-  d.innerHTML='<div class="mlab">BREAK HER HOLD!</div><div class="mbar"><i></i></div><div class="mtime">6.0</div><button type="button">TAP!</button>';
-  const tap=e=>{e.preventDefault();e.stopPropagation();if(!cine||!cine.mg||cine.mg.res)return;cine.mg.fill=Math.min(1,cine.mg.fill+1/28);SND.click();if(cine.mg.fill>=1){miniEnd(true);return;}const b=d.querySelector('button');b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit');};
+function miniShow(){if(clayer.querySelector('.cmini'))return;const cf=typeof cine.list[cine.i].mini==='object'?cine.list[cine.i].mini:{};cine.mg={fill:0,left:cf.time||6,cf,shT:1.2,shI:0};const d=document.createElement('div');d.className='cmini';
+  d.innerHTML='<div class="mlab">'+(cf.label||'BREAK HER HOLD!')+'</div><div class="mbar"><i></i></div><div class="mtime">'+(cf.time||6).toFixed(1)+'</div><button type="button">TAP!</button>';
+  const tap=e=>{e.preventDefault();e.stopPropagation();if(!cine||!cine.mg||cine.mg.res)return;cine.mg.fill=Math.min(1,cine.mg.fill+1/(cf.taps||28));SND.click();if(cine.mg.fill>=1){miniEnd(true);return;}const b=d.querySelector('button');b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit');};
   d.addEventListener('pointerdown',tap);clayer.appendChild(d);}
-function miniTick(dt){const g=cine.mg;if(!g||g.res)return;if(g.fill>=1){miniEnd(true);return;}g.left-=dt;g.fill=Math.max(0,g.fill-.04*dt);const d=clayer.querySelector('.cmini');
+function miniTick(dt){const g=cine.mg;if(!g||g.res)return;if(g.fill>=1){miniEnd(true);return;}g.left-=dt;g.fill=Math.max(0,g.fill-(g.cf.decay||.04)*dt);if(g.cf.shouts){g.shT-=dt;if(g.shT<=0){g.shT=2.1;feShout(g.shI++);}}const d=clayer.querySelector('.cmini');
   if(d){d.querySelector('.mbar i').style.width=(g.fill*100)+'%';d.querySelector('.mtime').textContent=Math.max(0,g.left).toFixed(1);}
   if(g.fill>=1)miniEnd(true);else if(g.left<=0)miniEnd(false);}
+function feShout(i){const L=[['Commander','Hex, any time now!'],['Rook',"I'm running dry here!"],['Commander',"They're on top of us!"],['Rook','Whatever you are doing, do it faster!'],['Commander','HEX!']].filter(x=>x[0]!=='Rook'||(FECREW&&FECREW.rook));const x=L[i%L.length];let d=clayer.querySelector('.cshout');if(!d){d=document.createElement('div');d.className='cshout';d.style.cssText='position:absolute;left:50%;top:16%;transform:translateX(-50%) rotate(-2deg);background:#0d1016e6;border:2px solid #ffc53d;color:#efe6dc;font:15px Bungee,Impact,sans-serif;padding:6px 12px;pointer-events:none;white-space:nowrap;z-index:5';clayer.appendChild(d);}d.innerHTML='<span style="color:#ffc53d">'+x[0].toUpperCase()+':</span> '+x[1];d.style.top=(3+(i%3)*4)+'%';d.style.left=(i%2?62:38)+'%';SND.shot(x[0]==='Rook'?'pistol':'rifle',0);}
 function miniEnd(won){const g=cine.mg;g.res=won?'won':'lost';cineLastMini=g.res;cine0pick='mini';const d=clayer.querySelector('.cmini');if(d)d.remove();
   if(won)SND.levelUp();else SND.explosion(.3);
+  const sh=clayer.querySelector('.cshout');if(sh)sh.remove();
+  if(g.cf&&g.cf.branch){cine.list=cine.list.slice(0,cine.i+1).concat(g.cf.branch(won));cine.tt=Math.max(cine.tt,cine.list[cine.i].d-.7);return;}
   const crew=cine.crew,C=FC,br=won?[C.w1,C.w2].concat(crew.rook?[C.w3,C.f6]:[C.rv3]):[C.l1,crew.rook?C.l2:C.rv2];
   cine.list=cine.list.slice(0,cine.i+1).concat(br);cine.tt=Math.max(cine.tt,cine.list[cine.i].d-.7);}
 function startForestCut(n,done,record){cineLoadKeys(FCUT_KEYS);const crew={rook:!!save.heroes.rook&&save.active.includes('rook'),hex:!!save.heroes.hex&&save.active.includes('hex')};
@@ -950,7 +953,7 @@ const BOARDS=[
  {k:'1',name:'Stage 1 · The Outskirts',waves:[1,2,3,4,5],heroes:w=>w>1?['bruno']:[]},
  {k:'2',name:'Stage 2 · The Escape',waves:[1],heroes:()=>['bruno']},
  {k:'3',name:'Stage 3 · The Empty Town',waves:[1,2,3,'end'],heroes:()=>['bruno','rook']},
- {k:'3f',name:'Stage 3 · The Forest',waves:[1,2,3,4],heroes:w=>w>1?['rook','hex']:['rook']}];
+ {k:'3f',name:'Stage 3 · The Forest',waves:[1,2,3,4,'end'],heroes:w=>w==='end'||w>1?['rook','hex']:['rook']}];
 let LSEL=null,LOADSEL=null;
 function reachOf(k){const R0=(save.reach&&save.reach[k])||0,c=save.cleared||0;
   if(k==='1')return Math.max(R0,c>=1?5:Math.min(5,(save.best||0)+1),1);
@@ -958,8 +961,8 @@ function reachOf(k){const R0=(save.reach&&save.reach[k])||0,c=save.cleared||0;
   if(k==='3')return Math.max(R0,c>=2&&save.route==='highway'?1:0,c>=3&&save.route==='highway'?3:0);
   if(k==='3f')return Math.max(R0,c>=2&&save.route==='backroad'?1:0,save.forestDone?4:0);return 0;}
 const reachEnd=()=>!!(save.reach&&save.reach['3e'])||((save.cleared||0)>=3&&save.route==='highway');
-const waveOpen=(k,w)=>w==='end'?reachEnd():reachOf(k)>=w;
-function markReach(k,w){save.reach=save.reach||{};if(w==='end'){save.reach['3e']=1;return;}save.reach[k]=Math.max(save.reach[k]||0,w);}
+const waveOpen=(k,w)=>w==='end'?(k==='3f'?!!(save.reach&&save.reach['3fe'])||!!save.forestDone:reachEnd()):reachOf(k)>=w;
+function markReach(k,w){save.reach=save.reach||{};if(w==='end'){save.reach[k==='3f'?'3fe':'3e']=1;return;}save.reach[k]=Math.max(save.reach[k]||0,w);}
 function loadHTML(){const BUILD=(window.__VER||'artifact').slice(0,6);if(!LSEL){const b=BOARDS.find(b=>reachOf(b.k)>0)||BOARDS[0];LSEL={k:b.k,w:1,h:{bruno:1,rook:1,hex:1}};}
   let h=`<h2>Load</h2><div class="stripe"></div><p class="sub">Testing tool. Start any board you've reached, from any wave, with any squad that belongs there. Mode: ${HORDE()?'Horde':'Normal'}. Build ${BUILD}.</p>`;
   for(const b of BOARDS){const open=reachOf(b.k)>0,sel=LSEL.k===b.k;
@@ -981,7 +984,7 @@ function loadGo(){const b=BOARDS.find(b=>b.k===LSEL.k),w=LSEL.w,pick=b.heroes(w)
   LOADSEL=pick;SX=0;camX=0;delete save.ckpt;persist();
   if(b.k==='1')newRun(w);else if(b.k==='2')startStage2();
   else if(b.k==='3'){startStage3();if(w==='end'){R.wave=3;startTownEnd();}else if(w>1)startWave3(w);}
-  else{startForest();if(w>1)startWaveF(w);}
+  else{startForest();if(w==='end'){R.wave=4;startForestEnd();}else if(w>1)startWaveF(w);}
   for(const id of pick)if(!save.heroes[id]&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];}
   save.active=pick.filter(id=>save.heroes[id]).slice(0,MAX_ACTIVE);for(const id of['cmd',...save.active])setHp(id,maxHp(id));
   LOADSEL=null;persist();}
@@ -1053,6 +1056,69 @@ function townEndFinish(won,crew){
 function townEndGallery(won,back){const crew=teCrew();cineLoadKeys(TE_KEYS);const t0=performance.now(),go=()=>{const i=CI.te_t1;if((i&&i.complete&&i.naturalWidth)||performance.now()-t0>6000)go2();else setTimeout(go,100);},go2=()=>startIntro(back,teOpen(crew).concat(won?[TE.t8]:[]).concat(teEnd(won,crew)));go();}
 
 /* the mini-game, played on the town street in first person */
+
+/* ---------- STAGE 3B ENDING: Cyber Future burning, Hex's teleport ---------- */
+const FE={
+ g1:{bg:'fe_g1',d:6,vo:"Momma fell. Beyond the last of the pines stood Cyber Future.",cam:p=>({cx:.55,cy:lerp(.55,.45,ease(p)),z:lerp(1.02,1.14,ease(p))}),
+  fx(c,tt){c.embers(tt);glowF(c,tt,.62,.4,.12,.25,'255,140,60');}},
+ g2:{bg:'fe_g2',d:6,vo:"The dead had found it first. They clawed at the walls. The walls held.",cam:p=>({cx:lerp(.4,.6,ease(p)),cy:.55,z:1.12}),snd:()=>{SND.groan(-.4,.6);setTimeout(()=>SND.groan(.4,.5),1400);},
+  fx(c,tt){c.embers(tt);if((tt%1.1)<.08)c.shake=1.5;}},
+ g3:{bg:'fe_g3',d:6,vo:"But the fire wasn't outside. It was coming from within.",cam:p=>({cx:.6,cy:lerp(.62,.4,ease(p)),z:lerp(1.04,1.16,ease(p))}),snd:()=>{setTimeout(()=>SND.explosion(.35),2500);},
+  fx(c,tt){glowF(c,tt,.6,.4,.16,.45,'255,140,50');c.embers(tt*1.4);if(tt>2.5&&tt<2.9)c.shake=4;}},
+ g4:{bg:'fe_g4',d:5,vo:"The marksmen at the gates were gone. Whatever was happening inside had pulled them in.",cam:p=>({cx:.5,cy:.5,z:lerp(1.14,1.04,ease(p))}),snd:()=>SND.buzz(),
+  fx(c,tt){c.embers(tt*.6);}},
+ g5:{bg:'fe_g5',d:6,vo:"Screams from inside the walls. Then roars. More than one.",cam:p=>({cx:.5,cy:.45,z:lerp(1.02,1.14,ease(p))}),snd:()=>{SND.groan(0,.9);setTimeout(()=>SND.thunder(),2600);setTimeout(()=>SND.groan(.5,1),3400);},
+  fx(c,tt){glowF(c,tt,.5,.45,.2,.25,'255,150,60');if(tt>2.6&&tt<3.3)c.shake=5;}},
+ g6:{bg:'fe_g6',d:6,vo:"Commander: \"Wait! Stay with us! Don't—\"",cam:p=>({cx:lerp(.45,.55,ease(p)),cy:.5,z:lerp(1.12,1.04,ease(p))}),
+  fx(c,tt){c.embers(tt);}},
+ g7:{bg:'fe_g7',d:5,vo:"The screams drew the horde. Half of it peeled away after them.",cam:p=>({cx:lerp(.6,.4,ease(p)),cy:.55,z:1.1}),snd:()=>SND.groan(.3,.8),
+  fx(c,tt){c.shake=1;c.embers(tt);}},
+ g8:{bg:'fe_g8a',d:5,vo:"The rest of them turned toward the squad.",cam:p=>({cx:.5,cy:lerp(.42,.5,ease(p)),z:lerp(1.16,1.04,ease(p))}),snd:()=>{SND.groan(-.3,.7);[1.6,2.2,2.9,3.5].forEach((t,i)=>setTimeout(()=>SND.shot(i%2?'pistol':'rifle',i%2?-.3:.3),t*1000));},
+  fx(c,tt){c.embers(tt*.7);}},
+ h1:{bg:'fe_h1',d:6,vo:"Commander: \"Hex! Get us inside!\" Hex: \"Give me a minute... Momma took everything I had.\"",cam:p=>({cx:.55,cy:lerp(.48,.42,ease(p)),z:lerp(1.04,1.16,ease(p))}),snd:()=>SND.groan(-.6,.6),
+  fx(c,tt){const on=(tt%1.4)<.5;c.glow(.3,.93,.06,on?.7:.15,'220,90,255');}},
+ h2:{bg:'fe_h2',bg2:'fe_h3',mix:()=>cine&&cine.mg?cine.mg.fill:1,d:4.2,choiceAt:.8,
+  mini:{label:'CHARGE THE SPELL!',time:10,taps:32,decay:.03,shouts:1,branch:feBranch},
+  vo:"Hex reached for whatever power she had left.",cam:p=>({cx:.5,cy:.41,z:1}),snd:()=>SND.hiss(),
+  fx(c,tt){const f=cine&&cine.mg?cine.mg.fill:1;c.glow(.5,.88,.25,.15+.5*f,'220,90,255');c.glow(.27,.33,.04,.3+.6*f,'240,150,255');c.glow(.73,.33,.04,.3+.6*f,'240,150,255');if(f>.6)c.shake=f*2;}},
+ w1:{bg:'fe_w1a',d:4,vo:"Hex: \"Hold on to something.\"",cam:p=>({cx:.5,cy:.48,z:lerp(1.04,1.18,ease(p))}),snd:()=>{SND.whoosh();setTimeout(()=>SND.explosion(.4),2600);},
+  fx(c,tt){c.glow(.5,.5,.35,.3+.2*Math.sin(tt*9),'230,120,255');if(tt>2.6){c.flash(Math.min(1,(tt-2.6)*1.6));}c.shake=1.5;}},
+ w1n:{bg:'fe_w1c',d:4,vo:"The runes flared. The world went white.",cam:p=>({cx:.5,cy:.48,z:lerp(1.04,1.18,ease(p))}),snd:()=>{SND.whoosh();setTimeout(()=>SND.explosion(.4),2600);},
+  fx(c,tt){c.glow(.5,.5,.35,.3+.2*Math.sin(tt*9),'230,120,255');if(tt>2.6){c.flash(Math.min(1,(tt-2.6)*1.6));}c.shake=1.5;}},
+ w2:{bg:'fe_w2a',d:7,vo:"They landed inside the walls. Inside, it was worse.",cam:p=>({cx:.5,cy:lerp(.55,.42,ease(p)),z:lerp(1.02,1.14,ease(p))}),snd:()=>{SND.thunder();setTimeout(()=>SND.groan(0,1),1800);},
+  fx(c,tt){if(tt<.5)c.flash(1-tt*2);glowF(c,tt,.55,.3,.18,.35,'255,140,50');c.embers(tt*1.3);c.glow(.5,.95,.2,.3*Math.max(0,1-tt/3),'230,120,255');if(tt>1.8&&tt<2.4)c.shake=3;}},
+ l1:{bg:'fe_l1',d:5,vo:"The runes flickered. Then went out.",cam:p=>({cx:.5,cy:.5,z:lerp(1.04,1.2,ease(p))}),snd:()=>{SND.hiss();setTimeout(()=>SND.groan(0,1),700);},
+  fx(c,tt){c.glow(.5,.75,.3,Math.max(0,.6-tt*.2),'220,90,255');if(tt>1)c.shake=2;c.dim(Math.max(0,(tt-3.8)*.7));}},
+ l2:{bg:'fe_l2a',d:6,vo:"So close to the gates. Not close enough.",cam:p=>({cx:.5,cy:.5,z:lerp(1.14,1.0,ease(p))}),snd:()=>{SND.groan(0,1);[.3,.9,1.6].forEach(t=>setTimeout(()=>SND.shot('pistol',0),t*1000));setTimeout(()=>SND.gameOver(),3800);},
+  fx(c,tt){c.glow(.15,.25,.05,.6,'220,90,255');c.shake=tt<2?2:0;c.dim(Math.max(0,(tt-3.6)*.4));}},
+ n1:{bg:'fe_n1c',d:6,vo:"Commander: \"No way in. We're out of road.\"",cam:p=>({cx:.45,cy:.5,z:lerp(1.14,1.04,ease(p))}),snd:()=>{SND.groan(-.5,.8);[.6,1.3,2,2.8].forEach((t,i)=>setTimeout(()=>SND.shot(i%2?'pistol':'rifle',0),t*1000));},
+  fx(c,tt){c.embers(tt*.6);if((tt%.7)<.07)c.shake=2;}},
+ n2:{bg:'fe_n2',d:6,vo:"In the shadows of the pines, someone was watching. She knew those faces.",cam:p=>({cx:lerp(.4,.35,ease(p)),cy:.42,z:lerp(1.04,1.18,ease(p))}),
+  fx(c,tt){c.glow(.27,.27,.05,.4+.2*Math.sin(tt*2),'230,140,255');c.glow(.35,.26,.05,.4+.2*Math.sin(tt*2+.5),'230,140,255');c.glow(.18,.68,.05,.3+.2*Math.sin(tt*3),'220,90,255');}},
+ n3:{bg:'fe_n3c',d:6,vo:"Hex (whispering): \"...I owe you that much.\"",cam:p=>({cx:.5,cy:.55,z:lerp(1.02,1.12,ease(p))}),snd:()=>SND.hiss(),
+  fx(c,tt){c.glow(.5,.78,.3,.35+.15*Math.sin(tt*6),'220,90,255');c.glow(.12,.18,.05,.5+.3*Math.sin(tt*4),'230,140,255');}},
+ n4:{bg:'fe_n4',d:5,vo:"When the light faded, so had she.",cam:p=>({cx:lerp(.4,.32,ease(p)),cy:.45,z:lerp(1.02,1.12,ease(p))}),
+  fx(c,tt){const a=Math.max(0,1-tt/4);c.glow(.26,.26,.035,.8*a,'230,140,255');c.glow(.28,.26,.035,.8*a,'230,140,255');c.dim(Math.max(0,(tt-3.5)*.5));}},
+};
+const FE_KEYS=['g1','g2','g3','g4','g5','g6','g7','g8a','g8b','g8c','g8d','h1','h2','h3','w1a','w1b','w1c','w1d','w2a','w2b','w2c','w2d','l1','l2a','l2b','n1c','n1d','n2','n3c','n3d','n4'].map(k=>'fe_'+k);
+let FECREW=null;
+const feV=(s,v)=>Object.assign({},s,{bg:s.bg.slice(0,-1)+v});
+function feCrew(){return{rook:save.active.includes('rook')&&!!save.heroes.rook,hex:save.active.includes('hex')&&!!save.heroes.hex};}
+const feL=c=>c.hex?(c.rook?'a':'b'):(c.rook?'c':'d');
+function feOpen(c){return[FE.g1,FE.g2,FE.g3,FE.g4,FE.g5,FE.g6,FE.g7,feV(FE.g8,feL(c))];}
+function feList(c){const v=feL(c);return feOpen(c).concat(c.hex?[FE.h1,FE.h2]:[feV(FE.n1,v),FE.n2,feV(FE.n3,v),feV(FE.w1n,v),FE.n4,feV(FE.w2,v)]);}
+function feBranch(won){const v=feL(FECREW);return won?[feV(FE.w1,v),feV(FE.w2,v)]:[FE.l1,feV(FE.l2,v)];}
+function feLoad(c){cineLoad(feOpen(c).slice(0,2));setTimeout(()=>cineLoadKeys(FE_KEYS.filter(k=>!/[abcd]$/.test(k)||k.endsWith(feL(c)))),2500);}
+function startForestEnd(){markReach('3f','end');save.ckpt={stage:'3f',wave:'end',hex:!!save.heroes.hex};persist();const c=FECREW=feCrew(),L=feList(c),t0=performance.now();feLoad(c);
+  const go=()=>{const ok=L.slice(0,2).every(s=>CI[s.bg]&&CI[s.bg].complete&&CI[s.bg].naturalWidth);if(ok||performance.now()-t0>6000)startIntro(forestEndDone,L);else setTimeout(go,100);};go();}
+function forestEndDone(){const res=cineLastMini;cineLastMini=null;cine0pick=null;const c=FECREW;
+  if(c.hex&&res!=='won'){story('minigame',{id:'hex_teleport',won:false});R.over=true;R.hexFail=1;legacyEnd('overrun_at_cyber_future');persist();state='over';ui();return;}
+  if(c.hex)story('minigame',{id:'hex_teleport',won:true});else{save.hexShadow=1;story('hex_from_shadows',{});}
+  save.cleared=Math.max(save.cleared||0,3);save.forestDone=1;legacyStage(3);story('stage_clear_forest',{hex:!!save.heroes.hex});legacyEnd('cleared_stage_3');save.gold+=600;delete save.ckpt;persist();state='win3f';ui();}
+function forestEndGallery(k,back){const c={hex:!/n/.test(k),rook:!/r/.test(k.slice(2))},won=!/l/.test(k);FECREW=c;feLoad(c);cineLoadKeys(FE_KEYS);
+  let L=feList(c);if(c.hex){L=L.slice(0,-1).concat([Object.assign({},FE.h2,{choiceAt:null,mini:null,mix:()=>won?1:.35})]).concat(feBranch(won));}
+  const t0=performance.now(),go=()=>{const i=CI.fe_g1;if((i&&i.complete&&i.naturalWidth)||performance.now()-t0>6000)startIntro(back,L);else setTimeout(go,100);};go();}
+
 const BLZM={"vm0": [0, 0, 326, 434], "vm1": [328, 0, 326, 434], "vm2": [656, 0, 326, 434], "vm3": [984, 0, 326, 434], "fl0": [1312, 0, 275, 371], "fl1": [1589, 0, 280, 374], "fl2": [0, 436, 281, 374], "fl3": [283, 436, 275, 372], "bz0": [560, 436, 167, 320], "bz1": [729, 436, 163, 287], "bz2": [894, 436, 153, 299], "bz3": [1049, 436, 180, 272], "bz4": [1231, 436, 176, 235], "bz5": [1409, 436, 155, 203], "bz6": [1566, 436, 188, 211]},BLZIMG=new Image();let blzReady=false;BLZIMG.onload=()=>{blzReady=true;};
 function blzLoad(){if(!BLZIMG.src)BLZIMG.src="assets/blz.webp?v=f49993378e";}
 const BZ_REACH=120,BZ_ZR=900,BZ_RANGE=1350;
@@ -1266,6 +1332,7 @@ function hurtMember(id,d){
   story(HORDE()?'hero_died':'hero_down',{hero:id,level:save.heroes[id].lv});
   delete save.heroes[id];save.active=save.active.filter(h=>h!==id);if(!save.fallen.includes(id))save.fallen.push(id);
   for(const e of R.en)if(e.tgt===id){e.tgt=null;e.atk=undefined;}
+  if(id==='hex'&&R.forest){R.over=true;R.hexDied=1;SND.gameOver();story('hex_fell_forest',{});legacyEnd('hex_fell');persist();state='over';ui();return;}
   SND.heroDown();R.banner={txt:HEROES[id].name.toUpperCase()+(HORDE()?' HAS FALLEN':' IS DOWN'),t:3,col:'#ff4d5e'};R.shake=.4;persist();
 }
 function hitWall(d,x){if(R.wall<=0)return;if(HORDE())d*=1.15;R.wall=Math.max(0,R.wall-d);SND.wallHit((x||0)/600);if(R.wall<=0)SND.wallBreak();R.shake=Math.max(R.shake||0,.18);if(R.wall<=0){R.banner={txt:R.stage===2?'THEY ARE ON THE TRUCK!':'THE WALL IS DOWN!',t:2.6,col:'#ff4d5e'};R.shake=.6;
@@ -1887,6 +1954,7 @@ function ui(){
     <h3>Rook arrives</h3><div class="btns">${G('s2','Whole squad')}${G('s2b','Bruno fallen')}</div>
     <h3>The fork in the road</h3><p class="sub">The first two pick a road at the choice.</p><div class="btns">${G('f','Whole squad')}${G('fr','Rook fallen')}${G('fb','Bruno fallen')}${G('fbr','Bruno and Rook fallen')}</div>
     <h3>The forest</h3><p class="sub">The first one includes the Hex mini-game.</p><div class="btns">${G('fc1','Something in the trees')}${G('fc1r','Same, Rook fallen')}${G('fc2','Screeches')}${G('fc3','Momma')}</div>
+    <h3>The forest ending</h3><p class="sub">The mini-game is skipped here and its result plays.</p><div class="btns">${G('fe','Hex gets them in')}${G('fexr','Same, Rook fallen')}${G('fel','The spell fizzles')}${G('fexrl','Same, Rook fallen')}${G('fen','Hex never joined')}${G('fenr','Same, Rook fallen')}</div>
     <h3>The town ending</h3><p class="sub">The mini-game is skipped here and its result plays.</p><div class="btns">${G('tw','Blaze makes it')}${G('twr','Same, Rook fallen')}${G('twb','Same, Bruno fallen')}${G('twbr','Same, both fallen')}${G('tl','Blaze is overrun')}${G('tlr','Same, Rook fallen')}${G('tlb','Same, Bruno fallen')}${G('tlbr','Same, both fallen')}</div>
     <button class="btn ghost" data-act="options">Back</button>`;
   }else if(state==='credits'){
@@ -1910,8 +1978,8 @@ function ui(){
   }else if(state==='over'){
     html=`<h1 class="title" style="color:var(--blood)">OVERRUN</h1><div class="stripe"></div>
     <div class="row"><span class="sub">Reached wave</span><span class="big">${R.wave}</span></div>
-    <p class="sub">${R&&R.lostAll?(R.forest?'Every survivor is gone. The forest took them one by one.':'Every survivor is gone. The town swallowed them one by one.'):R&&R.forest?'The Commander fell in the forest.':R&&R.stage===3?'The Commander fell in the empty town.':'The Commander fell and the Outskirts are lost. Try again to retake the wall from wave 1.'}</p>
-    <div class="btns"><button class="btn" data-act="${R&&R.forest?'stage3f':R&&R.stage===3?'stage3':R&&R.stage===2?'stage2':'retry'}">Try again</button><button class="btn ghost" data-act="menu">Menu</button></div>`;
+    <p class="sub">${R&&R.hexFail?'The spell fizzled at the walls of Cyber Future. The horde closed in.':R&&R.hexDied?'Hex fell. Without her there is no way into Cyber Future.':R&&R.lostAll?(R.forest?'Every survivor is gone. The forest took them one by one.':'Every survivor is gone. The town swallowed them one by one.'):R&&R.forest?'The Commander fell in the forest.':R&&R.stage===3?'The Commander fell in the empty town.':'The Commander fell and the Outskirts are lost. Try again to retake the wall from wave 1.'}</p>
+    <div class="btns"><button class="btn" data-act="${R&&R.hexFail?'fend':R&&R.forest?'stage3f':R&&R.stage===3?'stage3':R&&R.stage===2?'stage2':'retry'}">Try again</button><button class="btn ghost" data-act="menu">Menu</button></div>`;
   }else if(state==='win'){
     const alive=['cmd',...save.active].length,lost=save.fallen.length;
     html=`<h1 class="title">STAGE 1<span>COMPLETE</span></h1><div class="stripe"></div>
@@ -1965,13 +2033,14 @@ ov.addEventListener('click',e=>{
   else if(a==='lw'){const v=b.dataset.w;LSEL.w=v==='end'?'end':+v;const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
   else if(a==='lh'){LSEL.h[b.dataset.id]=!LSEL.h[b.dataset.id];const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
   else if(a==='lgo'){loadGo();return;}
+  else if(a==='fend'){R.over=false;R.hexFail=0;startForestEnd();return;}
   else if(a==='stage3f'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:3,route:'backroad'});}SX=0;camX=0;startForest();}
   else if(a==='stage3'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:3});}SX=0;camX=0;startStage3();}
   else if(a==='stage2'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:2});}SX=0;camX=0;startStage2();}
   else if(a==='gallery'){state='gallery';ui();return;}
   else if(a==='gal'){const k=b.dataset.k,back=()=>{CREW_VIEW=null;state='gallery';ui();};
     CREW_VIEW={bruno:!/b/.test(k.slice(1)),rook:!/r/.test(k.slice(1))};
-    if(k.startsWith('fc'))startForestCut(+k[2],back,false);else if(k[0]==='t')townEndGallery(k[1]==='w',back);else if(k==='intro')startIntro(back);else if(k[0]==='s'&&k[1]==='1')startIntro(back,SHOTS2);else if(k[0]==='s')startIntro(back,SHOTS3);else startFork(back,false);return;}
+    if(k.startsWith('fe'))forestEndGallery(k,back);else if(k.startsWith('fc'))startForestCut(+k[2],back,false);else if(k[0]==='t')townEndGallery(k[1]==='w',back);else if(k==='intro')startIntro(back);else if(k[0]==='s'&&k[1]==='1')startIntro(back,SHOTS2);else if(k[0]==='s')startIntro(back,SHOTS3);else startFork(back,false);return;}
   else if(a==='intro4'){const rec=!save.route;startFork(()=>{state='options';ui();},rec);}
   else if(a==='intro3'){startIntro(()=>{state='options';ui();},SHOTS3);}
   else if(a==='intro2'){startIntro(()=>{state='options';ui();},SHOTS2);}
@@ -1997,11 +2066,11 @@ document.addEventListener('visibilitychange',()=>{if(document.hidden){persist();
 
 /* ---------- INTRO CUTSCENE: riso-print panels with partial animation ---------- */
 const CINE_META={"gas": {"n": 6, "fw": 330.4, "fh": 248.49999999999997}, "crowd": {"n": 6, "fw": 237.99999999999997, "fh": 239.39999999999998}, "arm": {"n": 6, "fw": 209.4, "fh": 288.0}, "shadow": {"n": 6, "fw": 268, "fh": 102.0}, "wave": {"n": 4, "fw": 411, "fh": 117.0}, "lift": {"n": 4, "fw": 402.0, "fh": 492.0}, "bike": {"n": 4, "fw": 332.0, "fh": 300.8}, "leap": {"n": 4, "fw": 247.20000000000002, "fh": 326.40000000000003}, "bikef": {"n": 4, "fw": 350.40000000000003, "fh": 324.0}, "c3horde": {"n": 8, "fw": 320.4, "fh": 175.79999999999998}, "c3truck": {"n": 8, "fw": 137.5, "fh": 128.0}, "c3smoke": {"n": 8, "fw": 164.4, "fh": 103.2}, "c3peek": {"n": 8, "fw": 164.4, "fh": 121.8}, "c3beam": {"n": 8, "fw": 191.79999999999998, "fh": 72.8}, "c3fog": {"n": 8, "fw": 411.20000000000005, "fh": 192.8}, "c3spark": {"n": 8, "fw": 306.0, "fh": 162.0}, "c3fire": {"n": 8, "fw": 175.5, "fh": 210.6}, "c3ember": {"n": 8, "fw": 156.0, "fh": 160.0}, "c3flash": {"n": 8, "fw": 175.5, "fh": 176.4}, "c4ring": {"n": 4, "fw": 389.75, "fh": 140}, "c4spark": {"n": 4, "fw": 389.75, "fh": 210}, "c4fog": {"n": 4, "fw": 389.75, "fh": 140}, "c4burst": {"n": 4, "fw": 389.75, "fh": 255}};
-const CINE_SRC={"s1": "assets/cine/s1.webp?v=243c333768", "s2": "assets/cine/s2.webp?v=550e74da9a", "s3": "assets/cine/s3.webp?v=70cc779e19", "s4": "assets/cine/s4.webp?v=a7032a396c", "s5": "assets/cine/s5.webp?v=d9c16aae06", "s6": "assets/cine/s6.webp?v=7be0ebed55", "s7": "assets/cine/s7.webp?v=fc9f6ba24a", "s8": "assets/cine/s8.webp?v=1621073ea0", "gas": "assets/cine/gas.webp?v=315d27fe85", "crowd": "assets/cine/crowd.webp?v=63ce1e7073", "arm": "assets/cine/arm.webp?v=6bf76ce38f", "shadow": "assets/cine/shadow.webp?v=d6f37fc102", "wave": "assets/cine/wave.webp?v=23e8a4a53d", "w1": "assets/cine/w1.webp?v=c8f04b9c22", "w2": "assets/cine/w2.webp?v=0ed40fe71c", "w3": "assets/cine/w3.webp?v=70c8685020", "w4": "assets/cine/w4.webp?v=dbcff62397", "w5": "assets/cine/w5.webp?v=b5b30b1db7", "w6": "assets/cine/w6.webp?v=af200e06c2", "w7": "assets/cine/w7.webp?v=3950081f16", "w8": "assets/cine/w8.webp?v=f8d626832c", "lift": "assets/cine/lift.webp?v=370ce17c98", "r1": "assets/cine/r1.webp?v=3e4ef51c5c", "r2": "assets/cine/r2.webp?v=897e15e59c", "r3": "assets/cine/r3.webp?v=8a0a030f90", "r4": "assets/cine/r4.webp?v=a3521f3cb0", "r5": "assets/cine/r5.webp?v=97fb173298", "r6": "assets/cine/r6.webp?v=3ac4fdbb0d", "bike": "assets/cine/bike.webp?v=c67a4ad3e0", "leap": "assets/cine/leap.webp?v=970a293fe8", "bikef": "assets/cine/bikef.webp?v=ee94861b81", "b1": "assets/cine/b1.webp?v=ec2cd2723f", "b2": "assets/cine/b2.webp?v=01cf7f9c7b", "b6": "assets/cine/b6.webp?v=b63e26f414", "b7": "assets/cine/b7.webp?v=b6c3b43136", "b8": "assets/cine/b8.webp?v=f269e85dc3", "br1": "assets/cine/br1.webp?v=26cde8d39b", "x01": "assets/cine/x01.webp?v=57c1a8b59a", "x02": "assets/cine/x02.webp?v=278ed750fd", "xa3": "assets/cine/xa3.webp?v=63f1e488b3", "xa4": "assets/cine/xa4.webp?v=e283c3e464", "xa5": "assets/cine/xa5.webp?v=c231911ed0", "xa6": "assets/cine/xa6.webp?v=5d44e267c6", "xa7": "assets/cine/xa7.webp?v=d1a42b40c1", "xb3": "assets/cine/xb3.webp?v=759b78c0b1", "xb4": "assets/cine/xb4.webp?v=df36359644", "xb5": "assets/cine/xb5.webp?v=319fbf1c6f", "xb6": "assets/cine/xb6.webp?v=dc55f12004", "xb7": "assets/cine/xb7.webp?v=2603ef086d", "xb8": "assets/cine/xb8.webp?v=213337a3cb", "xv1": "assets/cine/xv1.webp?v=f0b1f7bc58", "xv2": "assets/cine/xv2.webp?v=f08c546b7d", "xv3": "assets/cine/xv3.webp?v=8dfbfd654f", "xv4": "assets/cine/xv4.webp?v=0519294f79", "xv5": "assets/cine/xv5.webp?v=2de26c5075", "xv6": "assets/cine/xv6.webp?v=8bdeb41aa8", "xv7": "assets/cine/xv7.webp?v=457158d6d8", "xf1": "assets/cine/xf1.webp?v=53c018c3db", "xf2": "assets/cine/xf2.webp?v=4ac30cc35b", "xf3": "assets/cine/xf3.webp?v=9db92f2352", "xf4": "assets/cine/xf4.webp?v=5b931210a4", "xf5": "assets/cine/xf5.webp?v=9d2c48c6dc", "xf6": "assets/cine/xf6.webp?v=5b89485ce3", "xw1": "assets/cine/xw1.webp?v=5768e46a45", "xw2": "assets/cine/xw2.webp?v=a02211f1a9", "xw3": "assets/cine/xw3.webp?v=e2a7715eca", "xl1": "assets/cine/xl1.webp?v=61a0c15c27", "xl2": "assets/cine/xl2.webp?v=26078fc2c4", "xrv1": "assets/cine/xrv1.webp?v=f284b5471c", "xrv2": "assets/cine/xrv2.webp?v=03d5736fe6", "xrv3": "assets/cine/xrv3.webp?v=5b2057f074", "xs1": "assets/cine/xs1.webp?v=bb79331e55", "xs2": "assets/cine/xs2.webp?v=f42fff5961", "xs2v": "assets/cine/xs2v.webp?v=17c61849a8", "xm1": "assets/cine/xm1.webp?v=9924e1689b", "c4ring": "assets/cine/c4ring.webp?v=4eac568207", "c4spark": "assets/cine/c4spark.webp?v=f398908cba", "c4fog": "assets/cine/c4fog.webp?v=1bac29ca7d", "c4burst": "assets/cine/c4burst.webp?v=c29024db4d", "c3horde": "assets/cine/c3horde.webp?v=51a1bcd882", "c3truck": "assets/cine/c3truck.webp?v=c3d079edb1", "c3smoke": "assets/cine/c3smoke.webp?v=104b4fcda5", "c3peek": "assets/cine/c3peek.webp?v=f5ee9d072a", "c3beam": "assets/cine/c3beam.webp?v=cf0d9e068c", "c3fog": "assets/cine/c3fog.webp?v=e27d3109d8", "c3spark": "assets/cine/c3spark.webp?v=8ec95a2788", "c3ember": "assets/cine/c3ember.webp?v=386f756069", "c3flash": "assets/cine/c3flash.webp?v=d9e65b2ea5", "te_t1": "assets/cine/te_t1.webp?v=584d2a9cfa", "te_t2a": "assets/cine/te_t2a.webp?v=fe492bd1ba", "te_t2b": "assets/cine/te_t2b.webp?v=8c05f539fc", "te_t2c": "assets/cine/te_t2c.webp?v=a11a51477b", "te_t2d": "assets/cine/te_t2d.webp?v=26beed7a3f", "te_t3": "assets/cine/te_t3.webp?v=817708c3de", "te_t4": "assets/cine/te_t4.webp?v=aa62671c0f", "te_t5a": "assets/cine/te_t5a.webp?v=5a6a434b7c", "te_t5b": "assets/cine/te_t5b.webp?v=67e35070ec", "te_t5c": "assets/cine/te_t5c.webp?v=d872d33a01", "te_t5d": "assets/cine/te_t5d.webp?v=566666704c", "te_t6": "assets/cine/te_t6.webp?v=c2e101c534", "te_t7": "assets/cine/te_t7.webp?v=9739b7ea64", "te_t8": "assets/cine/te_t8.webp?v=8713b55890", "te_w1": "assets/cine/te_w1.webp?v=753a7795e8", "te_w2a": "assets/cine/te_w2a.webp?v=54150808dc", "te_w2b": "assets/cine/te_w2b.webp?v=bef9b9aeb5", "te_w3": "assets/cine/te_w3.webp?v=cdb71249ca", "te_w4": "assets/cine/te_w4.webp?v=0f3149d82e", "te_w5": "assets/cine/te_w5.webp?v=63e3c99a0b", "te_l1": "assets/cine/te_l1.webp?v=8d2863cb46", "te_l2": "assets/cine/te_l2.webp?v=b3a97f8544", "te_l3": "assets/cine/te_l3.webp?v=3979192544", "te_l4a": "assets/cine/te_l4a.webp?v=b15dc704bb", "te_l4b": "assets/cine/te_l4b.webp?v=17f706673e", "te_e1": "assets/cine/te_e1.webp?v=5b8ed99e63", "te_e2": "assets/cine/te_e2.webp?v=81835e6d77"};
+const CINE_SRC={"s1": "assets/cine/s1.webp?v=243c333768", "s2": "assets/cine/s2.webp?v=550e74da9a", "s3": "assets/cine/s3.webp?v=70cc779e19", "s4": "assets/cine/s4.webp?v=a7032a396c", "s5": "assets/cine/s5.webp?v=d9c16aae06", "s6": "assets/cine/s6.webp?v=7be0ebed55", "s7": "assets/cine/s7.webp?v=fc9f6ba24a", "s8": "assets/cine/s8.webp?v=1621073ea0", "gas": "assets/cine/gas.webp?v=315d27fe85", "crowd": "assets/cine/crowd.webp?v=63ce1e7073", "arm": "assets/cine/arm.webp?v=6bf76ce38f", "shadow": "assets/cine/shadow.webp?v=d6f37fc102", "wave": "assets/cine/wave.webp?v=23e8a4a53d", "w1": "assets/cine/w1.webp?v=c8f04b9c22", "w2": "assets/cine/w2.webp?v=0ed40fe71c", "w3": "assets/cine/w3.webp?v=70c8685020", "w4": "assets/cine/w4.webp?v=dbcff62397", "w5": "assets/cine/w5.webp?v=b5b30b1db7", "w6": "assets/cine/w6.webp?v=af200e06c2", "w7": "assets/cine/w7.webp?v=3950081f16", "w8": "assets/cine/w8.webp?v=f8d626832c", "lift": "assets/cine/lift.webp?v=370ce17c98", "r1": "assets/cine/r1.webp?v=3e4ef51c5c", "r2": "assets/cine/r2.webp?v=897e15e59c", "r3": "assets/cine/r3.webp?v=8a0a030f90", "r4": "assets/cine/r4.webp?v=a3521f3cb0", "r5": "assets/cine/r5.webp?v=97fb173298", "r6": "assets/cine/r6.webp?v=3ac4fdbb0d", "bike": "assets/cine/bike.webp?v=c67a4ad3e0", "leap": "assets/cine/leap.webp?v=970a293fe8", "bikef": "assets/cine/bikef.webp?v=ee94861b81", "b1": "assets/cine/b1.webp?v=ec2cd2723f", "b2": "assets/cine/b2.webp?v=01cf7f9c7b", "b6": "assets/cine/b6.webp?v=b63e26f414", "b7": "assets/cine/b7.webp?v=b6c3b43136", "b8": "assets/cine/b8.webp?v=f269e85dc3", "br1": "assets/cine/br1.webp?v=26cde8d39b", "x01": "assets/cine/x01.webp?v=57c1a8b59a", "x02": "assets/cine/x02.webp?v=278ed750fd", "xa3": "assets/cine/xa3.webp?v=63f1e488b3", "xa4": "assets/cine/xa4.webp?v=e283c3e464", "xa5": "assets/cine/xa5.webp?v=c231911ed0", "xa6": "assets/cine/xa6.webp?v=5d44e267c6", "xa7": "assets/cine/xa7.webp?v=d1a42b40c1", "xb3": "assets/cine/xb3.webp?v=759b78c0b1", "xb4": "assets/cine/xb4.webp?v=df36359644", "xb5": "assets/cine/xb5.webp?v=319fbf1c6f", "xb6": "assets/cine/xb6.webp?v=dc55f12004", "xb7": "assets/cine/xb7.webp?v=2603ef086d", "xb8": "assets/cine/xb8.webp?v=213337a3cb", "xv1": "assets/cine/xv1.webp?v=f0b1f7bc58", "xv2": "assets/cine/xv2.webp?v=f08c546b7d", "xv3": "assets/cine/xv3.webp?v=8dfbfd654f", "xv4": "assets/cine/xv4.webp?v=0519294f79", "xv5": "assets/cine/xv5.webp?v=2de26c5075", "xv6": "assets/cine/xv6.webp?v=8bdeb41aa8", "xv7": "assets/cine/xv7.webp?v=457158d6d8", "xf1": "assets/cine/xf1.webp?v=53c018c3db", "xf2": "assets/cine/xf2.webp?v=4ac30cc35b", "xf3": "assets/cine/xf3.webp?v=9db92f2352", "xf4": "assets/cine/xf4.webp?v=5b931210a4", "xf5": "assets/cine/xf5.webp?v=9d2c48c6dc", "xf6": "assets/cine/xf6.webp?v=5b89485ce3", "xw1": "assets/cine/xw1.webp?v=5768e46a45", "xw2": "assets/cine/xw2.webp?v=a02211f1a9", "xw3": "assets/cine/xw3.webp?v=e2a7715eca", "xl1": "assets/cine/xl1.webp?v=61a0c15c27", "xl2": "assets/cine/xl2.webp?v=26078fc2c4", "xrv1": "assets/cine/xrv1.webp?v=f284b5471c", "xrv2": "assets/cine/xrv2.webp?v=03d5736fe6", "xrv3": "assets/cine/xrv3.webp?v=5b2057f074", "xs1": "assets/cine/xs1.webp?v=bb79331e55", "xs2": "assets/cine/xs2.webp?v=f42fff5961", "xs2v": "assets/cine/xs2v.webp?v=17c61849a8", "xm1": "assets/cine/xm1.webp?v=9924e1689b", "c4ring": "assets/cine/c4ring.webp?v=4eac568207", "c4spark": "assets/cine/c4spark.webp?v=f398908cba", "c4fog": "assets/cine/c4fog.webp?v=1bac29ca7d", "c4burst": "assets/cine/c4burst.webp?v=c29024db4d", "c3horde": "assets/cine/c3horde.webp?v=51a1bcd882", "c3truck": "assets/cine/c3truck.webp?v=c3d079edb1", "c3smoke": "assets/cine/c3smoke.webp?v=104b4fcda5", "c3peek": "assets/cine/c3peek.webp?v=f5ee9d072a", "c3beam": "assets/cine/c3beam.webp?v=cf0d9e068c", "c3fog": "assets/cine/c3fog.webp?v=e27d3109d8", "c3spark": "assets/cine/c3spark.webp?v=8ec95a2788", "c3ember": "assets/cine/c3ember.webp?v=386f756069", "c3flash": "assets/cine/c3flash.webp?v=d9e65b2ea5", "fe_g1": "assets/cine/fe_g1.webp?v=fe0fbbe930", "fe_g2": "assets/cine/fe_g2.webp?v=9bc9371de9", "fe_g3": "assets/cine/fe_g3.webp?v=40f2869355", "fe_g4": "assets/cine/fe_g4.webp?v=bdf36722f2", "fe_g5": "assets/cine/fe_g5.webp?v=ef7f521978", "fe_g6": "assets/cine/fe_g6.webp?v=808d8f926c", "fe_g7": "assets/cine/fe_g7.webp?v=bdcb705c94", "fe_g8a": "assets/cine/fe_g8a.webp?v=761765d52c", "fe_g8b": "assets/cine/fe_g8b.webp?v=76e42e466a", "fe_g8c": "assets/cine/fe_g8c.webp?v=21a3e15754", "fe_g8d": "assets/cine/fe_g8d.webp?v=cc81d2e0ee", "fe_h1": "assets/cine/fe_h1.webp?v=73beca4a12", "fe_h2": "assets/cine/fe_h2.webp?v=8b7ff0a01b", "fe_h3": "assets/cine/fe_h3.webp?v=6305b20f31", "fe_w1a": "assets/cine/fe_w1a.webp?v=dd7349ffda", "fe_w1b": "assets/cine/fe_w1b.webp?v=8e85862c06", "fe_w1c": "assets/cine/fe_w1c.webp?v=ba2f531c3b", "fe_w1d": "assets/cine/fe_w1d.webp?v=3a94f8db5c", "fe_w2a": "assets/cine/fe_w2a.webp?v=aa1826e67f", "fe_w2b": "assets/cine/fe_w2b.webp?v=689e888fc6", "fe_w2c": "assets/cine/fe_w2c.webp?v=2de2a83355", "fe_w2d": "assets/cine/fe_w2d.webp?v=6a28284172", "fe_l1": "assets/cine/fe_l1.webp?v=4575ab6ef1", "fe_l2a": "assets/cine/fe_l2a.webp?v=1093ad83fc", "fe_l2b": "assets/cine/fe_l2b.webp?v=35bd80f539", "fe_n1c": "assets/cine/fe_n1c.webp?v=4658768862", "fe_n1d": "assets/cine/fe_n1d.webp?v=fa9ebcc55d", "fe_n2": "assets/cine/fe_n2.webp?v=0f687bda5c", "fe_n3c": "assets/cine/fe_n3c.webp?v=d4d05b60f8", "fe_n3d": "assets/cine/fe_n3d.webp?v=95e42af559", "fe_n4": "assets/cine/fe_n4.webp?v=31da651bcf", "te_t1": "assets/cine/te_t1.webp?v=584d2a9cfa", "te_t2a": "assets/cine/te_t2a.webp?v=fe492bd1ba", "te_t2b": "assets/cine/te_t2b.webp?v=8c05f539fc", "te_t2c": "assets/cine/te_t2c.webp?v=a11a51477b", "te_t2d": "assets/cine/te_t2d.webp?v=26beed7a3f", "te_t3": "assets/cine/te_t3.webp?v=817708c3de", "te_t4": "assets/cine/te_t4.webp?v=aa62671c0f", "te_t5a": "assets/cine/te_t5a.webp?v=5a6a434b7c", "te_t5b": "assets/cine/te_t5b.webp?v=67e35070ec", "te_t5c": "assets/cine/te_t5c.webp?v=d872d33a01", "te_t5d": "assets/cine/te_t5d.webp?v=566666704c", "te_t6": "assets/cine/te_t6.webp?v=c2e101c534", "te_t7": "assets/cine/te_t7.webp?v=9739b7ea64", "te_t8": "assets/cine/te_t8.webp?v=8713b55890", "te_w1": "assets/cine/te_w1.webp?v=753a7795e8", "te_w2a": "assets/cine/te_w2a.webp?v=54150808dc", "te_w2b": "assets/cine/te_w2b.webp?v=bef9b9aeb5", "te_w3": "assets/cine/te_w3.webp?v=cdb71249ca", "te_w4": "assets/cine/te_w4.webp?v=0f3149d82e", "te_w5": "assets/cine/te_w5.webp?v=63e3c99a0b", "te_l1": "assets/cine/te_l1.webp?v=8d2863cb46", "te_l2": "assets/cine/te_l2.webp?v=b3a97f8544", "te_l3": "assets/cine/te_l3.webp?v=3979192544", "te_l4a": "assets/cine/te_l4a.webp?v=b15dc704bb", "te_l4b": "assets/cine/te_l4b.webp?v=17f706673e", "te_e1": "assets/cine/te_e1.webp?v=5b8ed99e63", "te_e2": "assets/cine/te_e2.webp?v=81835e6d77"};
 const CI={};const CINE_FILES=['s1','s2','s3','s4','s5','s6','s7','s8','gas','crowd','arm','shadow','wave','w1','w2','w3','w4','w5','w6','w7','w8','lift','r1','r2','r3','r4','r5','r6','bike','leap','bikef','b1','b2','b6','b7','b8','br1'];
 const CINE_SHEETS=['gas','crowd','arm','shadow','wave','lift','bike','leap','bikef'];
 function cineLoadKeys(keys){for(const k of keys){if(CI[k]||!CINE_SRC[k])continue;const im=new Image();im.decoding='async';im.src=CINE_SRC[k];CI[k]=im;}}
-function cineLoad(list){if(!list){cineLoadKeys(CINE_SHEETS);return;}const ks=[];for(const s of list){ks.push(s.bg);if(s.fb)ks.push(s.fb);if(typeof NOBRUNO!=='undefined'&&NOBRUNO[s.bg])ks.push(NOBRUNO[s.bg].bg);}cineLoadKeys(ks);}
+function cineLoad(list){if(!list){cineLoadKeys(CINE_SHEETS);return;}const ks=[];for(const s of list){ks.push(s.bg);if(s.bg2)ks.push(s.bg2);if(s.fb)ks.push(s.fb);if(typeof NOBRUNO!=='undefined'&&NOBRUNO[s.bg])ks.push(NOBRUNO[s.bg].bg);}cineLoadKeys(ks);}
 const IW=1440,IH=810;
 const ease=p=>p<.5?2*p*p:1-Math.pow(-2*p+2,2)/2;
 const lerp=(a,b,p)=>a+(b-a)*p;
@@ -2232,6 +2301,7 @@ function cineFrame(now){
   if(im&&im.complete&&im.naturalWidth){cctx.save();
     const prev=c.shake;
     cctx.drawImage(im,W/2-cam.cx*IW*s,H/2-cam.cy*IH*s,IW*s,IH*s);
+    if(S.bg2){const i2=CI[S.bg2];if(i2&&i2.complete&&i2.naturalWidth){cctx.globalAlpha=Math.max(0,Math.min(1,S.mix()));cctx.drawImage(i2,W/2-cam.cx*IW*s,H/2-cam.cy*IH*s,IW*s,IH*s);cctx.globalAlpha=1;}}
     S.fx(c,tt);
     cctx.restore();
     if(c.shake){const d=ccv.getContext('2d');d.drawImage(ccv,(Math.random()-.5)*c.shake*dpr,(Math.random()-.5)*c.shake*dpr);}}
