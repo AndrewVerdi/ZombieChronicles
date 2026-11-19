@@ -1221,7 +1221,7 @@ function mkEnemy(type,x,z){
   const T={
     grunt:{hp:185/ENEMY_K,spd:42,r:32,gold:1,xp:4,col:'#7fcf4a',dmg:10,hd:7},
     runner:{hp:65/ENEMY_K,spd:42*2.8,r:26,gold:3,xp:3,col:'#b46bff',dmg:5,hd:3,zig:1},
-    brute:{hp:120,spd:26,r:50,gold:15,xp:11,col:'#e2483d',dmg:24},
+    brute:{hp:1500/ENEMY_K,spd:26,r:50,gold:15,xp:11,col:'#e2483d',dmg:45,hd:30,nokb:1,thr:1},
     armored:{hp:500/ENEMY_K,spd:42*.7,r:38,gold:5,xp:8,col:'#8a94a6',dmg:20,hd:15,armor:5,nokb:1},
     splitter:{hp:45,spd:36,r:39,gold:10,xp:7,col:'#3fd6c6',dmg:12,split:1},
     screecher:{hp:80/ENEMY_K,spd:72,r:22,gold:4,xp:4,col:'#9aa08a',dmg:7,hd:5,scr:1},
@@ -1239,7 +1239,12 @@ function spawnEnemy(){
 
 /* ---------- THE WARD: stage 1 boss, parks mid-road and hurls hospital junk ---------- */
 const BOSS_Z=380,BOSS_VIS=1.35;
-const PROJ={gurney:{set:'pgurney',dmg:15,rad:72,fx:'pimpact',hp:45,truck:15},wheel:{set:'pwheel',dmg:10,rad:58,fx:'pimpact',hp:25,truck:10},tank:{set:'ptank',dmg:25,rad:120,fx:'pblast',hp:35,truck:25},car:{set:'pcar',dmg:40,rad:110,fx:'pblast',hp:90,truck:40},gruntp:{set:null,dmg:10*.65,rad:60,fx:'pimpact',hp:30,truck:10}};
+const PROJ={gurney:{set:'pgurney',dmg:15,rad:72,fx:'pimpact',hp:45,truck:15},wheel:{set:'pwheel',dmg:10,rad:58,fx:'pimpact',hp:25,truck:10},tank:{set:'ptank',dmg:25,rad:120,fx:'pblast',hp:35,truck:25},car:{set:'pcar',dmg:40,rad:110,fx:'pblast',hp:90,truck:40},gruntp:{set:null,dmg:10*.65,rad:60,fx:'pimpact',hp:30,truck:10},carry:{set:null,dmg:0,rad:60,fx:'pimpact',hp:30,truck:0}};
+/* Brute: picks up a nearby enemy at 20% health or less and throws it at a hero */
+function bruteAI(e,dt){e.thT=(e.thT==null?1.5:e.thT)-dt;if(e.thT>0||e.stun>0)return;e.thT=.5;const sq=squad();if(!sq.length)return;
+  const q=R.en.find(o=>o!==e&&!o.dead&&!o.held&&o.type!=='brute'&&o.type!=='boss'&&o.type!=='momma'&&!o.onRoof&&o.hp<=o.max*.2&&Math.hypot(o.x-e.x,o.z-e.z)<e.r+o.r+70);if(!q)return;
+  const m=sq[Math.floor(Math.random()*sq.length)],d=Math.hypot(m.x-e.x,m.z-e.z);q.held=1;q.atk=undefined;e.thT=3.5;
+  R.proj=R.proj||[];R.proj.push({kind:'carry',en:q,hp:q.hp,x0:e.x,z0:e.z,h0:e.r*EH*.9,x1:m.x+(Math.random()-.5)*30,z1:m.z+10,t:0,T:.8+d/1400,peak:160+d*.12,x:e.x,z:e.z,h:0,spin:0});SND.whoosh();SND.groan((e.x/600)||0,.6);}
 function bossAI(e,dt){
   R.proj=R.proj||[];
   if(e.thrT==null){e.thrT=2.2;e.roarT=6;e.act=null;R.banner={txt:'THE WARD APPROACHES',t:2.6,col:'#b6f23a'};SND.groan(0,.6);}
@@ -1268,14 +1273,16 @@ function projUpdate(dt){
   for(const p of R.proj){p.t+=dt;const q=Math.min(1,p.t/p.T);p.x=p.x0+(p.x1-p.x0)*q;p.z=p.z0+(p.z1-p.z0)*q;p.h=p.h0*(1-q)+Math.sin(Math.PI*q)*p.peak;
     if(q>=1&&!p.done){p.done=1;const P_=PROJ[p.kind];R.bfx.push({set:P_.fx,x:p.x,z:p.z,t:0});R.shake=p.kind==='tank'?.5:.3;
       SND.explosion(p.kind==='tank'?.9:.45);burst(p.x,p.z,20,p.kind==='tank'?'#b6f23a':'#c9a46a',p.kind==='tank'?24:14);
-      for(const m of squad()){if(Math.hypot(m.x-p.x,(m.z-p.z)*1.6)<P_.rad)hurtMember(m.id,P_.dmg/HURT_K);}
-      if(R.stage===2)hitWall(P_.truck,p.x);
+      const pd=p.en?p.en.hd:P_.dmg;for(const m of squad()){if(Math.hypot(m.x-p.x,(m.z-p.z)*1.6)<P_.rad)hurtMember(m.id,pd/HURT_K);}
+      if(R.stage===2)hitWall(p.en?p.en.dmg:P_.truck,p.x);
+      if(p.en){const q=p.en;q.held=0;q.x=p.x;q.z=Math.max(60,p.z+30);q.atk=undefined;q.tgt=null;q.stun=Math.max(q.stun||0,.6);R.en.push(q);}
       if(p.kind==='gruntp'){const g=mkEnemy('grunt',p.x+(Math.random()-.5)*40,p.z+40);g.onRoof=1;g.hp*=.7;g.max=g.hp;}}}
   R.proj=R.proj.filter(p=>!p.done);
   for(const f of R.bfx)f.t+=dt;R.bfx=R.bfx.filter(f=>f.t<.6);
 }
 function drawProj(p){
   if(!envReady)return;const[sx,sy,k]=P(p.x,p.z,p.h);if(p.flash>0){p.flash-=1/60;ctx.save();ctx.globalAlpha=.6;ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(sx,sy-20*k,30*k,0,6.283);ctx.fill();ctx.restore();}
+  if(p.kind==='carry'){const q=p.en;if(atlasReady&&META[q.type]){ctx.save();ctx.translate(sx,sy);ctx.rotate(p.t*9);drawFrame(META[q.type].hit[1],0,40*k,k*q.r*EH/EBODY);ctx.restore();}return;}
   if(p.kind==='gruntp'){if(atlasReady){ctx.save();ctx.translate(sx,sy);ctx.rotate(p.t*9);drawFrame(META.grunt.hit[1],0,40*k,k*32*EH/EBODY);ctx.restore();}return;}
   const fr=EM[PROJ[p.kind].set];
   eDrawA(fr[(Math.floor(p.t*11)+p.spin)%fr.length],sx,sy,k*1.15*(1+Math.sin(Math.PI*Math.min(1,p.t/p.T))*.25));
@@ -1554,6 +1561,8 @@ function update(dt){
     if(e.flash>0)e.flash-=dt;if(e.hitT>0)e.hitT-=dt;
     if(e.burn>0){e.burn-=dt;e.hp-=e.bdps*dt;if(Math.random()<dt*14)R.pa.push({x:e.x+(Math.random()-.5)*e.r,z:e.z,h:e.r*(1+Math.random()*1.2),vx:0,vz:0,vh:90,t:.45,col:Math.random()<.5?'#ffb347':'#ff5a1f',ng:1});if(e.hp<=0){e.dead=1;kill(e,e.burnOwn||'blaze');continue;}}
     if(e.scrCd>0)e.scrCd-=dt;if(e.scrT>0)e.scrT-=dt;
+    if(e.held)continue;
+    if(e.thr)bruteAI(e,dt);
     if(e.type==='momma'){mommaAI(e,dt);continue;}
     if(e.atk!==undefined){
       if(e.ctgt){const c=e.ctgt;if(c.hp<=0||Math.hypot(c.x-e.x,c.z+12-e.z)>e.r+60){e.atk=undefined;e.ctgt=null;}}
@@ -1613,7 +1622,7 @@ function update(dt){
     if(b.life>0&&R.stage===2&&R.proj)for(const q of R.proj){
       if(q.done||b.hit.has(q)||q.t/q.T>.92)continue;
       if((q.x-b.x)**2+(q.z-b.z)**2<(46+b.r)**2){b.hit.add(q);q.hp-=b.dmg;q.flash=.08;SND.hit(q.x/600);
-        if(q.hp<=0){q.done=1;q.shot=1;R.bfx=R.bfx||[];R.bfx.push({set:'pimpact',x:q.x,z:q.z,t:0});burst(q.x,q.z,q.h,'#c9a46a',14);SND.explosion(.25);save.gold+=20;const[px,py]=P(q.x,q.z,q.h+20);R.tx.push({x:px,y:py,txt:'+20',col:'#ffc53d',t:1});}
+        if(q.hp<=0){q.done=1;q.shot=1;if(q.en){q.en.held=0;q.en.hp=0;q.en.dead=1;kill(q.en,b.own||'cmd');}R.bfx=R.bfx||[];R.bfx.push({set:'pimpact',x:q.x,z:q.z,t:0});burst(q.x,q.z,q.h,'#c9a46a',14);SND.explosion(.25);save.gold+=20;const[px,py]=P(q.x,q.z,q.h+20);R.tx.push({x:px,y:py,txt:'+20',col:'#ffc53d',t:1});}
         if(--b.pierce<=0){b.life=0;break;}}}
     if(b.life>0&&!b.flame)for(const c of R.cr){
       if(c.dead||b.hit.has(c))continue;
@@ -1632,7 +1641,7 @@ function update(dt){
   if(R.katCd>0)R.katCd-=dt;if(R.slashes){for(const s of R.slashes)s.t+=dt;R.slashes=R.slashes.filter(s=>s.t<.28);}
   for(const d of R.dead)d.t+=dt;R.dead=R.dead.filter(d=>d.t<1.6);
   if(R.jail&&R.jail.flash>0)R.jail.flash-=dt;
-  R.en=R.en.filter(e=>!e.dead);R.bu=R.bu.filter(b=>b.life>0);R.cr=R.cr.filter(c=>!c.dead);
+  R.en=R.en.filter(e=>!e.dead&&!e.held);R.bu=R.bu.filter(b=>b.life>0);R.cr=R.cr.filter(c=>!c.dead);
   R.pa=R.pa.filter(p=>p.t>0);R.bolts=R.bolts.filter(b=>b.life>0);R.tx=R.tx.filter(x=>x.t>0);
   if(R.over)return;
   if(R.escapeT!=null){R.escapeT-=dt;for(const e of R.en)if(!e.onRoof)e.z+=520*dt;R.en=R.en.filter(e=>e.z<ZFAR+200||e.onRoof);if(R.escapeT<=0){R.escapeT=null;save.cleared=Math.max(save.cleared||0,2);legacyStage(2);save.gold+=600;persist();startFork(()=>{save.ckpt={stage:save.route==='highway'?3:'3f',wave:1};persist();state='win2';ui();},true);return;}}
