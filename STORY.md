@@ -18,3 +18,13 @@
 ## Later
 - Frost: joins automatically, not on the stage after the labs but the one after that (stage 6). Boards TBD.
 - Nova: last unlockable, very easy to miss. Most likely the stage after Frost. Requires every other hero alive; if anyone is missing, every attempt to help her fails and costs more party members. With everyone alive, heroes can still be lost in the rescue if assigned the wrong duties (duty assignment TBD).
+
+
+## Stage 4B: Cyber Future (forest route)
+- Wave 1, the courtyard: 100 turned civilians, scientists and soldiers (200 in Horde), a Brute walking with the horde, then two more Brutes as it closes in.
+- At the start Bruno radios in: he and Blaze are pinned on the third floor. A clock starts (5:30 Normal, 6:40 Horde) and keeps running through the tower.
+- Inside: side-scroller. Drag to move, hold SHOOT, tap MELEE, tap a portrait to switch heroes. No healing, no abilities.
+  - Floor 1: head right to the stairs, 25 grunts from ahead.
+  - Floor 2: head left, grunts from both sides. Volt is trapped in the Power Lab behind debris and fire ("ARGH!"). Hex's melee clears the debris, then Rook's or the Commander's melee kicks the door in. No hint is given. Volt joins.
+  - Floor 3: grunts walk toward Bruno and Blaze's barricade; ~20 attack it and peel off when shot. Bruno and Blaze give cover fire. With a few grunts left a Brute bursts through a door. Volt is best against it, then Hex, the Commander, Rook; Rook's blade is best up close.
+- The clock stops when the squad reaches the fight. If it runs out first, the barricade falls and Bruno and Blaze are lost for good.
