@@ -640,7 +640,7 @@ function drawFacadeSide(side){
   ctx.globalAlpha=1;
 }
 function drawTownWorld(dt){
-  if(state==='play')roadScroll+=dt*WALK;
+  if(state==='play'&&!(R&&R.cfb))roadScroll+=dt*WALK;
   ctx.save();ctx.imageSmoothingEnabled=false;
   if(sky3Ready){ctx.imageSmoothingEnabled=true;const sh=152,sw=sh*SKY3IMG.width/SKY3IMG.height;ctx.fillStyle='#120a1a';ctx.fillRect(-20,-20,WW+40,HOR+30);ctx.drawImage(SKY3IMG,WW/2-sw/2,HOR+5-sh,sw,sh);ctx.imageSmoothingEnabled=false;}
   else{const sh=HOR+4,sw=Math.max(WW+20,sh*SKY3.width/SKY3.height);ctx.drawImage(SKY3,WW/2-sw/2,HOR+4-sh,sw,sh);}
@@ -747,7 +747,7 @@ function drawPanelSide(side){
 }
 const FPROPS=[['rock',.55],['log',.7],['stump',.6],['mush',.5],['bush',.75],['tent',.8],['lantern',.75],['sign',.7],['bones',.6]];
 function drawForestWorld(dt){
-  if(state==='play')roadScroll+=dt*WALK;
+  if(state==='play'&&!(R&&R.cfb))roadScroll+=dt*WALK;
   ctx.save();ctx.imageSmoothingEnabled=false;
   ctx.fillStyle='#0c0814';ctx.fillRect(-20,-20,WW+40,WH+40);
   if(skyfReady){ctx.imageSmoothingEnabled=true;const sh=152,sw=sh*SKYFIMG.width/SKYFIMG.height;ctx.drawImage(SKYFIMG,WW/2-sw/2,HOR+5-sh,sw,sh);ctx.imageSmoothingEnabled=false;}
@@ -1173,20 +1173,25 @@ function cfbYardDone(){if(R.yardDone)return;R.yardDone=1;SND.waveClear();save.go
 /* ---------------- SIDE SCROLLER ---------------- */
 const GY=306,SPD_SIDE=175;
 const SIDE_W={cmd:{rate:.14,mul:.55,col:'#ffd27a',spd:950,vsB:1.15},rook:{rate:.22,mul:.75,col:'#ff8a3d',spd:900,vsB:.8},hex:{rate:.45,mul:1,col:'#d68bff',spd:520,orb:1,vsB:1.5},volt:{rate:.5,mul:1,col:'#9fd0ff',chain:1,vsB:2.2}};
-const FLOORS={1:{len:2700,start:120,dir:1,n:25},2:{len:2700,start:2580,dir:-1,n:25},3:{len:2500,start:120,dir:1,n:30}};
+const FLOORS={1:{len:2700,start:120,dir:1,n:25},2:{len:2700,start:2580,dir:-1,n:25},3:{len:2700,start:120,dir:1,n:30}};
+/* doors in the wall art repeat every WALL_P; props that are doors sit exactly over one */
+const WALL_S=(306+6)/625,WALL_P=2172*WALL_S,WALL_D=[540*WALL_S,1630*WALL_S];
+function snapDoor(x){let best=x,bd=1e9;for(let n=Math.floor(x/WALL_P)-1;n<=Math.floor(x/WALL_P)+1;n++)for(const d of WALL_D){const c=n*WALL_P+d;if(Math.abs(c-x)<bd){bd=Math.abs(c-x);best=c;}}return Math.round(best);}
+const MZ={cmd:[76,46],rook:[74,40],hex:[77,52],volt:[80,50]};
 function sideMembers(){return['cmd',...save.active].filter(id=>id==='cmd'||save.heroes[id]);}
 function sideStart(f){sideLoad();const F=FLOORS[f],H=HORDE()?1.5:1;R.en=[];R.bu=[];R.pa=[];R.proj=[];R.banner=null;
-  const S=R.side={on:1,floor:f,len:F.len,x:F.start,face:F.dir,cam:0,active:'cmd',en:[],bu:[],fx:[],zaps:[],mv:0,shoot:false,shT:0,melT:0,melA:0,anT:0,
+  const S=R.side={on:1,floor:f,len:F.len,x:F.start,face:F.dir,cam:0,active:R.sideActive||'cmd',en:[],bu:[],fx:[],zaps:[],mv:0,shoot:false,shT:0,melT:0,melA:0,anT:0,
     trig:[],door:null,npc:null,brute:null,t:0,hint:4,exitT:-1,ptr:{}};
   if(!sideMembers().includes(S.active))S.active='cmd';
+  S.exitX=f===1?snapDoor(F.len-260):f===2?snapDoor(260):null;S.elevX=f===1?snapDoor(300):f===2?snapDoor(F.len-260):null;
   const n=Math.round(F.n*H);
   if(f===1){for(let i=0;i<n;i++)S.trig.push({x:420+i*(F.len-700)/n+Math.random()*60,side:1,type:'grunt'});}
   if(f===2){for(let i=0;i<n;i++)S.trig.push({x:F.start-260-i*(F.len-600)/n-Math.random()*60,side:i%3===2?1:-1,type:'grunt'});
-    S.door={x:Math.round(F.start-(F.start-120)*.75),debris:!save.voltMet,locked:!save.voltMet,open:!!save.voltMet,argT:2};}
-  if(f===3){S.bar={x:F.len-230};S.npc={bT:1,flT:0,lineT:3,li:0};
-    for(let i=0;i<Math.round(20*H);i++)sideEnemy('grunt',S.bar.x-60-i*9-Math.random()*40,{bar:1});
+    S.door={x:snapDoor(F.start-(F.start-120)*.75),debris:!save.voltMet,locked:!save.voltMet,open:!!save.voltMet,argT:2};}
+  if(f===3){S.bar={x:F.len-460};S.npc={bT:1,flT:0,lineT:3,li:0};
+    for(let i=0;i<Math.round(20*H);i++)sideEnemy('grunt',S.bar.x-34-i*7-Math.random()*22,{bar:1});
     for(let i=0;i<Math.round(10*H);i++)sideEnemy('grunt',700+i*(S.bar.x-1100)/(10*H)+Math.random()*50,{toBar:1});
-    S.doors=[1500,1880];if(R.cfLost)sideBarricadeFalls();}
+    S.doors=[snapDoor(1400),snapDoor(1900)];if(R.cfLost)sideBarricadeFalls();}
   R.banner={txt:'FLOOR '+f+(f===1?' · FIND THE STAIRS':f===2?' · HEAD LEFT':' · REACH BRUNO AND BLAZE'),t:2.6,col:'#ffc53d'};
   cfbCkpt('f'+f);state='side';ui();last=performance.now();}
 function sideEnemy(type,x,o){const S=R.side,big=type==='brute';
@@ -1211,13 +1216,13 @@ function sideDmg(e,d,own,kb,melee){if(e.dead)return;
   e.hp-=d;e.flash=.08;e.aggro=1;if(e.bar&&!melee&&Math.random()<.7)e.bar=0;if(e.toBar)e.toBar=0;
   if(kb){e.x+=kb*R.side.face;e.stun=Math.max(e.stun,.45);}else if(e.type!=='brute')e.stun=Math.max(e.stun,.12);
   SND.hit(0);if(e.hp<=0)sideKill(e,own);}
-function sideShoot(){const S=R.side,id=S.active,W=SIDE_W[id],dmg=st(id).dmg*W.mul,y=GY-58;S.shT=W.rate;S.anT=.25;S.melA=0;
+function sideShoot(){const S=R.side,id=S.active,W=SIDE_W[id],dmg=st(id).dmg*W.mul,mz=MZ[id]||[70,40],y=GY+2-mz[0]*SK,mx=S.x+S.face*mz[1]*SK;S.shT=W.rate;S.anT=.25;S.melA=0;
   SND.shot(SHOT_KIND[id]||'rifle',0);
   if(W.chain){let cur=null,bd=470;for(const e of S.en){if(e.dead)continue;const dx=(e.x-S.x)*S.face;if(dx>0&&dx<bd){bd=dx;cur=e;}}
-    const pts=[[S.x+S.face*22,y]];const hit=new Set();
-    for(let k=0;k<3&&cur;k++){hit.add(cur);pts.push([cur.x,GY-50]);sideDmg(cur,dmg,id,0);let nx=null,nd=170;for(const e of S.en){if(e.dead||hit.has(e))continue;const d=Math.abs(e.x-cur.x);if(d<nd){nd=d;nx=e;}}cur=nx;}
+    const pts=[[mx,y]];const hit=new Set();
+    for(let k=0;k<3&&cur;k++){hit.add(cur);pts.push([cur.x,GY-62*SK]);sideDmg(cur,dmg,id,0);let nx=null,nd=170;for(const e of S.en){if(e.dead||hit.has(e))continue;const d=Math.abs(e.x-cur.x);if(d<nd){nd=d;nx=e;}}cur=nx;}
     if(pts.length===1)pts.push([S.x+S.face*300,y-10]);S.zaps.push({pts,t:.16});return;}
-  S.bu.push({x:S.x+S.face*24,y:y+(id==='rook'?(S.alt=!S.alt)?-6:4:0),v:W.spd*S.face,d:dmg,own:id,col:W.col,orb:W.orb,life:.85});}
+  S.bu.push({x:mx,y:y+(id==='rook'?(S.alt=!S.alt)?-5:5:0),v:W.spd*S.face,d:dmg,own:id,col:W.col,orb:W.orb,life:.85});}
 function sideMelee(){const S=R.side,id=S.active,s=st(id);S.melA=.35;S.anT=.35;S.melT=id==='hex'?.8:id==='volt'?.7:.45;
   // Volt's door: Hex burns away the debris, then Rook or the Commander kicks it in
   const D=S.door;if(D&&Math.abs(S.x-D.x)<95&&!D.open){
@@ -1246,7 +1251,7 @@ function sideUpdate(dt){const S=R.side;if(!S)return;t+=dt;S.t+=dt;cfbTick(dt);if
   if(!sideMembers().includes(S.active))S.active='cmd';
   // move, blocked by a zombie in the way
   let mv=S.mv||(S.keys&&((S.keys.r?1:0)-(S.keys.l?1:0)))||0;
-  if(mv){S.face=mv;const block=S.en.some(e=>!e.dead&&(e.x-S.x)*mv>0&&(e.x-S.x)*mv<e.w+22);if(!block)S.x=Math.max(40,Math.min(S.len-40,S.x+mv*SPD_SIDE*dt));}
+  if(mv){S.face=mv;const block=S.en.some(e=>!e.dead&&(e.x-S.x)*mv>0&&(e.x-S.x)*mv<e.w+22);if(!block&&S.exitT<0){const lo=S.floor===2?S.exitX:40,hi=S.floor===1?S.exitX:S.floor===3?S.bar.x-45:S.len-40;S.x=Math.max(lo,Math.min(hi,S.x+mv*SPD_SIDE*dt));}}
   if((S.shoot||(S.keys&&S.keys.s))&&S.shT<=0)sideShoot();
   // camera
   const tgt=S.x-WW/2+S.face*90;S.cam+=(Math.max(0,Math.min(S.len-WW,tgt))-S.cam)*Math.min(1,dt*4);
@@ -1280,12 +1285,13 @@ function sideUpdate(dt){const S=R.side;if(!S)return;t+=dt;S.t+=dt;cfbTick(dt);if
       if(N.muz>0)N.muz-=dt;N.flT-=dt;const fl=S.en.filter(e=>!e.dead&&e.x<S.bar.x&&e.x>S.bar.x-210);N.fire=fl.length>0;for(const e of fl)sideDmg(e,(e.type==='brute'?25:40)*dt,'blaze_npc');
       N.lineT-=dt;if(N.lineT<=0&&!R.say){N.lineT=5+Math.random()*3;const L=NPC_LINES[N.li++%NPC_LINES.length];R.say={who:L[0],txt:L[1],t:3};}}
     const live=S.en.filter(e=>!e.dead);
-    if(!S.brute&&S.x>S.bar.x-1100&&live.length<=3){const dx=S.doors.find(x=>x>S.x+140)||Math.min(S.bar.x-120,S.x+220);S.brute=sideEnemy('brute',dx,{aggro:1,burst:dx});S.burstT=.8;
+    if(!S.brute&&S.x>S.bar.x-1100&&live.length<=3){const dx=S.doors.find(x=>x>S.x+140)||Math.min(S.bar.x-120,S.x+220);S.brute=sideEnemy('brute',dx,{aggro:1,burst:dx});S.burstT=.8;if(Math.abs(S.x-dx)<120){sideHurt(S.active,20);const dir=S.x<dx?-1:1;S.x=Math.max(40,Math.min(S.bar.x-45,S.x+dir*150));S.flash=.3;}
       R.banner={txt:'BRUTE!',t:2,col:'#ff4d5e'};SND.explosion(.8);SND.groan(0,1);R.shake=.6;for(let i=0;i<26;i++)S.fx.push({x:dx+(Math.random()-.5)*60,y:GY-Math.random()*120,vx:(Math.random()-.5)*260,vy:-80-Math.random()*160,t:.9,col:'#8a94a6'});}
     if(S.burstT>0)S.burstT-=dt;
     if(S.brute&&S.brute.dead&&!live.length&&S.exitT<0){S.exitT=1.6;R.banner={txt:'FLOOR CLEAR',t:2,col:'#b6f23a'};SND.waveClear();}}
   // exits
-  if(S.floor!==3){const atEnd=S.floor===1?S.x>=S.len-70:S.x<=70;if(atEnd&&S.exitT<0){S.exitT=.9;SND.whoosh();}}
+  if(S.floor!==3){const atEnd=Math.abs(S.x-S.exitX)<3;if(atEnd&&S.exitT<0){S.exitT=.9;S.entering=1;SND.whoosh();}}
+  R.sideActive=S.active;
   if(S.exitT>=0){S.exitT-=dt;if(S.exitT<0){S.exitT=-1;if(S.floor<3)sideStart(S.floor+1);else cfbFinish();}}
 }
 function cfbFinish(){const saved=!R.cfLost;story('stage_clear_cfb',{saved});R.side.on=0;
@@ -1334,9 +1340,9 @@ function drawSideBG2(S){const f=S.floor,c=S.cam;ctx.fillStyle='#120a1a';ctx.fill
   const fh=WH-GY+6,fw=INF.width*fh/INF.height;for(let x=-(c%fw);x<WW;x+=fw)ctx.drawImage(INF,x,GY-4,fw+1,fh);
   // props along the floor
   const vis=(px,pw)=>px-c>-pw&&px-c<WW+pw;
-  if(f!==3){const ex=f===1?S.len-60:60;if(vis(ex,120)){ipr('exit',ex-c,172);ctx.fillStyle='#b6f23a';ctx.font='11px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText(f===1?'→':'←',ex-c,GY-182);}
-    const el=f===1?300:S.len-300;if(vis(el,160))ipr('elev',el-c,172);}
-  for(let i=Math.floor(c/430)-1;i<(c+WW)/430+1;i++){const h=hash3(i*17+f*3),px=i*430+180;if(px<200||px>S.len-200)continue;if(S.door&&Math.abs(px-S.door.x)<200)continue;if(f===3&&(Math.abs(px-S.bar.x)<260||S.doors.some(d=>Math.abs(px-d)<150)))continue;
+  if(f!==3){const ex=S.exitX;if(vis(ex,120)){ipr('exit',ex-c,172);ctx.fillStyle='#b6f23a';ctx.font='11px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText(f===1?'→':'←',ex-c,GY-182);}
+    const el=S.elevX;if(vis(el,160))ipr('elev',el-c,172);}
+  for(let i=Math.floor(c/430)-1;i<(c+WW)/430+1;i++){const h=hash3(i*17+f*3),px=i*430+180;if(px<200||px>S.len-200)continue;if([S.exitX,S.elevX].some(d=>d!=null&&Math.abs(px-d)<150))continue;if(S.door&&Math.abs(px-S.door.x)<200)continue;if(f===3&&(Math.abs(px-S.bar.x)<260||S.doors.some(d=>Math.abs(px-d)<150)))continue;
     if(h<.22){fireGlow(px-c,GY-30,90);ipr('fire',px-c,74);}else if(h<.4)ipr('bench',px-c,86);}
   if(f===3){for(const dx of S.doors){const br=S.brute&&S.brute.burst===dx;ipr(br?'dblOpen':'dbl',dx-c,156);}
     const bx=S.bar.x-c;if(!S.barDown)ipr('bar',bx+30,108);else ipr('bar',bx+40,50,.85);}}
@@ -1401,7 +1407,9 @@ function drawSide(){const S=R.side;ctx.save();if(R.shake>0)ctx.translate((Math.r
   // player
   const id=S.active,M=META[id],px=S.x-c;
   ctx.fillStyle='rgba(0,0,0,.4)';ctx.beginPath();ctx.ellipse(px,GY,24,6,0,0,6.283);ctx.fill();
-  if(NEW){const row=S.melA>0?'melee':S.anT>0?'shoot':S.mv?'run':'idle',fr=row==='melee'?Math.min(5,Math.floor((.35-S.melA)/.35*6)):row==='shoot'?Math.floor(t*12):row==='run'?Math.floor(t*12):Math.floor(t*6);sd(id,row,fr,px,S.face<0,S.flash>0?.6:1);}
+  const pa=S.entering?Math.max(0,S.exitT/.9):(S.flash>0?.6:1);
+  if(NEW&&S.anT>0&&S.mv&&!(S.melA>0)){const waist=GY+2-50*SK;ctx.save();ctx.beginPath();ctx.rect(px-120,waist,240,200);ctx.clip();sd(id,'run',Math.floor(t*12),px,S.face<0,pa);ctx.restore();ctx.save();ctx.beginPath();ctx.rect(px-140,0,280,waist);ctx.clip();sd(id,'shoot',Math.floor(t*12),px,S.face<0,pa);ctx.restore();}
+  else if(NEW){const row=S.melA>0?'melee':S.anT>0?'shoot':S.mv?'run':'idle',fr=row==='melee'?Math.min(5,Math.floor((.35-S.melA)/.35*6)):row==='shoot'?Math.floor(t*12):row==='run'?Math.floor(t*12):Math.floor(t*6);sd(id,row,fr,px,S.face<0,pa);}
   else if(atlasReady&&M){let arr=M.idle,fr=Math.floor(t*6);if(S.melA>0&&id==='rook'&&M.slash){arr=M.slash;fr=Math.floor((.35-S.melA)*18);}else if(S.anT>0&&(M.wshoot||M.shoot)){arr=(S.mv&&M.wshoot)?M.wshoot:M.shoot;fr=Math.floor(t*14);}else if(S.mv)arr=M.run,fr=Math.floor(t*10);
     sideSprite(id,arr,fr,px,SH,S.flash>0?.6:1);}
   // melee effects
@@ -1982,7 +1990,7 @@ function drawFrame(idx,x,y,sc,alpha){const r=RECTS[idx];if(!r)return;if(alpha!==
 function heroFrame(id){
   const M=META[id],st=anim(id);
   if(st.a==='slash'){if(M.slash){const f=Math.floor(st.t*20);if(f<M.slash.length)return M.slash[f];}st.a='run';st.t=0;}
-  if(st.a==='shoot'&&R&&R.stage===3&&M.wshoot){if(t-st.last<.35)return M.wshoot[Math.floor(t*9+id.length)%M.wshoot.length];st.a='run';st.t=0;}
+  if(st.a==='shoot'&&R&&R.stage===3&&!R.cfb&&M.wshoot){if(t-st.last<.35)return M.wshoot[Math.floor(t*9+id.length)%M.wshoot.length];st.a='run';st.t=0;}
   if(st.a==='shoot'){
     const n=M.shoot.length;let f=Math.floor(st.t*14);
     if(f>=n){
@@ -1993,7 +2001,7 @@ function heroFrame(id){
   }
   const lean=R?Math.min(3,Math.abs(R.vx)/170):0;
   if(lean>=1){const arr=R.vx<0?M.leanL:M.leanR;return arr[Math.min(arr.length-1,Math.floor(lean)-1)];}
-  if(R&&R.stage===3&&M.run)return M.run[Math.floor(st.t*9)%M.run.length];
+  if(R&&R.stage===3&&!R.cfb&&M.run)return M.run[Math.floor(st.t*9)%M.run.length];
   const n=M.idle.length,ki=Math.floor(st.t*6)%Math.max(1,2*n-2);return M.idle[ki<n?ki:2*n-2-ki];
 }
 /* waist line for walk+shoot compositing: where each frame's body centre sits at hip height */
@@ -2089,7 +2097,7 @@ function drawSquadMember(s){
   const[sx,sy,k]=P(s.x,s.z);
   ctx.fillStyle='rgba(0,0,0,.45)';ctx.beginPath();ctx.ellipse(sx,sy,24*k,7*k,0,0,6.283);ctx.fill();
   if(s.id==='cmd'){ctx.strokeStyle='#ffc53d';ctx.lineWidth=2;ctx.beginPath();ctx.ellipse(sx,sy,30*k,9*k,0,0,6.283);ctx.stroke();}
-  if(atlasReady&&R&&R.stage===3&&anim(s.id).a==='shoot'&&META[s.id].run&&!META[s.id].wshoot){const sc=k*CHAR_H/BODY_PX,fr=heroFrame(s.id),M=META[s.id],rf=M.run[Math.floor(t*9+(s.id.length))%M.run.length],cut=sy-WAIST_PX*sc;
+  if(atlasReady&&R&&R.stage===3&&!R.cfb&&anim(s.id).a==='shoot'&&META[s.id].run&&!META[s.id].wshoot){const sc=k*CHAR_H/BODY_PX,fr=heroFrame(s.id),M=META[s.id],rf=M.run[Math.floor(t*9+(s.id.length))%M.run.length],cut=sy-WAIST_PX*sc;
     const dx=(waistX(fr)-waistX(rf))*sc;
     ctx.save();ctx.beginPath();ctx.rect(sx-200*k,cut-2*sc,400*k,300*k);ctx.clip();drawFrame(rf,sx+dx,sy,sc);ctx.restore();
     ctx.save();ctx.beginPath();ctx.rect(sx-200*k,cut-400*k,400*k,400*k+3*sc);ctx.clip();drawFrame(fr,sx,sy,sc);
