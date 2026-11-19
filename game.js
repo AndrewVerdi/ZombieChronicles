@@ -2159,7 +2159,7 @@ function draw(){
 
 /* ---------- LOOP ---------- */
 let last=performance.now();
-function loop(now){
+function loop(now){resizeCheck();
   const dt=Math.min(.033,(now-last)/1000);last=now;
   if(state==='play')update(dt);else if(state==='blaze')blazeUpdate(dt);else if(state==='side')sideUpdate(dt);else{t+=dt*.3;}
   SND.setTrack(state==='intro'?'cine':(state==='play'||state==='blaze'||state==='side'||state==='pause'||state==='inter')?'combat':state==='over'?null:state==='win'?'title':'title');SND.setPause(state==='pause'||state==='inter');
@@ -2173,6 +2173,8 @@ function resize(){
   turn.hidden=!(r.height>r.width&&state==='play');
 }
 window.addEventListener('resize',resize);
+window.addEventListener('orientationchange',()=>setTimeout(resize,250));if(window.visualViewport)visualViewport.addEventListener('resize',resize);
+let rsW=0,rsH=0;function resizeCheck(){const w=stage.clientWidth,h=stage.clientHeight;const d=Math.min(2,window.devicePixelRatio||1);if(w!==rsW||h!==rsH||Math.abs(cv.width-Math.round(w*d))>2||Math.abs(cv.height-Math.round(h*d))>2){rsW=w;rsH=h;resize();}}
 
 /* ---------- INPUT ---------- */
 let drag=null,tap0=null;
