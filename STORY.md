@@ -19,10 +19,14 @@
 - Containment: the doors burst and 10 brutes spill out at once. View switches behind the team; the player picks 3 heroes plus the Commander, standing in place.
 - Ending cutscene: a mass of zombies comes up behind them, too many to fight; they cross the room to a ladder onto a lower roof, see the courtyard destroyed, the main gate torn open by a brute and the horde spilling in. Cyber Future is lost; the squad needs a way out.
 
-## Later
-- Frost: joins automatically, not on the stage after the labs but the one after that (stage 6). Boards TBD.
-- Nova: last unlockable, very easy to miss. Most likely the stage after Frost. Requires every other hero alive; if anyone is missing, every attempt to help her fails and costs more party members. With everyone alive, heroes can still be lost in the rescue if assigned the wrong duties (duty assignment TBD).
-
+## Roadmap: stages 5 to 10 (planned, not built)
+- **Stage 5:** distress call from Frost, holed up on a Mega City rooftop in a helicopter; she needs support and a pilot, and knows where a cure might be. The squad fires a grappling hook past the wall, zip-lines away from the horde into the forest, and heads for a ranger station with a vehicle. Town-route players can save and recruit Hex here, only if they have Volt.
+- **Stage 6:** driving, from the forest to the back road and onto the highway. The player seats the heroes in the jeep; each seat gives a role and buffs: driver (driving only), front passenger (shoots ahead), two rear seats (support, fire at enemies from the sides), standing in the open back (360° offensive support), sitting facing backward (fires at anything behind). The Ward returns. Ends crashing through the lobby of Frost's building.
+- **Stage 7:** the player controls Nova, a sniper on a nearby rooftop, covering the squad as it climbs floor by floor on autopilot and covering Frost from zombies. Hidden 6-minute timer to reach the roof and clear it, saving Frost. Saving Nova needs everyone alive, each with a job: Commander preps the helicopter (no time to fly to her); Hex teleports the team over and back; Frost keeps the fires down so the building holds; Volt powers Nova's high-security door and stays at the circuit; Bruno defends Volt; Rook protects Frost; Blaze goes alone to get Nova. If anyone is missing, they thank Nova over the radio, she is overrun, and they fly off.
+- **Stage 8:** helicopter to a remote island off Mega City with another Cyber Future lab. The squad runs up to the lab.
+- **Stage 9:** breaking into the lab. Heroes are assigned to roles, like the Mass Effect 2 suicide mission; the wrong hero in a role makes that part go wrong and someone dies.
+- **Stage 10:** final boss. Then the cure room: the distribution system is broken and must be launched by hand from inside, killing whoever stays.
+- **Final cutscene:** the survivors on the island shore watch the chemical spread, killing the undead, the mutated and the virus. A massive alien ship appears overhead; the team is beamed up and the ship leaves.
 
 ## Stage 4B: Cyber Future (forest route)
 - Wave 1, the courtyard: 100 turned civilians, scientists and soldiers (200 in Horde), a Brute walking with the horde, then two more Brutes as it closes in.
