@@ -942,7 +942,7 @@ function miniEnd(won){const g=cine.mg;g.res=won?'won':'lost';cineLastMini=g.res;
   if(g.cf&&g.cf.branch){cine.list=cine.list.slice(0,cine.i+1).concat(g.cf.branch(won));cine.tt=Math.max(cine.tt,cine.list[cine.i].d-.7);return;}
   const crew=cine.crew,C=FC,br=won?[C.w1,C.w2].concat(crew.rook?[C.w3,C.f6]:[C.rv3]):[C.l1,crew.rook?C.l2:C.rv2];
   cine.list=cine.list.slice(0,cine.i+1).concat(br);cine.tt=Math.max(cine.tt,cine.list[cine.i].d-.7);}
-function startForestCut(n,done,record){cineLoadKeys(FCUT_KEYS);const crew={rook:!!save.heroes.rook&&save.active.includes('rook'),hex:!!save.heroes.hex&&save.active.includes('hex')};
+function startForestCut(n,done,record){cutSeen(['fc'+n]);cineLoadKeys(FCUT_KEYS);const crew={rook:!!save.heroes.rook&&save.active.includes('rook'),hex:!!save.heroes.hex&&save.active.includes('hex')};
   if(CREW_VIEW){crew.rook=CREW_VIEW.rook;crew.hex=CREW_VIEW.hex!==false;}
   cine0pick=null;startIntro(()=>{const res=cineLastMini;cineLastMini=null;cine0pick=null;
     if(record&&n===1){const won=res==='won';story('minigame',{id:'hex_pin',won});
@@ -1314,10 +1314,11 @@ function sideUpdate(dt){const S=R.side;if(!S)return;t+=dt;S.t+=dt;cfbTick(dt);if
   R.sideActive=S.active;
   if(S.exitT>=0){S.exitT-=dt;if(S.exitT<0){S.exitT=-1;if(R.cfa)cfaExit(S);else if(S.floor<3)sideStart(S.floor+1);else cfbFinish();}}
 }
-function cfbFinish(){const saved=!R.cfLost;story('stage_clear_cfb',{saved});R.side.on=0;
-  const shots=saved?[{bg:'cfe_1',d:5,vo:"Bruno: \"Took you long enough, Commander.\"",cam:p=>({cx:.5,cy:.45,z:lerp(1.02,1.14,ease(p))}),fx(c,tt){c.embers(tt);}},
+function cfbEndShots(saved){return saved?[{bg:'cfe_1',d:5,vo:"Bruno: \"Took you long enough, Commander.\"",cam:p=>({cx:.5,cy:.45,z:lerp(1.02,1.14,ease(p))}),fx(c,tt){c.embers(tt);}},
       {bg:'cfe_2',d:5,vo:"Blaze: \"Next time, we pick the meeting spot.\"",cam:p=>({cx:lerp(.45,.4,ease(p)),cy:.4,z:lerp(1.04,1.16,ease(p))}),fx(c,tt){c.embers(tt*.7);c.glow(.9,.25,.08,.3+.1*Math.sin(tt*9),'255,150,60');}}]
-    :[{bg:'cfe_3',d:6.5,vo:"The barricade fell. They had held as long as anyone could.",cam:p=>({cx:lerp(.55,.5,ease(p)),cy:.5,z:lerp(1.18,1.02,ease(p))}),fx(c,tt){c.embers(tt*.5);c.glow(.05,.15,.1,.35+.1*Math.sin(tt*8),'255,140,50');c.dim(Math.max(0,(tt-5)*.4));}}];
+    :[{bg:'cfe_3',d:6.5,vo:"The barricade fell. They had held as long as anyone could.",cam:p=>({cx:lerp(.55,.5,ease(p)),cy:.5,z:lerp(1.18,1.02,ease(p))}),fx(c,tt){c.embers(tt*.5);c.glow(.05,.15,.1,.35+.1*Math.sin(tt*8),'255,140,50');c.dim(Math.max(0,(tt-5)*.4));}}];}
+function cfbFinish(){const saved=!R.cfLost;story('stage_clear_cfb',{saved});R.side.on=0;
+  const shots=cfbEndShots(saved);
   cineLoad(shots);
   startIntro(()=>{if(saved){for(const id of['bruno','blaze']){if(save.heroes[id])continue;const src=save.away&&save.away[id];
       const lvs=[save.cmd,...save.active.map(h=>save.heroes[h].lv)],lv=Math.round(lvs.reduce((a,b)=>a+b,0)/lvs.length);
@@ -1493,7 +1494,8 @@ const FA_FB='te_e1',FA_FB2='te_e2';
 /* cutscene versions by who's alive: each key lists the heroes in that image besides the Commander */
 const FA_V={o1:{fa_o1:['bruno','blaze','rook'],fa_o1_br:['blaze','rook'],fa_o1_b:['blaze'],fa_o1_r:['rook'],fa_o1_c:[]},
  hall:{fa_h_vbbr:['volt','bruno','blaze','rook'],fa_h_vbb:['volt','bruno','blaze'],fa_h_bbr:['bruno','blaze','rook'],fa_h_br:['blaze','rook'],fa_h_bv:['blaze','volt'],fa_h_r:['rook'],fa_h_b:['blaze']}};
-function faAlive(){return CFA_SQUAD.filter(id=>save.heroes[id]&&!(save.fallen||[]).includes(id));}
+let FA_VIEW=null;
+function faAlive(){if(FA_VIEW)return FA_VIEW.slice();return CFA_SQUAD.filter(id=>save.heroes[id]&&!(save.fallen||[]).includes(id));}
 function faPickV(set,have){let best=null,bn=-1;for(const[k,c]of Object.entries(set)){if(c.every(id=>have.includes(id))&&c.length>bn){bn=c.length;best=k;}}return best;}
 function faOpenList(){const have=faAlive().filter(id=>id!=='volt');return[
  {bg:faPickV(FA_V.o1,have),fb:FA_FB,d:5,vo:"Cyber Future. The squad had finally made it to the gates.",cam:p=>({cx:.5,cy:lerp(.55,.45,ease(p)),z:lerp(1.02,1.1,ease(p))}),fx(c,tt){}},
@@ -2494,7 +2496,7 @@ function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.cf
 function waveClear(){if(R.cfa){cfaVaultDone();return;}if(R.cfb){cfbYardDone();return;}if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healRecovery();save.gold+=50+R.wave*20;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{save.ckpt={stage:2,wave:1};persist();state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){clearCkpt();SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
-function freshSave(){legacy();const LG=save.legacy;save={legacy:LG,mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
+function freshSave(){legacy();const LG=save.legacy;save={legacy:LG,seen:save.seen,mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
 function rosterHTML(){
   let h='<h3>Commander</h3>';
   const cc=trainCost(save.cmd);
@@ -2585,15 +2587,22 @@ function ui(){
     <button class="btn ghost" data-act="menu">Back</button>`;
   }else if(state==='gallery'){
     const G=(k,t)=>`<button class="btn ghost" data-act="gal" data-k="${k}">${t}</button>`;
+    const SEC=(k,title,note,btns)=>`<h3>${title}</h3>`+(cutIsSeen(k)?(note?`<p class="sub">${note}</p>`:'')+`<div class="btns">${btns}</div>`:`<p class="sub">Not seen yet.</p>`);
     html=`<h2>Cutscene gallery</h2><div class="stripe"></div>
-    <p class="sub">Every cutscene and every version of it. Watching here never changes your save.</p>
-    <h3>Opening</h3><div class="btns">${G('intro','The intro')}</div>
-    <h3>Stage 1 ending</h3><div class="btns">${G('s1','Whole squad')}${G('s1b','Bruno fallen')}</div>
-    <h3>Rook arrives</h3><div class="btns">${G('s2','Whole squad')}${G('s2b','Bruno fallen')}</div>
-    <h3>The fork in the road</h3><p class="sub">The first two pick a road at the choice.</p><div class="btns">${G('f','Whole squad')}${G('fr','Rook fallen')}${G('fb','Bruno fallen')}${G('fbr','Bruno and Rook fallen')}</div>
-    <h3>The forest</h3><p class="sub">The first one includes the Hex mini-game.</p><div class="btns">${G('fc1','Something in the trees')}${G('fc1r','Same, Rook fallen')}${G('fc2','Screeches')}${G('fc3','Momma')}</div>
-    <h3>The forest ending</h3><p class="sub">The mini-game is skipped here and its result plays.</p><div class="btns">${G('fe','Hex gets them in')}${G('fexr','Same, Rook fallen')}${G('fel','The spell fizzles')}${G('fexrl','Same, Rook fallen')}${G('fen','Hex never joined')}${G('fenr','Same, Rook fallen')}</div>
-    <h3>The town ending</h3><p class="sub">The mini-game is skipped here and its result plays.</p><div class="btns">${G('tw','Blaze makes it')}${G('twr','Same, Rook fallen')}${G('twb','Same, Bruno fallen')}${G('twbr','Same, both fallen')}${G('tl','Blaze is overrun')}${G('tlr','Same, Rook fallen')}${G('tlb','Same, Bruno fallen')}${G('tlbr','Same, both fallen')}</div>
+    <p class="sub">Every cutscene you've seen, and every version of it. Watching here never changes your save.</p>
+    ${SEC('intro','Opening','',G('intro','The intro'))}
+    ${SEC('s1','Stage 1 ending','',G('s1','Whole squad')+G('s1b','Bruno fallen'))}
+    ${SEC('s2','Rook arrives','',G('s2','Whole squad')+G('s2b','Bruno fallen'))}
+    ${SEC('fork','The fork in the road','The first two pick a road at the choice.',G('f','Whole squad')+G('fr','Rook fallen')+G('fb','Bruno fallen')+G('fbr','Bruno and Rook fallen'))}
+    ${SEC('fc1','The forest: something in the trees','Includes the Hex mini-game.',G('fc1','Whole squad')+G('fc1r','Rook fallen'))}
+    ${SEC('fc2','The forest: screeches','',G('fc2','Screeches'))}
+    ${SEC('fc3','The forest: Momma','',G('fc3','Momma'))}
+    ${SEC('fe','The forest ending','The mini-game is skipped here and its result plays.',G('fe','Hex gets them in')+G('fexr','Same, Rook fallen')+G('fel','The spell fizzles')+G('fexrl','Same, Rook fallen')+G('fen','Hex never joined')+G('fenr','Same, Rook fallen'))}
+    ${SEC('te','The town ending','The mini-game is skipped here and its result plays.',G('tw','Blaze makes it')+G('twr','Same, Rook fallen')+G('twb','Same, Bruno fallen')+G('twbr','Same, both fallen')+G('tl','Blaze is overrun')+G('tlr','Same, Rook fallen')+G('tlb','Same, Bruno fallen')+G('tlbr','Same, both fallen'))}
+    ${SEC('fao','Stage 4 (town route): Cyber Future','',G('4ao:bruno,blaze,rook','Whole squad')+G('4ao:blaze,rook','Bruno fallen')+G('4ao:bruno,rook','Blaze lost')+G('4ao:bruno,blaze','Rook fallen')+G('4ao:','Commander alone'))}
+    ${SEC('fae','Stage 4 (town route): the roof','',G('4ae:volt,bruno,blaze,rook','Whole squad')+G('4ae:bruno,blaze,rook','Volt not freed')+G('4ae:volt,bruno,blaze','Rook fallen')+G('4ae:blaze,volt','Blaze and Volt')+G('4ae:blaze,rook','Blaze and Rook')+G('4ae:rook','Rook only')+G('4ae:blaze','Blaze only')+G('4ae:','Commander alone'))}
+    ${SEC('vf','Stage 4 (forest route): Volt','',G('4bv','Volt behind the door'))}
+    ${SEC('cfe','Stage 4 (forest route): the barricade','',G('4bs','Made it in time')+G('4bl','Too late'))}
     <button class="btn ghost" data-act="options">Back</button>`;
   }else if(state==='credits'){
     html=`<h2>Credits</h2><div class="stripe"></div>
@@ -2688,7 +2697,10 @@ ov.addEventListener('click',e=>{
   else if(a==='stage3'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:3});}SX=0;camX=0;startStage3();}
   else if(a==='stage2'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:2});}SX=0;camX=0;startStage2();}
   else if(a==='gallery'){state='gallery';ui();return;}
-  else if(a==='gal'){const k=b.dataset.k,back=()=>{CREW_VIEW=null;state='gallery';ui();};
+  else if(a==='gal'){const k=b.dataset.k,back=()=>{CREW_VIEW=null;FA_VIEW=null;state='gallery';ui();};
+    if(k.startsWith('4a')){FA_VIEW=k.split(':')[1].split(',').filter(Boolean);const L=k[2]==='o'?faOpenList():faEndList();cineLoad(L);startIntro(back,L);return;}
+    if(k==='4bv'){cineLoad(VF);startIntro(back,VF);return;}
+    if(k==='4bs'||k==='4bl'){const L=cfbEndShots(k==='4bs');cineLoad(L);startIntro(back,L);return;}
     CREW_VIEW={bruno:!/b/.test(k.slice(1)),rook:!/r/.test(k.slice(1))};
     if(k.startsWith('fe'))forestEndGallery(k,back);else if(k.startsWith('fc'))startForestCut(+k[2],back,false);else if(k[0]==='t')townEndGallery(k[1]==='w',back);else if(k==='intro')startIntro(back);else if(k[0]==='s'&&k[1]==='1')startIntro(back,SHOTS2);else if(k[0]==='s')startIntro(back,SHOTS3);else startFork(back,false);return;}
   else if(a==='intro4'){const rec=!save.route;startFork(()=>{state='options';ui();},rec);}
@@ -2874,7 +2886,7 @@ function forkList(){const{bruno,rook}=forkCrew(),F=FORK;
   if(!bruno){const B=forkBranch('backroad');return[F.xv1,rook?F.xv2:F.xv3,B[3],B[4],B[5]];}
   return[F.x01,rook?F.x02:F.xv4];}
 /* record=true on the real run: saves the pick and logs it to the story record */
-function startFork(done,record){cineLoadKeys(FORK_KEYS);const forced=!forkCrew().bruno;
+function startFork(done,record){cutSeen(['fork']);cineLoadKeys(FORK_KEYS);const forced=!forkCrew().bruno;
   startIntro(()=>{const route=cine0pick||'backroad';cine0pick=null;
     if(record){const crew=forkCrew();save.route=route;story('choice',{id:'fork_road',pick:route,forced,crew});
       if(route==='backroad'&&crew.bruno){story('hero_split',{hero:'bruno',to:'cyber_future_lab'});brunoLeaves();}persist();}
@@ -2936,7 +2948,12 @@ function cineEl(){
   GRAIN=document.createElement('canvas');GRAIN.width=GRAIN.height=180;const g=GRAIN.getContext('2d'),id=g.createImageData(180,180);
   for(let i=0;i<id.data.length;i+=4){const v=Math.random()*255;id.data[i]=id.data[i+1]=id.data[i+2]=v;id.data[i+3]=Math.random()<.5?40:0;}g.putImageData(id,0,0);
 }
-function startIntro(done,list){cineEl();cineLoad();cineLoad(list||SHOTS);cine={i:0,tt:0,done,last:performance.now(),list:storyCut(list||SHOTS)};state='intro';ui();clayer.hidden=false;requestAnimationFrame(cineFrame);}
+function cutKeysOf(list){if(!list||list===SHOTS)return['intro'];if(list===SHOTS2)return['s1'];if(list===SHOTS3)return['s2'];const out=new Set();
+  for(const s of list){const b=(s&&s.bg)||'';if(b.startsWith('te_'))out.add('te');else if(b.startsWith('fe_'))out.add('fe');else if(b.startsWith('vf_'))out.add('vf');else if(b.startsWith('cfe_'))out.add('cfe');else if(b.startsWith('fa_o'))out.add('fao');else if(/^fa_(h|l|roof|gate)/.test(b))out.add('fae');}return[...out];}
+function cutSeen(keys){save.seen=save.seen||{};let ch=0;for(const k of keys)if(!save.seen[k]){save.seen[k]=1;ch=1;}if(ch)persist();}
+function cutIsSeen(k){const s=save.seen||{};if(s[k])return true;const c=save.cleared||0;
+  if(k==='intro')return true;if(k==='s1')return c>=1;if(k==='s2')return c>=2;if(k==='fork')return !!save.route;return false;}
+function startIntro(done,list){cutSeen(cutKeysOf(list));cineEl();cineLoad();cineLoad(list||SHOTS);cine={i:0,tt:0,done,last:performance.now(),list:storyCut(list||SHOTS)};state='intro';ui();clayer.hidden=false;requestAnimationFrame(cineFrame);}
 function endIntro(){if(!cine)return;const d=cine.done;cine=null;clayer.hidden=true;const ch=clayer.querySelector('.cchoice');if(ch)ch.remove();const cm=clayer.querySelector('.cmini');if(cm)cm.remove();SND.engineSet(false);d&&d();}
 function cineFrame(now){
   if(!cine)return;
