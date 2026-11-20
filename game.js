@@ -1272,7 +1272,7 @@ function sideUpdate(dt){const S=R.side;if(!S)return;t+=dt;S.t+=dt;cfbTick(dt);if
   // camera
   const tgt=S.x-WW/2+S.face*90;S.cam+=(Math.max(0,Math.min(S.len-WW,tgt))-S.cam)*Math.min(1,dt*4);
   // spawn triggers: appear at the edge of the screen
-  for(const g of S.trig){if(g.done)continue;const near=S.floor===2?S.x<g.x+WW*.6:S.x>g.x-WW*.6;if(near){g.done=1;const ex=g.side>0?S.cam+WW+40:S.cam-40;const z=sideEnemy(g.type,ex,{aggro:1});if(g.hp)z.hp=z.max=g.hp;}}
+  for(const g of S.trig){if(g.done)continue;const near=S.floor===2?S.x<g.x+WW*.6:S.x>g.x-WW*.6;if(near){g.done=1;const ex=g.side>0?S.cam+WW+40:S.cam-40;const z=sideEnemy(g.type,ex,{aggro:1});if(g.hp)z.hp=z.max=g.hp;if(g.skin&&z.type==='grunt')z.skin=g.skin;}}
   // floor 3: clock stops once you reach the fight
   if(S.floor===2&&S.door&&!S.vfl&&Math.abs(S.x-S.door.x)<900){S.vfl=1;cineLoad(VF);}
   if(!R.cfa&&S.floor===3&&!R.clockStop&&S.x>S.bar.x-900){R.clockStop=1;if(!R.cfLost){R.sayQ.unshift({who:'bruno',txt:"Commander! Over here!",t:2.6});}}
@@ -1483,7 +1483,7 @@ function drawSideHUD(S){const Mb=sideMembers();
 const CFA_ORDER=['f1','f2','f3','f4','vault'];
 const CFA_SQUAD=['rook','blaze','bruno','volt'];
 const SCI_MAX=10;
-const FLOORS_A={1:{len:2700,start:120,dir:1,n:20,sci:6},2:{len:2700,start:2580,dir:-1,n:20,sci:6},3:{len:2700,start:120,dir:1,n:14,sci:5},4:{len:3600,start:120,dir:1,n:44,sci:3}};
+const FLOORS_A={1:{len:2700,start:120,dir:1,n:20,sci:6},2:{len:2700,start:2580,dir:-1,n:20,sci:6},3:{len:2700,start:120,dir:1,n:14,sci:5},4:{len:3600,start:120,dir:1,n:44,sci:0}};
 Object.assign(SIDE_W,{blaze:{rate:.08,mul:1,col:'#ff7a2e',flame:1,range:215,vsB:1.3},bruno:{rate:.85,mul:1,col:'#ffd27a',sg:1,range:300,vsB:1.1}});
 const FAPM={"cdoorOpen": [0, 0, 511, 313], "cdoor": [513, 0, 507, 308], "pod": [1022, 0, 200, 198], "rack": [1224, 0, 218, 116], "gurney": [1444, 0, 208, 113], "rubble": [1654, 0, 201, 102], "deadGuard": [0, 315, 286, 72], "deadSci": [288, 315, 290, 66], "blood": [580, 315, 196, 56]},FAP=new Image(),FAWC=new Image(),FAWH=new Image(),FACONT=new Image(),FAFLOOR=new Image();
 function faLoad(){if(FAP.src||!'assets/faprops.webp?v=a8720f434b')return;FAP.src='assets/faprops.webp?v=a8720f434b';FAWC.src='assets/fawc.webp?v=cda58715c3';FAWH.src='assets/fawh.webp?v=bf6f4e2d5a';FACONT.src='assets/facont.webp?v=a14cccf830';FAFLOOR.src='assets/fafloor.webp?v=e32c3d4607';}
@@ -1539,7 +1539,7 @@ function cfaFloor(S,f,F,H){
     S.door={x:snapDoor(F.start-(F.start-120)*.6),key:1,locked:1,open:false,argT:2};}
   if(f===3){S.bdoor=snapDoor(1500);for(let i=0;i<n;i++)S.trig.push({x:380+i*(S.bdoor-560)/n+Math.random()*50,side:1,type:'grunt'});}
   if(f===4){S.vault={x:F.len-300,st:0,t:0};
-    for(let i=0;i<n;i++)S.trig.push({x:380+i*(F.len-900)/n+Math.random()*40,side:i%7===6?-1:1,type:'grunt'});
+    for(let i=0;i<n;i++)S.trig.push({x:380+i*(F.len-900)/n+Math.random()*40,side:i%7===6?-1:1,type:'grunt',skin:Math.random()<.75?'sci':'sol'});
     for(const q of[.33,.66])S.trig.push({x:F.len*q,side:1,type:'brute',hp:HORDE()?3100:2600});
     const HP=[['deadSci',30],['deadGuard',32],['blood',16],['deadSci',30],['gurney',56],['rubble',48],['blood',16],['rack',58],['pod',96],['deadGuard',32]];for(let i=0;i<26;i++){const q=HP[i%HP.length];S.corpse.push({x:300+i*(F.len-800)/26+Math.random()*60,n:q[0],h:q[1],fl:Math.random()<.5});}
     if(0)S.corpse.push({x:300+Math.random()*(F.len-700),sk:['grunt','sci','sol','sci'][i%4],fl:Math.random()<.5,fr:4+Math.floor(Math.random()*2)});}
@@ -1615,7 +1615,7 @@ function cfaDrawPad(x,D){const px=x+70,py=GY-118,ok=!D.locked;ctx.fillStyle='#1a
 
 /* ---- per-frame floor logic; returns true if it changed scene ---- */
 function cfaUpdate(S,dt){
-  cfaSciUpdate(S,dt);if(R.over)return true;
+  if(S.floor<4){cfaSciUpdate(S,dt);if(R.over)return true;}
   if(S.flame>0)S.flame-=dt;if(S.muz>0)S.muz-=dt;
   const D=S.door;if(D){if(D.deny>0)D.deny-=dt;if(D.swipe>0)D.swipe-=dt;
     if(!D.hint&&Math.abs(S.x-D.x)<520){D.hint=1;if(!save.heroes.blaze)R.banner={txt:'LOCKED · NEEDS A SECURITY CARD',t:2.6,col:'#ff4d5e'};}}
@@ -1681,7 +1681,7 @@ function cfaDrawSci(S,c){for(const s of S.sci){const x=s.x-c;if(x<-60||x>WW+60)c
   if(s.down){const p=s.upT/.45;ctx.fillStyle='#0d1016cc';ctx.fillRect(x-20,GY-60,40,5);ctx.fillStyle='#5ee08a';ctx.fillRect(x-20,GY-60,40*p,5);if(Math.abs(s.x-S.x)>38&&(t*2%1)<.6){ctx.fillStyle='#ffc53d';ctx.font='10px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText('HELP!',x,GY-68);}}
   if(s.held){ctx.fillStyle='#ff4d5e';ctx.font='11px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText('!!',x,GY-128);}}
   for(const q of R.tx){if(q.sx==null)continue;ctx.globalAlpha=Math.min(1,q.t*2);ctx.fillStyle=q.col||'#ff4d5e';ctx.font='11px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText(q.txt,q.sx-c,GY-120-(1-q.t)*20);}ctx.globalAlpha=1;}
-function cfaHUD(cx){ctx.fillStyle='#0d1016cc';ctx.fillRect(cx-120,6,240,26);const n=R.sciTurned,warn=n>=SCI_MAX-3;
+function cfaHUD(cx){if(R.side&&R.side.floor>=4)return;ctx.fillStyle='#0d1016cc';ctx.fillRect(cx-120,6,240,26);const n=R.sciTurned,warn=n>=SCI_MAX-3;
   ctx.fillStyle=warn&&(t%1<.5)?'#ff4d5e':n?'#ffc53d':'#5ee08a';ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='center';
   ctx.fillText('SCIENTISTS TURNED '+n+'/'+SCI_MAX+'  ·  SAVED '+R.sciSaved,cx,24);}
 
@@ -2491,7 +2491,7 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
-function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.cfa){hW.textContent='CONTAINMENT';const wl=document.querySelector('.wl'),n=R.en.filter(e=>e.type==='brute'&&e.hp>0).length;if(wl)wl.textContent='BRUTES '+n+' · TURNED '+R.sciTurned+'/'+SCI_MAX;hH.style.width=(n/10*100)+'%';hH.style.background='var(--blood)';hG.textContent=save.gold.toLocaleString();return;}if(R.cfb){hW.textContent='CYBER FUTURE';const wl=document.querySelector('.wl');if(wl)wl.textContent=R.cfLost?'BRUNO & BLAZE · LOST':'BRUNO & BLAZE '+fmtClock(R.clock);const f=R.clock/R.clock0;hH.style.width=(f*100)+'%';hH.style.background=R.clock<60?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();}
+function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.cfa){hW.textContent='CONTAINMENT';const wl=document.querySelector('.wl'),n=R.en.filter(e=>e.type==='brute'&&e.hp>0).length;if(wl)wl.textContent='BRUTES '+n;hH.style.width=(n/10*100)+'%';hH.style.background='var(--blood)';hG.textContent=save.gold.toLocaleString();return;}if(R.cfb){hW.textContent='CYBER FUTURE';const wl=document.querySelector('.wl');if(wl)wl.textContent=R.cfLost?'BRUNO & BLAZE · LOST':'BRUNO & BLAZE '+fmtClock(R.clock);const f=R.clock/R.clock0;hH.style.width=(f*100)+'%';hH.style.background=R.clock<60?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();}
 function waveClear(){if(R.cfa){cfaVaultDone();return;}if(R.cfb){cfbYardDone();return;}if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healRecovery();save.gold+=50+R.wave*20;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{save.ckpt={stage:2,wave:1};persist();state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){clearCkpt();SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
