@@ -21,11 +21,21 @@
 
 ## Roadmap: stages 5 to 10 (planned, not built)
 - **Stage 5:** distress call from Frost, holed up on a Mega City rooftop in a helicopter; she needs support and a pilot, and knows where a cure might be. The squad fires a grappling hook past the wall, zip-lines away from the horde into the forest, and heads for a ranger station with a vehicle. Town-route players can save and recruit Hex here, only if they have Volt.
+  - Screechers appear in Stage 5 on both routes. The squad comes upon a ritual: Momma and a circle of Screechers levitating Hex.
+  - Town route, no Volt: Hex is turned. Fight Momma and Hex at the same time.
+  - Town route, with Volt: mini-game. Volt charges up and shoots electricity into the water, killing Momma and every Screecher there. Hex falls, the squad gathers her, she joins.
+  - Forest route, Hex in the squad: the ritual is ending; the Screechers have revived Momma, stronger and angrier. Fight her.
+  - Forest route, Hex never joined: Hex has just been turned. Fight Hex and the Screechers.
 - **Stage 6:** driving, from the forest to the back road and onto the highway. The player seats the heroes in the jeep; each seat gives a role and buffs: driver (driving only), front passenger (shoots ahead), two rear seats (support, fire at enemies from the sides), standing in the open back (360° offensive support), sitting facing backward (fires at anything behind). The Ward returns. Ends crashing through the lobby of Frost's building.
+  - Any number of heroes can ride, down to just a driver (extremely hard). Each hero has their own benefits per seat (detailed when the stage is built). The Ward shows up partway through and stays a constant threat.
 - **Stage 7:** the player controls Nova, a sniper on a nearby rooftop, covering the squad as it climbs floor by floor on autopilot and covering Frost from zombies. Hidden 6-minute timer to reach the roof and clear it, saving Frost. Saving Nova needs everyone alive, each with a job: Commander preps the helicopter (no time to fly to her); Hex teleports the team over and back; Frost keeps the fires down so the building holds; Volt powers Nova's high-security door and stays at the circuit; Bruno defends Volt; Rook protects Frost; Blaze goes alone to get Nova. If anyone is missing, they thank Nova over the radio, she is overrun, and they fly off.
+  - The 6-minute timer is how long the squad takes to reach Frost; it doesn't kill her. She dies only if enemies find her and take all her health. The player's job as Nova is cover fire protecting every party member.
+  - If saved, Nova joins and plays in the usual stages, when picked for the party (the cap still applies).
 - **Stage 8:** helicopter to a remote island off Mega City with another Cyber Future lab. The squad runs up to the lab.
 - **Stage 9:** breaking into the lab. Heroes are assigned to roles, like the Mass Effect 2 suicide mission; the wrong hero in a role makes that part go wrong and someone dies.
+  - The squad is paired off and split up depending on the player's strategy; no group is more than 4 deep. Details when the stage is built.
 - **Stage 10:** final boss. Then the cure room: the distribution system is broken and must be launched by hand from inside, killing whoever stays.
+  - The player picks who stays, anyone including the Commander. That hero is unavailable in the sequel. If the Commander is picked, a random hero takes his place (story reasons). Details when the stage is built.
 - **Final cutscene:** the survivors on the island shore watch the chemical spread, killing the undead, the mutated and the virus. A massive alien ship appears overhead; the team is beamed up and the ship leaves.
 
 ## Stage 4B: Cyber Future (forest route)
