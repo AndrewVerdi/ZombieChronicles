@@ -11,7 +11,7 @@
 ## Stage 4A: Cyber Future (town route)
 - Opening cutscene: scientists burst out of the main building into the courtyard; the squad goes in to investigate.
 - Almost all side-scrolling, same tower as 4B but with minimal destruction. Playable: Commander, Rook, Blaze, Bruno, plus Volt once freed. Blaze joins the roster here if she won the town ending.
-- Scientist meter: scientists run toward the squad to escape. A bullet (or flame, or shotgun blast) drops them; reach them before a zombie and the squad helps them up. A zombie that gets one (always if they're down, sometimes if they're running) turns them. 10 turned = game over. No clock.
+- Scientist meter: scientists run toward the squad to escape. A bullet (or flame, or shotgun blast) drops them; reach them before a zombie and the squad helps them up. A zombie that gets one (always if they're down, sometimes if they're running) turns them. 20 turned (15 in Horde) = game over; 28 scientists in Normal, 34 in Horde. No clock.
 - Blaze can run and gun, but it burns her (small, steady self-damage while moving and firing).
 - Floor 2: Volt's room isn't blocked; a keypad is visible. Only Blaze's security card opens it (melee with Blaze to swipe). No Blaze, no Volt.
 - Floor 3: the brute bursts through the door only when the squad is in front of it, so the hit always lands. Once he's down the squad goes through his door.

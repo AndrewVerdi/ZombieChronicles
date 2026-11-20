@@ -1482,8 +1482,8 @@ function drawSideHUD(S){const Mb=sideMembers();
    ===================================================================== */
 const CFA_ORDER=['f1','f2','f3','f4','vault'];
 const CFA_SQUAD=['rook','blaze','bruno','volt'];
-const SCI_MAX=10;
-const FLOORS_A={1:{len:2700,start:120,dir:1,n:20,sci:6},2:{len:2700,start:2580,dir:-1,n:20,sci:6},3:{len:2700,start:120,dir:1,n:14,sci:5},4:{len:3600,start:120,dir:1,n:44,sci:0}};
+let SCI_MAX=20;const sciMax=()=>HORDE()?15:20;
+const FLOORS_A={1:{len:2700,start:120,dir:1,n:20,sci:10},2:{len:2700,start:2580,dir:-1,n:20,sci:10},3:{len:2700,start:120,dir:1,n:14,sci:8},4:{len:3600,start:120,dir:1,n:44,sci:0}};
 Object.assign(SIDE_W,{blaze:{rate:.08,mul:1,col:'#ff7a2e',flame:1,range:215,vsB:1.3},bruno:{rate:.85,mul:1,col:'#ffd27a',sg:1,range:300,vsB:1.1}});
 const FAPM={"cdoorOpen": [0, 0, 511, 313], "cdoor": [513, 0, 507, 308], "pod": [1022, 0, 200, 198], "rack": [1224, 0, 218, 116], "gurney": [1444, 0, 208, 113], "rubble": [1654, 0, 201, 102], "deadGuard": [0, 315, 286, 72], "deadSci": [288, 315, 290, 66], "blood": [580, 315, 196, 56]},FAP=new Image(),FAWC=new Image(),FAWH=new Image(),FACONT=new Image(),FAFLOOR=new Image();
 function faLoad(){if(FAP.src||!'assets/faprops.webp?v=a8720f434b')return;FAP.src='assets/faprops.webp?v=a8720f434b';FAWC.src='assets/fawc.webp?v=cda58715c3';FAWH.src='assets/fawh.webp?v=bf6f4e2d5a';FACONT.src='assets/facont.webp?v=a14cccf830';FAFLOOR.src='assets/fafloor.webp?v=e32c3d4607';}
@@ -1506,15 +1506,14 @@ function faEndList(){const have=faAlive(),hall=faPickV(FA_V.hall,have),who=have.
  hall&&{bg:hall,fb:FA_FB2,d:5,vo:"The last brute fell. Then the hall behind them filled with the dead.",cam:p=>({cx:.5,cy:.5,z:lerp(1.02,1.14,ease(p))}),snd:()=>SND.groan(0,1),fx(c,tt){if((tt%1.2)<.1)c.shake=3;}},
  {bg:'fa_l_'+who,fb:FA_FB2,d:4.5,vo:(hall?'':"The last brute fell, and the dead filled the hall behind them. ")+nm+': "Too many! There\'s a ladder, move!"',cam:p=>({cx:lerp(.42,.56,ease(p)),cy:.5,z:1.1}),fx(c,tt){}},
  {bg:'fa_roof',fb:FA_FB,d:5.5,vo:"The ladder opened onto one of the lower roofs. Below them, the courtyard was gone.",cam:p=>({cx:lerp(.4,.55,ease(p)),cy:.5,z:lerp(1.16,1.04,ease(p))}),fx(c,tt){}},
- {bg:'fa_gate',fb:FA_FB,d:5.5,vo:"A brute had torn the main gate open. The horde was pouring in.",cam:p=>({cx:.58,cy:.5,z:lerp(1.02,1.18,ease(p))}),snd:()=>{SND.explosion(.6);SND.groan(0,1);},fx(c,tt){if(tt<.4)c.shake=6;}},
- {bg:'fa_roof',fb:FA_FB2,d:6,vo:"Cyber Future was lost. Now the squad needed a way out.",cam:p=>({cx:.55,cy:.45,z:lerp(1.3,1.0,ease(p))}),fx(c,tt){c.dim(Math.max(0,(tt-4.5)*.6));}}].filter(Boolean);}
+ {bg:'fa_gate',fb:FA_FB2,d:7.5,vo:"A brute had torn the main gate open and the horde was pouring in. Cyber Future was lost. Now the squad needed a way out.",cam:p=>({cx:.58,cy:.5,z:lerp(1.02,1.2,ease(p))}),snd:()=>{SND.explosion(.6);SND.groan(0,1);},fx(c,tt){if(tt<.4)c.shake=6;c.dim(Math.max(0,(tt-6)*.6));}}].filter(Boolean);}
 
 function cfaRoster(){
   if(save.blaze==='joined'&&!save.heroes.blaze){const src=save.away&&save.away.blaze,lvs=[save.cmd,...Object.values(save.heroes).map(h=>h.lv)],lv=Math.round(lvs.reduce((a,b)=>a+b,0)/lvs.length);
     save.heroes.blaze=src?{lv:src.lv,xp:src.xp||0}:{lv:Math.max(lv,JOIN_LV.blaze),xp:0};if(save.away)delete save.away.blaze;story('hero_joined',{hero:'blaze'});}
   for(const id of CFA_SQUAD)if(!save.heroes[id]&&save.away&&save.away[id]&&(id!=='volt'||save.voltMet==='joined')&&!(LOADSEL&&!LOADSEL.includes(id))){save.heroes[id]=save.away[id];delete save.away[id];}
   storyParty(CFA_SQUAD);save.active=CFA_SQUAD.filter(id=>save.heroes[id]).slice(0,MAX_ACTIVE);}
-function cfaStart(at,turned,skip){at=at||'f1';faLoad();stageRevive();cfaRoster();
+function cfaStart(at,turned,skip){SCI_MAX=sciMax();at=at||'f1';faLoad();stageRevive();cfaRoster();
   if(at==='f1')for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
   roadScroll=0;SX=0;camX=0;
   R={stage:3,cfa:1,wave:1,wall:0,wallMax:1,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[],civ:[],civLost:0,civHide:1,
@@ -1545,7 +1544,7 @@ function cfaFloor(S,f,F,H){
     if(0)S.corpse.push({x:300+Math.random()*(F.len-700),sk:['grunt','sci','sol','sci'][i%4],fl:Math.random()<.5,fr:4+Math.floor(Math.random()*2)});}
   // scientists come at you from ahead, spaced out over the floor
   const span=f===2?[F.start-500,420]:[620,(f===3?S.bdoor-200:F.len-600)];
-  for(let i=0;i<F.sci;i++){const q=(i+.5)/F.sci;S.strig.push({x:span[0]+(span[1]-span[0])*q});}
+  const nS=Math.round(F.sci*(HORDE()?1.2:1));for(let i=0;i<nS;i++){const q=(i+.5)/nS;S.strig.push({x:span[0]+(span[1]-span[0])*q});}
   if(f===4)R.sayQ.push({who:'bruno',txt:"God... what happened down here?",t:3});
   R.banner={txt:f===4?'THE HALL':'FLOOR '+f+(f===1?' · GET THEM OUT':f===2?' · HEAD LEFT':' · KEEP CLIMBING'),t:2.6,col:'#ffc53d'};}
 function cfaBounds(S){const f=S.floor;
@@ -1709,7 +1708,7 @@ function cfaFinish(){story('stage_clear_cfa',{turned:R.sciTurned,saved:R.sciSave
 function cfaWinHTML(){return `<h1 class="title">STAGE 4<span>COMPLETE</span></h1><div class="stripe"></div>
   <p class="sub">The squad cut through Cyber Future and broke the containment brutes. From the roof they watched the horde pour through the busted gate. Cyber Future is lost. Now they need a way out.</p>
   <div class="row"><span class="sub">Scientists saved</span><span class="big">${save.cfaSaved||0}</span></div>
-  <div class="row"><span class="sub">Scientists turned</span><span class="big">${save.cfaTurned||0} / ${SCI_MAX}</span></div>
+  <div class="row"><span class="sub">Scientists turned</span><span class="big">${save.cfaTurned||0} / ${sciMax()}</span></div>
   <div class="row"><span class="sub">Score</span><span class="big">${save.gold.toLocaleString()}</span></div>
   <p class="sub">Stage 5 is coming soon.</p>
   <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="cfa">Play Stage 4 again</button></div>`;}
