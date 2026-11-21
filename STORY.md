@@ -23,16 +23,20 @@
 - Opening cutscene: Frost's radio call, the grappling line over the wall, the zip line into the forest, sneaking toward a ranger station, then screams in the woods.
 - Wave 1: Screechers circle the squad, then every regular enemy (grunts, runners, armored, Screechers, 2 Brutes; doubled in Horde).
 - The ritual (cutscene, then):
-  - Town route with Volt: Volt's mini-game. Hold to charge, let go with the meter in the green, 3 surges before the ritual bar fills. Win: Hex is saved and joins. Lose: fight Momma, turned Hex and Screechers.
+  - Town route with Volt: Volt's mini-game, played inside the cutscene. Hold to charge, let go with the meter in the green, 3 surges before the ritual bar fills. Win: Hex is saved and joins. Lose: fight Momma, turned Hex and Screechers.
   - Town route, no Volt: fight Momma, turned Hex and Screechers.
   - Forest route with Hex: the Screechers are reviving Momma. With Volt: the same mini-game; win and Momma stays dead, lose and fight Momma reborn (1.5x health, enraged from the start) with Screechers. No Volt: straight to Momma reborn.
   - Forest route, Hex never joined: fight turned Hex and Screechers.
   - Turned Hex: floats in, throws green orbs that stun, blinks around, calls Screechers. Killing Momma doesn't kill her. If she's defeated, she's gone for good.
-- The ranger station (side-scroller): with Bruno he shoots the padlock and the noise brings the horde; without him the garage stays locked and the horde follows them from the pool anyway. Either way the jeep key has to be found inside.
-  - Pick two to go to the station; everyone else holds the jeep. Clock: 5:00 Normal, 3:00 Horde. If it runs out, the horde swarms the jeep: game over.
-  - Squad of two (Commander plus one): the other stays at the jeep, the Commander goes alone, 1:00 in either mode. Commander alone: same.
-  - Outside: fight through to the station. At the door, pick who guards; the other searches inside.
-  - Inside: 8 pieces of furniture, MELEE to search; the key is in a random one each run. Zombies smash through windows and grab you (can't move until you shoot or hit them off). The guard loses health over time; if they go down, zombies start coming through the door.
+- The ranger station (side-scroller):
+  - With Bruno in the squad: he shoots the padlock, the noise brings the horde, the squad holds the jeep. One key to find: the jeep key.
+  - Without Bruno: the garage stays locked, the horde follows them from the pool, the squad holds the garage. Two keys to find: the jeep key and the garage key.
+  - Squad of three or more: pick two to go to the station; everyone else holds the jeep or garage. Clock: 5:00 Normal, 3:00 Horde.
+  - Squad of two with Bruno: Bruno holds the jeep, the Commander goes alone, 1:00 in either mode.
+  - Squad of two without Bruno: both go (one guards, one searches), normal clock, two keys. Commander alone: searches alone, normal clock, two keys.
+  - At the door, pick who guards; the other searches inside. The guard and the squad hold for as long as the clock runs.
+  - Inside: 8 pieces of furniture, MELEE to search; the keys are in random ones each run. Zombies smash through windows and grab you (you can't move until you shoot or hit them off), and zombies outside block your path: they cost time, not health.
+  - Nobody can die at the station. If the clock runs out, the horde kills the entire party: game over.
 - Ending cutscene: the keys, the jeep bursting out of the garage onto the road to Mega City.
 
 ## Roadmap: stages 5 to 10 (planned, not built)

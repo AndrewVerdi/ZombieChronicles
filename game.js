@@ -929,11 +929,11 @@ function fcutList(n,crew){const rook=crew.rook,C=FC;
   if(n===1)return rook?[C.f1,C.f2,C.f3,C.f4,C.f5]:[C.rv1,C.f3,C.f4,C.f5];
   if(n===2)return crew.hex&&rook?[C.s1,C.s2]:[crew.hex?C.s2:C.s2v];
   return[C.m1];}
-function miniShow(){if(clayer.querySelector('.cmini'))return;const cf=typeof cine.list[cine.i].mini==='object'?cine.list[cine.i].mini:{};cine.mg={fill:0,left:cf.time||6,cf,shT:1.2,shI:0};const d=document.createElement('div');d.className='cmini';
+function miniShow(){if(clayer.querySelector('.cmini'))return;const cf=typeof cine.list[cine.i].mini==='object'?cine.list[cine.i].mini:{};if(cf.kind==='volt'){voltMiniShow(cf);return;}cine.mg={fill:0,left:cf.time||6,cf,shT:1.2,shI:0};const d=document.createElement('div');d.className='cmini';
   d.innerHTML='<div class="mlab">'+(cf.label||'BREAK HER HOLD!')+'</div><div class="mbar"><i></i></div><div class="mtime">'+(cf.time||6).toFixed(1)+'</div><button type="button">TAP!</button>';
   const tap=e=>{e.preventDefault();e.stopPropagation();if(!cine||!cine.mg||cine.mg.res)return;cine.mg.fill=Math.min(1,cine.mg.fill+1/(cf.taps||28));SND.click();if(cine.mg.fill>=1){miniEnd(true);return;}const b=d.querySelector('button');b.classList.remove('hit');void b.offsetWidth;b.classList.add('hit');};
   d.addEventListener('pointerdown',tap);clayer.appendChild(d);}
-function miniTick(dt){const g=cine.mg;if(!g||g.res)return;if(g.fill>=1){miniEnd(true);return;}g.left-=dt;g.fill=Math.max(0,g.fill-(g.cf.decay||.04)*dt);if(g.cf.shouts){g.shT-=dt;if(g.shT<=0){g.shT=2.1;feShout(g.shI++);}}const d=clayer.querySelector('.cmini');
+function miniTick(dt){const g=cine.mg;if(!g||g.res)return;if(g.volt){voltMiniTick(dt);return;}if(g.fill>=1){miniEnd(true);return;}g.left-=dt;g.fill=Math.max(0,g.fill-(g.cf.decay||.04)*dt);if(g.cf.shouts){g.shT-=dt;if(g.shT<=0){g.shT=2.1;feShout(g.shI++);}}const d=clayer.querySelector('.cmini');
   if(d){d.querySelector('.mbar i').style.width=(g.fill*100)+'%';d.querySelector('.mtime').textContent=Math.max(0,g.left).toFixed(1);}
   if(g.fill>=1)miniEnd(true);else if(g.left<=0)miniEnd(false);}
 function feShout(i){const L=[['Commander','Hex, any time now!'],['Rook',"I'm running dry here!"],['Commander',"They're on top of us!"],['Rook','Whatever you are doing, do it faster!'],['Commander','HEX!']].filter(x=>x[0]!=='Rook'||(FECREW&&FECREW.rook));const x=L[i%L.length];let d=clayer.querySelector('.cshout');if(!d){d=document.createElement('div');d.className='cshout';d.style.cssText='position:absolute;left:50%;top:16%;transform:translateX(-50%) rotate(-2deg);background:#0d1016e6;border:2px solid #ffc53d;color:#efe6dc;font:15px Bungee,Impact,sans-serif;padding:6px 12px;pointer-events:none;white-space:nowrap;z-index:5';clayer.appendChild(d);}d.innerHTML='<span style="color:#ffc53d">'+x[0].toUpperCase()+':</span> '+x[1];d.style.top=(3+(i%3)*4)+'%';d.style.left=(i%2?62:38)+'%';SND.shot(x[0]==='Rook'?'pistol':'rifle',0);}
@@ -1220,7 +1220,7 @@ function sideFall(id){const S=R.side;if(R.s5){s5Fall(id);return;}
   story(HORDE()?'hero_died':'hero_down',{hero:id,level:save.heroes[id].lv,where:'cyber_future'});
   delete save.heroes[id];save.active=save.active.filter(h=>h!==id);if(!save.fallen.includes(id))save.fallen.push(id);
   SND.heroDown();R.banner={txt:HEROES[id].name.toUpperCase()+(HORDE()?' HAS FALLEN':' IS DOWN'),t:3,col:'#ff4d5e'};S.active='cmd';persist();}
-function sideHurt(id,d){if(R.over)return;if(HORDE())d*=1.15;const hp=getHp(id)-d;setHp(id,hp);SND.hurt(0);R.side.flash=.15;if(hp<=0)sideFall(id);}
+function sideHurt(id,d){if(R.over)return;if(R.s5){SND.hurt(0);R.side.flash=.12;return;}if(HORDE())d*=1.15;const hp=getHp(id)-d;setHp(id,hp);SND.hurt(0);R.side.flash=.15;if(hp<=0)sideFall(id);}
 function sideKill(e,own){e.dead=1;e.dt=0;if(SIDE_W[own])addKill(own,e.type==='runner'?'runner':e.type);save.gold+=e.type==='brute'?150:e.type==='runner'?30:10;
   const xp=e.type==='brute'?11:e.type==='runner'?3:4;for(const id of['cmd',...save.active]){const x=xp*(id===own?1:XP_SHARE);if(id==='cmd')cmdXp(x);else giveXp(id,x);}
   SND.die(e.type,0);}
@@ -1784,14 +1784,43 @@ function s5RitualList(kind){
   if(kind==='hexv')return[
     sh5('s5_r1','fe_n1c',5.5,"Through the trees: a black pool, a ring of Screechers, and Momma in the middle of it.",pushIn,{snd:()=>SND.groan(0,.5)}),
     sh5('s5_r2','xw1',5,"Floating above the water, limp, was Hex. They were turning her.",panL),
-    sh5('s5_r3','fe_n2',4.5,"Volt: \"They're all standing in water. Give me a second.\"",pushIn)];
+    sh5('s5_r3','fe_n2',6,"Volt: \"They're all standing in water. Give me a second.\"",pushIn,voltMiniShot('hexv'))];
   if(kind==='hext')return[
     sh5('s5_r1','fe_n1c',5.5,"Through the trees: a black pool and a ring of Screechers"+(s5Town()?", with Momma in the middle of it.":"."),pushIn,{snd:()=>SND.groan(0,.5)}),
     sh5('s5_h2','xw1',5.5,"Hex hung above the water. Her eyes opened, and they were green.",pushIn,{fx:shakeFx})];
   // the Screechers are singing Momma back
   const v=s5Alive('volt');return[
     sh5('s5_v1','fe_n2',5.5,"Momma's body lay in a black pool. A ring of Screechers was singing her back.",pushIn,{snd:()=>SND.groan(0,.4)}),
-    sh5('s5_v2','xm1',4.5,"Hex: \"They're bringing her back.\""+(v?" Volt: \"Not if I fry the pond first.\"":" Commander: \"Then we put her down again.\""),panL)];}
+    sh5('s5_v2','xm1',v?6:4.5,"Hex: \"They're bringing her back.\""+(v?" Volt: \"Not if I fry the pond first.\"":" Commander: \"Then we put her down again.\""),panL,v?voltMiniShot('mom'):{})];}
+function voltMiniShot(kind){return{choiceAt:2.4,mini:{kind:'volt',for:kind,branch:won=>won?s5WinList(kind):s5LoseList(kind)},
+  fx(c,tt){const g=cine&&cine.mg;if(g&&g.volt){if(g.flashT>0)c.flash(Math.min(.9,g.flashT*1.8));if(g.hold)c.shake=1+g.charge*3;c.glow(.5,.62,.3,.15+.4*g.rit,'182,242,58');}}};}
+function voltMiniShow(cf){cine.mg={volt:1,cf,rit:0,charge:0,hold:false,zone:[.62,.86],surges:0,need:3,t:0,spd:1,msg:'',msgT:0,flashT:0};
+  const d=document.createElement('div');d.className='cmini';d.style.cssText='position:absolute;inset:0;z-index:4;touch-action:none;cursor:pointer;background:none;border:0;padding:0;transform:none;left:0;top:0;width:auto';
+  const lab=cf.for==='hexv'?'TURNING HEX':'MOMMA RETURNS';
+  d.innerHTML='<div style="position:absolute;left:50%;top:5%;transform:translateX(-50%);width:52%;text-align:center;font:12px Bungee,Impact,sans-serif;color:#b6f23a;text-shadow:0 1px 0 #000">'+lab+'<div style="height:9px;background:#2a1a22;margin-top:4px;border:1px solid #000"><i class="vr" style="display:block;height:100%;width:0;background:#b6f23a"></i></div></div>'
+   +'<div style="position:absolute;right:4%;top:16%;height:56%;width:30px;background:#1a2a33;border:2px solid #efe6dc"><b class="vz" style="position:absolute;left:0;right:0;background:rgba(94,224,138,.9)"></b><b class="vc" style="position:absolute;left:6px;right:6px;bottom:0;height:0;background:#9fe8ff"></b></div>'
+   +'<div class="vp" style="position:absolute;right:3%;top:75%;font:16px Bungee,Impact,sans-serif;color:#9fe8ff;letter-spacing:4px"></div>'
+   +'<div class="vm" style="position:absolute;left:50%;top:38%;transform:translateX(-50%);font:24px Bungee,Impact,sans-serif;color:#9fe8ff;text-shadow:0 2px 0 #000;white-space:nowrap"></div>'
+   +'<div style="position:absolute;left:50%;bottom:24%;transform:translateX(-50%);font:13px Bungee,Impact,sans-serif;color:#efe6dc;background:#0d1016d9;padding:6px 12px;white-space:nowrap">HOLD TO CHARGE · LET GO IN THE GREEN</div>';
+  const dn=e=>{e.preventDefault();e.stopPropagation();const g=cine&&cine.mg;if(!g||g.res)return;g.hold=true;try{d.setPointerCapture(e.pointerId);}catch(_){}},
+        up=e=>{e.preventDefault();e.stopPropagation();voltRelease();};
+  d.addEventListener('pointerdown',dn);d.addEventListener('pointerup',up);d.addEventListener('pointercancel',up);clayer.appendChild(d);voltMiniDom();}
+function voltRelease(){const g=cine&&cine.mg;if(!g||g.res||!g.hold)return;g.hold=false;
+  if(g.charge>=g.zone[0]&&g.charge<=g.zone[1]){g.surges++;g.rit=Math.max(0,g.rit-.14);g.flashT=.45;SND.shot('zap',0);SND.explosion(.3);g.msg='SURGE '+g.surges+'/'+g.need;g.msgT=1;
+    const w=Math.max(.1,.24-g.surges*.05),c0=.42+Math.random()*(.9-w-.42);g.zone=[c0,c0+w];g.spd=1+g.surges*.3;}
+  else if(g.charge>.15){g.msg='TOO WEAK';g.msgT=.9;g.rit=Math.min(1,g.rit+.03);SND.click();}
+  g.charge=0;voltMiniDom();if(g.surges>=g.need){setTimeout(()=>{if(cine&&cine.mg===g&&!g.res)miniEnd(true);},450);}}
+function voltMiniTick(dt){const g=cine.mg;if(!g||g.res)return;g.t+=dt;if(g.flashT>0)g.flashT-=dt;if(g.msgT>0)g.msgT-=dt;
+  if(g.surges<g.need){g.rit+=dt/(HORDE()?11:15);
+    if(g.hold){g.charge+=dt*(.55+.35*Math.abs(Math.sin(g.t*2.3)))*g.spd;if(g.charge>1.04){g.charge=0;g.hold=false;g.msg='OVERLOAD';g.msgT=1;g.rit=Math.min(1,g.rit+.05);SND.click();}}
+    if(g.rit>=1){voltMiniDom();miniEnd(false);return;}}
+  voltMiniDom();}
+function voltMiniDom(){const g=cine&&cine.mg,d=clayer.querySelector('.cmini');if(!g||!d)return;
+  d.querySelector('.vr').style.width=Math.min(100,g.rit*100)+'%';d.querySelector('.vr').style.background=g.rit>.75&&(g.t%.5<.25)?'#ff4d5e':'#b6f23a';
+  const z=d.querySelector('.vz');z.style.bottom=(g.zone[0]*100)+'%';z.style.height=((g.zone[1]-g.zone[0])*100)+'%';
+  const c=d.querySelector('.vc');c.style.height=Math.min(100,g.charge*100)+'%';c.style.background=g.charge>g.zone[1]?'#ff4d5e':'#9fe8ff';
+  d.querySelector('.vp').textContent='●'.repeat(g.surges)+'○'.repeat(g.need-g.surges);
+  const m=d.querySelector('.vm');m.textContent=g.msgT>0?g.msg:'';m.style.color=g.msg.startsWith('SURGE')?'#9fe8ff':'#ff4d5e';}
 function s5WinList(kind){
   if(kind==='hexv')return[
     sh5('s5_w1','xw2',5,"The pool lit up white. Every Screecher dropped. So did Momma.",pullOut,{snd:()=>SND.explosion(.6),fx:(c,tt)=>{if(tt<.5)c.shake=6;}}),
@@ -1801,13 +1830,14 @@ function s5WinList(kind){
 function s5LoseList(kind){
   if(kind==='hexv')return[sh5('s5_l1','xw1',5,"Volt's charge died in the water. Hex's eyes snapped open, green.",pushIn,{fx:shakeFx})];
   return[sh5('s5_l2','xm1',5,"Too late. Momma rose out of the pool, bigger and angrier.",pushIn,{snd:()=>SND.groan(0,1),fx:shakeFx})];}
-function s5PostList(){const b=s5Alive('bruno');return[
+function s5HasBruno(){if(S5_VIEW&&S5_VIEW.bruno!=null)return S5_VIEW.bruno;return s5Team().includes('bruno');}
+function s5PostList(){const b=s5HasBruno();return[
   sh5('s5_p1','te_e1',5.5,"The ranger station. A garage, a padlock, and behind it, a jeep.",pushIn),
   ...(b?[sh5('s5_p2','te_e2',3.5,"Bruno: \"I got this.\"",panL,{snd:()=>setTimeout(()=>SND.shot('shotgun',0),2600)}),
          sh5('s5_p3','te_e1',4.5,"Commander: \"Bruno! Every dead thing for a mile heard that.\"",pushIn),
          sh5('s5_p4',S5_FB2,4,"They had. And there was still no key for the jeep.",pullOut,{snd:()=>SND.groan(0,1),fx:shakeFx})]
-       :[sh5('s5_p2','te_e2',4.5,"Locked. The key for the garage and the jeep had to be inside the station.",panL),
-         sh5('s5_p4',S5_FB2,4.5,"Then the trees started moving. The dead had followed them from the pool.",pullOut,{snd:()=>SND.groan(0,1),fx:shakeFx})])];}
+       :[sh5('s5_p2','te_e2',4.5,"Locked tight. The keys for the garage and the jeep had to be inside the station.",panL),
+         sh5('s5_p4',S5_FB2,4.5,"Then the trees started moving. The dead had followed them from the pool. Commander: \"Hold the garage!\"",pullOut,{snd:()=>SND.groan(0,1),fx:shakeFx})])];}
 function s5EndList(){return[
   sh5('s5_e1','te_e2',4,"Keys.",pushIn),
   sh5('s5_e2','te_e1',6,"The jeep tore out of the garage, through the horde, and onto the road. Next stop: Mega City.",pullOut,{snd:()=>SND.explosion(.4),fx:(c,tt)=>{c.dim(Math.max(0,(tt-4.6)*.7));}})];}
@@ -1839,8 +1869,17 @@ function s5WaveDone(){if(R.s5Done)return;R.s5Done=1;SND.waveClear();healRecovery
 
 /* ---------- the ritual ---------- */
 function s5Kind(){if(s5Town())return s5Alive('volt')?'hexv':'hext';return s5Alive('hex')?'mom':'hext';}
-function s5Ritual(){s5Base();R.s5ph='rit';s5Ckpt('rit');const k=R.s5kind=s5Kind(),L=s5RitualList(k);cineLoad(L);
-  startIntro(()=>{if(k==='hexv'||(k==='mom'&&s5Alive('volt')))vmgStart(k);else s5Fight(k==='mom'?'mom':s5Town()?'both':'hex');},L);}
+function s5Ritual(){s5Base();R.s5ph='rit';s5Ckpt('rit');const k=R.s5kind=s5Kind(),L=s5RitualList(k);cineLoad(L);cineLoad(s5WinList(k).concat(s5LoseList(k)));
+  cine0pick=null;cineLastMini=null;
+  startIntro(()=>{const res=cineLastMini;cineLastMini=null;cine0pick=null;
+    if(res==='won'){s5VoltWon(k);s5Post();}
+    else if(res==='lost')s5Fight(k==='hexv'?'both':'mom');
+    else s5Fight(k==='mom'?'mom':s5Town()?'both':'hex');},L);}
+function s5VoltWon(k){story('volt_pool',{won:true,kind:k});
+  if(k==='hexv'){const lvs=[save.cmd,...save.active.map(h=>save.heroes[h].lv)],lv=Math.round(lvs.reduce((a,b)=>a+b,0)/lvs.length);
+    const src=save.away&&save.away.hex;save.heroes.hex=src?{lv:src.lv,xp:src.xp||0,hp:null}:{lv:Math.max(lv,JOIN_LV.hex||1),xp:0,hp:null};if(save.away)delete save.away.hex;
+    save.fallen=(save.fallen||[]).filter(h=>h!=='hex');delete save.hexTurned;story('hero_joined',{hero:'hex',where:'stage5'});setHp('hex',maxHp('hex'));}
+  persist();}
 function s5Fight(kind){s5Base();R.s5ph='fight';R.s5fight=kind;R.wave=4;const H2=HORDE()?2:1,q=[];
   const nS=(kind==='hex'?14:kind==='both'?16:18)*H2;for(let i=0;i<nS;i++)q.push('screecher');
   for(let i=0;i<6*H2;i++)q.push('grunt');shuf(q);
@@ -1960,12 +1999,13 @@ const S5_ITEMS=[['desk','DESK'],['cabinet','FILE CABINET'],['locker','LOCKER'],[
 let S5_PICK=null;
 function s5Team(){return['cmd',...save.active.filter(id=>save.heroes[id])];}
 function s5Post(){s5Base();R.s5ph='post';s5Ckpt('post');const L=s5PostList();cineLoad(L);
-  startIntro(()=>{R.clock=HORDE()?180:300;const T=s5Team();
-    if(T.length<=2){R.s5go=['cmd'];R.s5jeep=T.filter(id=>id!=='cmd');R.clock=60;s5Outside();return;}
+  startIntro(()=>{R.clock=HORDE()?180:300;const T=s5Team();R.s5keys=s5HasBruno()?1:2;
+    if(T.length===2&&T.includes('bruno')){R.s5go=['cmd'];R.s5jeep=['bruno'];R.clock=60;s5Outside();return;}
+    if(T.length<=2){R.s5go=T.slice();R.s5jeep=[];s5Outside();return;}
     S5_PICK=[];state='pick5';ui();},L);}
 function s5PickHTML(){const T=s5Team(),ok=S5_PICK.length===2,nm=id=>id==='cmd'?'Commander':HEROES[id].name;
-  return `<h2>The ranger station</h2><div class="stripe"></div><p class="sub">Two go to the station for the key. Everyone else holds the jeep. You have ${fmtClock(R.clock)} before the horde overruns them.</p>
-  <div class="chips">${T.map(id=>`<button class="chip ${S5_PICK.includes(id)?'on':''}" data-act="p5" data-id="${id}">${nm(id)} · ${Math.round(getHp(id))}/${Math.round(maxHp(id))}</button>`).join('')}</div>
+  return `<h2>The ranger station</h2><div class="stripe"></div><p class="sub">Two go to the station for ${R.s5keys>1?'the jeep key and the garage key':'the jeep key'}. Everyone else holds the ${R.s5keys>1?'garage':'jeep'}. You have ${fmtClock(R.clock)} before the horde overruns them, and everyone with them.</p>
+  <div class="chips">${T.map(id=>`<button class="chip ${S5_PICK.includes(id)?'on':''}" data-act="p5" data-id="${id}">${nm(id)}</button>`).join('')}</div>
   <p class="sub">${S5_PICK.length}/2 chosen</p><div class="btns"><button class="btn" data-act="p5go" ${ok?'':'disabled style="opacity:.4"'}>Go</button></div>`;}
 function s5GuardHTML(){const T=R.s5go,nm=id=>id==='cmd'?'Commander':HEROES[id].name;
   return `<h2>At the door</h2><div class="stripe"></div><p class="sub">One stands guard outside. The other goes in and searches. Who guards the door?</p>
@@ -1976,20 +2016,20 @@ function s5PickAct(a,b){
   if(a==='g5'){const g=b.dataset.id;R.s5guard={id:g};R.s5in=R.s5go.filter(x=>x!==g)[0];R.sideActive=R.s5in;sideStart(2);return true;}
   return false;}
 function s5Outside(){story('ranger_post',{go:R.s5go,jeep:R.s5jeep});R.sideActive=R.s5go[0];sideStart(1);
-  R.sayQ.push({who:R.s5go[0]==='cmd'?'cmd':R.s5go[0],txt:R.s5go.length>1?"Station's on the right. Move!":"I'll find it. Hold them off!",t:3});}
+  R.sayQ.push({who:R.s5go[0]==='cmd'?'cmd':R.s5go[0],txt:R.s5go.length>1?"Station's on the right. Move!":R.s5keys>1?"I'll find the keys. Hold them off!":"I'll find it. Hold them off!",t:3});}
 function s5Members(){const S=R.side;if(!S)return['cmd'];const L=S.floor===2?[R.s5in]:R.s5go;return L.filter(id=>id==='cmd'||save.heroes[id]);}
 function s5Floor(S,f,F,H){S.items=[];S.wins=[];S.grab=null;
   if(f===1){S.postX=F.len-260;
     const n=Math.round(18*H);for(let i=0;i<n;i++)S.trig.push({x:520+i*(S.postX-700)/n+Math.random()*60,side:i%5===4?-1:1,type:'grunt'});
     S.trickT=5;R.banner={txt:'GET TO THE STATION',t:2.4,col:'#ffc53d'};}
-  else{const keyI=Math.floor(Math.random()*S5_ITEMS.length),it=S5_ITEMS.slice().sort(()=>Math.random()-.5);
-    for(let i=0;i<it.length;i++)S.items.push({x:260+i*150+(Math.random()-.5)*30,k:it[i][0],name:it[i][1],key:i===keyI,done:0});
+  else{const it=S5_ITEMS.slice().sort(()=>Math.random()-.5),ks=[0,1,2,3,4,5,6,7].sort(()=>Math.random()-.5).slice(0,R.s5keys||1);S.found=0;
+    for(let i=0;i<it.length;i++){const ki=ks.indexOf(i);S.items.push({x:260+i*150+(Math.random()-.5)*30,k:it[i][0],name:it[i][1],key:ki<0?null:ki===0?'JEEP KEY':'GARAGE KEY',done:0});}
     for(const wx of[330,630,930,1230])S.wins.push({x:wx,broke:0});
-    S.winT=4;S.doorT=0;R.banner={txt:'FIND THE KEY · MELEE TO SEARCH',t:3,col:'#ffc53d'};
+    S.winT=4;S.doorT=0;R.banner={txt:(R.s5keys>1?'FIND BOTH KEYS':'FIND THE JEEP KEY')+' · MELEE TO SEARCH',t:3,col:'#ffc53d'};
     if(R.s5guard)R.sayQ.push({who:R.s5guard.id,txt:"I've got the door. Be quick.",t:2.6});}}
 function s5Bounds(S){return S.floor===1?[60,S.postX]:[70,S.len-60];}
 function s5Tick(dt){if(R.say&&R.side){}if(!R.say&&R.sayQ&&R.sayQ.length)R.say=R.sayQ.shift();
-  if(!R.clockStop&&R.side){R.clock-=dt;if(R.clock<=0&&!R.over){R.clock=0;R.over=true;R.s5Swarm=1;story('jeep_overrun',{});gameOver();}}}
+  if(!R.clockStop&&R.side){R.clock-=dt;if(R.clock<=0&&!R.over){R.clock=0;R.over=true;R.s5Swarm=1;story('party_overrun',{where:'ranger_post'});gameOver();}}}
 /* zombies that come through the windows grab whoever is searching */
 function s5ZAI(e,S,dt){if(!e.win)return false;
   if(e.inT>0){e.inT-=dt;return true;}
@@ -2007,14 +2047,11 @@ function s5Update(S,dt){
     return false;}
   // inside: searching, windows, the guard
   if(S.search){S.search.t+=dt;if(S.search.t>=.9){const it=S.search.it;it.done=1;S.lock=0;S.search=null;
-      if(it.key){s5KeyFound(S);return false;}R.tx.push({sx:it.x,txt:'NOTHING',t:1.1,col:'#efe6dc'});SND.click();}}
+      if(it.key){S.found++;R.tx.push({sx:it.x,txt:it.key+'!',t:1.6,col:'#b6f23a'});SND.levelUp();if(S.found>=(R.s5keys||1)){s5KeyFound(S);return false;}R.banner={txt:it.key+' · '+(R.s5keys-S.found)+' TO GO',t:2,col:'#b6f23a'};return false;}R.tx.push({sx:it.x,txt:'NOTHING',t:1.1,col:'#efe6dc'});SND.click();}}
   S.winT-=dt;if(S.winT<=0){S.winT=(HORDE()?3.4:5)*(.75+Math.random()*.5);const vis=S.wins.filter(w=>w.x>S.cam+40&&w.x<S.cam+WW-40);const w=vis[Math.floor(Math.random()*vis.length)];
     if(w){w.broke=1;w.shard=.6;const z=sideEnemy('grunt',w.x,{aggro:1,win:1,inT:.55});if(z.type==='runner'){z.type='grunt';z.hp=z.max=185;z.spd=46;z.hd=7;}z.spd=60;SND.explosion(.2);
       for(let i=0;i<14;i++)S.fx.push({x:w.x+(Math.random()-.5)*50,y:GY-150+Math.random()*60,vx:(Math.random()-.5)*220,vy:-40-Math.random()*100,t:.8,col:'#cfe6ff'});}}
   for(const w of S.wins)if(w.shard>0)w.shard-=dt;
-  const G=R.s5guard;if(G&&!G.down){const id=G.id;G.t=(G.t||0)+dt;if(G.t>1){G.t=0;const hp=getHp(id)-(HORDE()?2.2:1.5)*(R.clock<60?1.6:1);setHp(id,hp);
-      if(hp<=0){G.down=1;s5GuardFalls(id);}}}
-  if(G&&G.down){S.doorT-=dt;if(S.doorT<=0){S.doorT=HORDE()?2.2:3;sideEnemy('grunt',80,{aggro:1});}}
   for(const q of R.tx)if(q.sx!=null)q.t-=dt;R.tx=R.tx.filter(q=>q.sx==null||q.t>0);
   return false;}
 function s5GuardFalls(id){R.banner={txt:(id==='cmd'?'THE COMMANDER':HEROES[id].name.toUpperCase())+' IS DOWN AT THE DOOR',t:3,col:'#ff4d5e'};SND.heroDown();
@@ -2033,7 +2070,7 @@ function s5Fall(id){const S=R.side;if(id==='cmd'){R.over=true;gameOver();return;
 function s5Melee(S){if(S.floor!==2||S.grab)return false;const it=S.items.find(i=>!i.done&&Math.abs(i.x-S.x)<70);if(!it)return false;
   S.search={it,t:0};S.lock=1;S.melA=.35;S.anT=.35;S.melT=.9;SND.click();return true;}
 function s5KeyFound(S){R.clockStop=1;S.lock=1;R.banner={txt:'GOT THE KEYS!',t:3,col:'#b6f23a'};SND.waveClear();story('jeep_key_found',{left:Math.round(R.clock)});
-  R.tx.push({sx:S.x,txt:'KEYS!',t:1.6,col:'#b6f23a'});setTimeout(s5Finish,1800);}
+  setTimeout(s5Finish,1800);}
 function s5Exit(S){if(S.floor===1){if(R.s5go.length>1){S.on=0;state='guard5';ui();}else{R.s5in=R.s5go[0];R.s5guard=null;sideStart(2);}}}
 function s5Finish(){if(R.s5End)return;R.s5End=1;if(R.side)R.side.on=0;const L=s5EndList();cineLoad(L);
   startIntro(()=>{save.cleared=Math.max(save.cleared||0,5);save.s5Done=1;legacyStage(5);delete save.ckpt;persist();state='win5';ui();},L);}
@@ -2051,7 +2088,7 @@ function s5BG(S){const c=S.cam;
     ctx.fillStyle='#22161c';ctx.fillRect(0,GY,WW,WH-GY);ctx.fillStyle='#3a2a2a';for(let i=0;i<40;i++){const x=((i*97-c)%WW+WW)%WW;ctx.fillRect(x,GY+6+(i%5)*9,14,3);}
     // garage + jeep at the start
     const gx=150-c;if(gx>-260&&gx<WW+260){ctx.fillStyle='#3a2830';ctx.fillRect(gx-130,GY-170,260,170);ctx.fillStyle='#5a3a3a';ctx.beginPath();ctx.moveTo(gx-145,GY-170);ctx.lineTo(gx,GY-215);ctx.lineTo(gx+145,GY-170);ctx.fill();
-      ctx.fillStyle='#0b0610';ctx.fillRect(gx-100,GY-130,200,130);const open=s5Alive('bruno')||R.s5brunoOpen;
+      ctx.fillStyle='#0b0610';ctx.fillRect(gx-100,GY-130,200,130);const open=R.s5keys===1;
       if(!open){ctx.fillStyle='#6a5a62';for(let k=0;k<6;k++)ctx.fillRect(gx-100,GY-130+k*22,200,18);ctx.fillStyle='#ffc53d';ctx.fillRect(gx-8,GY-50,16,18);}
       else{ctx.fillStyle='#3a4a2a';ctx.fillRect(gx-80,GY-62,160,44);ctx.fillRect(gx-50,GY-92,100,30);ctx.fillStyle='#111';ctx.beginPath();ctx.arc(gx-50,GY-16,16,0,6.283);ctx.arc(gx+50,GY-16,16,0,6.283);ctx.fill();}
       for(let i=0;i<R.s5jeep.length;i++){const id=R.s5jeep[i];if(id==='cmd'||save.heroes[id])sd(id,'shoot',Math.floor(t*10+i*3),gx+110+i*36,false,.9);}
@@ -2090,9 +2127,9 @@ function s5DrawSide(S,c){for(const q of R.tx){if(q.sx==null)continue;ctx.globalA
   if(S.grab){const x=S.x-c;ctx.strokeStyle='#ff4d5e';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,GY-70,46+Math.sin(t*14)*3,0,6.283);ctx.stroke();}}
 function s5HUD(cx){ctx.fillStyle='#0d1016cc';ctx.fillRect(cx-130,6,260,26);const c=R.clock;
   ctx.fillStyle=R.clockStop?'#5ee08a':c<30&&(t%1<.5)?'#ff4d5e':'#ffc53d';ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='center';
-  ctx.fillText(R.clockStop?'GOT THE KEYS':'THE JEEP HOLDS · '+fmtClock(c),cx,24);
-  const G=R.s5guard;if(G&&R.side&&R.side.floor===2){const id=G.id,f=G.down?0:Math.max(0,getHp(id)/maxHp(id));ctx.fillStyle='#0d1016cc';ctx.fillRect(cx-130,34,260,18);ctx.fillStyle='#efe6dc';ctx.font='9px Bungee, Impact, sans-serif';
-    ctx.fillText((G.down?'DOOR LOST · ':'GUARD · ')+(id==='cmd'?'COMMANDER':HEROES[id].name.toUpperCase()),cx-40,47);ctx.fillStyle='#2a1f33';ctx.fillRect(cx+40,40,80,6);ctx.fillStyle=f<.3?'#ff4d5e':'#5ee08a';ctx.fillRect(cx+40,40,80*f,6);}}
+  ctx.fillText(R.clockStop?'GOT THE KEYS':(R.s5keys>1?'THE GARAGE HOLDS · ':'THE JEEP HOLDS · ')+fmtClock(c),cx,24);
+  if(R.side&&R.side.floor===2){const G=R.s5guard;ctx.fillStyle='#0d1016cc';ctx.fillRect(cx-130,34,260,18);ctx.fillStyle='#efe6dc';ctx.font='9px Bungee, Impact, sans-serif';
+    ctx.fillText('KEYS '+(R.side.found||0)+'/'+(R.s5keys||1)+(G?'  ·  '+(G.id==='cmd'?'COMMANDER':HEROES[G.id].name.toUpperCase())+' HOLDS THE DOOR':''),cx,47);}}
 
 const BLZM={"vm0": [0, 0, 326, 434], "vm1": [328, 0, 326, 434], "vm2": [656, 0, 326, 434], "vm3": [984, 0, 326, 434], "fl0": [1312, 0, 275, 371], "fl1": [1589, 0, 280, 374], "fl2": [0, 436, 281, 374], "fl3": [283, 436, 275, 372], "bz0": [560, 436, 167, 320], "bz1": [729, 436, 163, 287], "bz2": [894, 436, 153, 299], "bz3": [1049, 436, 180, 272], "bz4": [1231, 436, 176, 235], "bz5": [1409, 436, 155, 203], "bz6": [1566, 436, 188, 211]},BLZIMG=new Image();let blzReady=false;BLZIMG.onload=()=>{blzReady=true;};
 function blzLoad(){if(!BLZIMG.src)BLZIMG.src="assets/blz.webp?v=f49993378e";}
@@ -3064,6 +3101,7 @@ ov.addEventListener('click',e=>{
     if(k[0]==='5'){const p=k.split(':');let L;S5_VIEW={bruno:p[1]==='1',volt:true,town:p[1]!=='mom'};
       if(p[0]==='5i')L=s5IntroList();else if(p[0]==='5p')L=s5PostList();else if(p[0]==='5e')L=s5EndList();
       else{if(p[1]==='hext')S5_VIEW.volt=false;L=s5RitualList(p[1]);if(p[2]==='w')L=L.concat(s5WinList(p[1]));if(p[2]==='l')L=L.concat(s5LoseList(p[1]));}
+      L=L.map(s=>s.mini?Object.assign({},s,{choiceAt:null,mini:null}):s);
       cineLoad(L);startIntro(()=>{S5_VIEW=null;back();},L);return;}
     if(k==='4bv'){cineLoad(VF);startIntro(back,VF);return;}
     if(k==='4bs'||k==='4bl'){const L=cfbEndShots(k==='4bs');cineLoad(L);startIntro(back,L);return;}
