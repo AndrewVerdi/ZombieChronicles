@@ -1837,7 +1837,7 @@ function s5PostList(){const b=s5HasBruno();return[
          sh5('s5_p3','te_e1',4.5,"Commander: \"Bruno! Every dead thing for a mile heard that.\"",pushIn),
          sh5('s5_p4',S5_FB2,4,"They had. And there was still no key for the jeep.",pullOut,{snd:()=>SND.groan(0,1),fx:shakeFx})]
        :[sh5('s5_p2','te_e2',4.5,"Locked tight. The keys for the garage and the jeep had to be inside the station.",panL),
-         sh5('s5_p4',S5_FB2,4.5,"Then the trees started moving. The dead had followed them from the pool. Commander: \"Hold the garage!\"",pullOut,{snd:()=>SND.groan(0,1),fx:shakeFx})])];}
+         sh5('s5_p4',S5_FB2,4.5,"No noise this time. But the dead always find their way, a few at a time. Commander: \"Hold the garage!\"",pullOut,{snd:()=>SND.groan(0,1),fx:shakeFx})])];}
 function s5EndList(){return[
   sh5('s5_e1','te_e2',4,"Keys.",pushIn),
   sh5('s5_e2','te_e1',6,"The jeep tore out of the garage, through the horde, and onto the road. Next stop: Mega City.",pullOut,{snd:()=>SND.explosion(.4),fx:(c,tt)=>{c.dim(Math.max(0,(tt-4.6)*.7));}})];}
@@ -1999,7 +1999,7 @@ const S5_ITEMS=[['desk','DESK'],['cabinet','FILE CABINET'],['locker','LOCKER'],[
 let S5_PICK=null;
 function s5Team(){return['cmd',...save.active.filter(id=>save.heroes[id])];}
 function s5Post(){s5Base();R.s5ph='post';s5Ckpt('post');const L=s5PostList();cineLoad(L);
-  startIntro(()=>{R.clock=HORDE()?180:300;const T=s5Team();R.s5keys=s5HasBruno()?1:2;
+  startIntro(()=>{const T=s5Team();R.s5keys=s5HasBruno()?1:2;R.clock=R.s5keys>1?480:HORDE()?180:300;
     if(T.length===2&&T.includes('bruno')){R.s5go=['cmd'];R.s5jeep=['bruno'];R.clock=60;s5Outside();return;}
     if(T.length<=2){R.s5go=T.slice();R.s5jeep=[];s5Outside();return;}
     S5_PICK=[];state='pick5';ui();},L);}
@@ -2020,7 +2020,7 @@ function s5Outside(){story('ranger_post',{go:R.s5go,jeep:R.s5jeep});R.sideActive
 function s5Members(){const S=R.side;if(!S)return['cmd'];const L=S.floor===2?[R.s5in]:R.s5go;return L.filter(id=>id==='cmd'||save.heroes[id]);}
 function s5Floor(S,f,F,H){S.items=[];S.wins=[];S.grab=null;
   if(f===1){S.postX=F.len-260;
-    const n=Math.round(18*H);for(let i=0;i<n;i++)S.trig.push({x:520+i*(S.postX-700)/n+Math.random()*60,side:i%5===4?-1:1,type:'grunt'});
+    const n=Math.round((R.s5keys>1?9:18)*H);for(let i=0;i<n;i++)S.trig.push({x:520+i*(S.postX-700)/n+Math.random()*60,side:i%5===4?-1:1,type:'grunt'});
     S.trickT=5;R.banner={txt:'GET TO THE STATION',t:2.4,col:'#ffc53d'};}
   else{const it=S5_ITEMS.slice().sort(()=>Math.random()-.5),ks=[0,1,2,3,4,5,6,7].sort(()=>Math.random()-.5).slice(0,R.s5keys||1);S.found=0;
     for(let i=0;i<it.length;i++){const ki=ks.indexOf(i);S.items.push({x:260+i*150+(Math.random()-.5)*30,k:it[i][0],name:it[i][1],key:ki<0?null:ki===0?'JEEP KEY':'GARAGE KEY',done:0});}
@@ -2042,13 +2042,13 @@ function s5ZAI(e,S,dt){if(!e.win)return false;
 function s5Update(S,dt){
   if(S.grab&&S.grab.dead){S.grab=null;S.lock=0;}
   if(S.floor===1){
-    S.trickT-=dt;if(S.trickT<=0){S.trickT=(HORDE()?2.2:3.2)*(.7+Math.random()*.6);const side=Math.random()<.75?1:-1;sideEnemy('grunt',side>0?S.cam+WW+40:S.cam-40,{aggro:1});}
+    S.trickT-=dt;if(S.trickT<=0){S.trickT=(HORDE()?2.2:3.2)*(R.s5keys>1?2:1)*(.7+Math.random()*.6);const side=Math.random()<.75?1:-1;sideEnemy('grunt',side>0?S.cam+WW+40:S.cam-40,{aggro:1});}
     if(S.x>=S.postX-4&&S.exitT<0){S.exitT=.9;S.entering=1;SND.whoosh();}
     return false;}
   // inside: searching, windows, the guard
   if(S.search){S.search.t+=dt;if(S.search.t>=.9){const it=S.search.it;it.done=1;S.lock=0;S.search=null;
       if(it.key){S.found++;R.tx.push({sx:it.x,txt:it.key+'!',t:1.6,col:'#b6f23a'});SND.levelUp();if(S.found>=(R.s5keys||1)){s5KeyFound(S);return false;}R.banner={txt:it.key+' · '+(R.s5keys-S.found)+' TO GO',t:2,col:'#b6f23a'};return false;}R.tx.push({sx:it.x,txt:'NOTHING',t:1.1,col:'#efe6dc'});SND.click();}}
-  S.winT-=dt;if(S.winT<=0){S.winT=(HORDE()?3.4:5)*(.75+Math.random()*.5);const vis=S.wins.filter(w=>w.x>S.cam+40&&w.x<S.cam+WW-40);const w=vis[Math.floor(Math.random()*vis.length)];
+  S.winT-=dt;if(S.winT<=0){S.winT=(HORDE()?3.4:5)*(R.s5keys>1?1.8:1)*(.75+Math.random()*.5);const vis=S.wins.filter(w=>w.x>S.cam+40&&w.x<S.cam+WW-40);const w=vis[Math.floor(Math.random()*vis.length)];
     if(w){w.broke=1;w.shard=.6;const z=sideEnemy('grunt',w.x,{aggro:1,win:1,inT:.55});if(z.type==='runner'){z.type='grunt';z.hp=z.max=185;z.spd=46;z.hd=7;}z.spd=60;SND.explosion(.2);
       for(let i=0;i<14;i++)S.fx.push({x:w.x+(Math.random()-.5)*50,y:GY-150+Math.random()*60,vx:(Math.random()-.5)*220,vy:-40-Math.random()*100,t:.8,col:'#cfe6ff'});}}
   for(const w of S.wins)if(w.shard>0)w.shard-=dt;

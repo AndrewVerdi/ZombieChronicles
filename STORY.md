@@ -30,10 +30,10 @@
   - Turned Hex: floats in, throws green orbs that stun, blinks around, calls Screechers. Killing Momma doesn't kill her. If she's defeated, she's gone for good.
 - The ranger station (side-scroller):
   - With Bruno in the squad: he shoots the padlock, the noise brings the horde, the squad holds the jeep. One key to find: the jeep key.
-  - Without Bruno: the garage stays locked, the horde follows them from the pool, the squad holds the garage. Two keys to find: the jeep key and the garage key.
-  - Squad of three or more: pick two to go to the station; everyone else holds the jeep or garage. Clock: 5:00 Normal, 3:00 Horde.
+  - Without Bruno: the garage stays locked and no noise draws the horde; zombies still find them, in smaller groups (about half as many outside, fewer through the windows). The squad holds the garage. Two keys to find: the jeep key and the garage key. Clock: 8:00 in either mode.
+  - Squad of three or more: pick two to go to the station; everyone else holds the jeep or garage. Clock with Bruno: 5:00 Normal, 3:00 Horde.
   - Squad of two with Bruno: Bruno holds the jeep, the Commander goes alone, 1:00 in either mode.
-  - Squad of two without Bruno: both go (one guards, one searches), normal clock, two keys. Commander alone: searches alone, normal clock, two keys.
+  - Squad of two without Bruno: both go (one guards, one searches), 8:00, two keys. Commander alone: searches alone, 8:00, two keys.
   - At the door, pick who guards; the other searches inside. The guard and the squad hold for as long as the clock runs.
   - Inside: 8 pieces of furniture, MELEE to search; the keys are in random ones each run. Zombies smash through windows and grab you (you can't move until you shoot or hit them off), and zombies outside block your path: they cost time, not health.
   - Nobody can die at the station. If the clock runs out, the horde kills the entire party: game over.
