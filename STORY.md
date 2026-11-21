@@ -19,6 +19,22 @@
 - Containment: the doors burst and 10 brutes spill out at once. View switches behind the team; the player picks 3 heroes plus the Commander, standing in place.
 - Ending cutscene: a mass of zombies comes up behind them, too many to fight; they cross the room to a ladder onto a lower roof, see the courtyard destroyed, the main gate torn open by a brute and the horde spilling in. Cyber Future is lost; the squad needs a way out.
 
+## Stage 5: The Forest Run (built)
+- Opening cutscene: Frost's radio call, the grappling line over the wall, the zip line into the forest, sneaking toward a ranger station, then screams in the woods.
+- Wave 1: Screechers circle the squad, then every regular enemy (grunts, runners, armored, Screechers, 2 Brutes; doubled in Horde).
+- The ritual (cutscene, then):
+  - Town route with Volt: Volt's mini-game. Hold to charge, let go with the meter in the green, 3 surges before the ritual bar fills. Win: Hex is saved and joins. Lose: fight Momma, turned Hex and Screechers.
+  - Town route, no Volt: fight Momma, turned Hex and Screechers.
+  - Forest route with Hex: the Screechers are reviving Momma. With Volt: the same mini-game; win and Momma stays dead, lose and fight Momma reborn (1.5x health, enraged from the start) with Screechers. No Volt: straight to Momma reborn.
+  - Forest route, Hex never joined: fight turned Hex and Screechers.
+  - Turned Hex: floats in, throws green orbs that stun, blinks around, calls Screechers. Killing Momma doesn't kill her. If she's defeated, she's gone for good.
+- The ranger station (side-scroller): with Bruno he shoots the padlock and the noise brings the horde; without him the garage stays locked and the horde follows them from the pool anyway. Either way the jeep key has to be found inside.
+  - Pick two to go to the station; everyone else holds the jeep. Clock: 5:00 Normal, 3:00 Horde. If it runs out, the horde swarms the jeep: game over.
+  - Squad of two (Commander plus one): the other stays at the jeep, the Commander goes alone, 1:00 in either mode. Commander alone: same.
+  - Outside: fight through to the station. At the door, pick who guards; the other searches inside.
+  - Inside: 8 pieces of furniture, MELEE to search; the key is in a random one each run. Zombies smash through windows and grab you (can't move until you shoot or hit them off). The guard loses health over time; if they go down, zombies start coming through the door.
+- Ending cutscene: the keys, the jeep bursting out of the garage onto the road to Mega City.
+
 ## Roadmap: stages 5 to 10 (planned, not built)
 - **Stage 5:** distress call from Frost, holed up on a Mega City rooftop in a helicopter; she needs support and a pilot, and knows where a cure might be. The squad fires a grappling hook past the wall, zip-lines away from the horde into the forest, and heads for a ranger station with a vehicle. Town-route players can save and recruit Hex here, only if they have Volt.
   - Screechers appear in Stage 5 on both routes. The squad comes upon a ritual: Momma and a circle of Screechers levitating Hex.
