@@ -1848,9 +1848,8 @@ function s5PostList(){const b=s5HasBruno();return[
          sh5('s5_p9',S5_FB2,4,"They had. And there was still no key for the jeep.",pullOut,{snd:()=>SND.groan(0,1),fx:shakeFx})]
        :[sh5('s5_p8',S5_FB,4.5,"Locked tight. The keys for the garage and the jeep had to be inside the station.",panL),
          sh5('s5_p9',S5_FB2,4.5,"No noise this time. But the dead always find their way, a few at a time. Commander: \"Hold the garage!\"",pullOut,{snd:()=>SND.groan(0,1),fx:shakeFx})])];}
+function s5KeysList(){return[sh5('s5_e0',S5_FB,3.5,"Keys.",pushIn)];}
 function s5EndList(){return[
-  sh5('s5_e0',S5_FB,2.5,"",pushIn),
-  sh5('s5_e1',S5_FB,3.5,"Keys.",pushIn),
   sh5('s5_e2',S5_FB,6,"The jeep tore out of the garage, through the horde, and onto the road. Next stop: Mega City.",pullOut,{snd:()=>SND.explosion(.4),fx:(c,tt)=>{c.dim(Math.max(0,(tt-4.6)*.7));}})];}
 
 /* ---------- start, checkpoints ---------- */
@@ -2045,7 +2044,7 @@ function s5PickAct(a,b){
   if(a==='p5go'){R.s5go=S5_PICK.slice();R.s5jeep=s5Team().filter(id=>!R.s5go.includes(id));s5Outside();return true;}
   if(a==='g5'){const g=b.dataset.id;R.s5guard={id:g};R.s5in=R.s5go.filter(x=>x!==g)[0];R.sideActive=R.s5in;sideStart(2);return true;}
   return false;}
-function s5Outside(){story('ranger_post',{go:R.s5go,jeep:R.s5jeep});R.sideActive=R.s5go[0];sideStart(1);
+function s5Outside(){cineLoad(s5KeysList());story('ranger_post',{go:R.s5go,jeep:R.s5jeep});R.sideActive=R.s5go[0];sideStart(1);
   R.sayQ.push({who:R.s5go[0]==='cmd'?'cmd':R.s5go[0],txt:R.s5go.length>1?"Station's on the right. Move!":R.s5keys>1?"I'll find the keys. Hold them off!":"I'll find it. Hold them off!",t:3});}
 function s5Members(){const S=R.side;if(!S)return['cmd'];const L=S.floor===2?[R.s5in]:R.s5go;return L.filter(id=>id==='cmd'||save.heroes[id]);}
 function s5Floor(S,f,F,H){S.items=[];S.wins=[];S.grab=null;
@@ -2105,9 +2104,12 @@ function s5Fall(id){const S=R.side;if(id==='cmd'){R.over=true;gameOver();return;
   S.active=s5Members()[0];S.grab=null;S.lock=0;S.search=null;}
 function s5Melee(S){if(S.floor!==2||S.grab)return false;const it=S.items.find(i=>!i.done&&Math.abs(i.x-S.x)<70);if(!it)return false;
   S.search={it,t:0};S.lock=1;S.melA=.35;S.anT=.35;S.melT=.9;SND.click();return true;}
-function s5KeyFound(S){R.s5ret=1;S.lock=0;R.banner={txt:(R.s5keys>1?'GOT THE KEYS':'GOT THE JEEP KEY')+' · BACK OUT THE DOOR',t:3,col:'#b6f23a'};SND.waveClear();story('jeep_key_found',{left:Math.round(R.clock)});
-  for(const it of S.items)it.done=1;
-  R.sayQ.push({who:R.s5in==='cmd'?'cmd':R.s5in,txt:"Got it! Coming out!",t:2.4});}
+function s5KeyFound(S){R.s5ret=1;S.lock=1;SND.waveClear();story('jeep_key_found',{left:Math.round(R.clock)});
+  for(const it of S.items)it.done=1;for(const e of S.en)if(e.win&&!e.dead){e.dead=1;e.dt=0;}S.grab=null;
+  const L=s5KeysList();cineLoad(L);
+  startIntro(()=>{if(R.over)return;S.lock=0;state='side';ui();last=performance.now();
+    R.banner={txt:(R.s5keys>1?'GOT THE KEYS':'GOT THE JEEP KEY')+' · BACK OUT THE DOOR',t:3,col:'#b6f23a'};
+    R.sayQ.push({who:R.s5in==='cmd'?'cmd':R.s5in,txt:"Got it! Coming out!",t:2.4});},L);}
 /* the garage squad: everyone left at the jeep fires at anything in range, turning to face it */
 function s5GarX(){return 300+Math.max(0,(R.s5jeep||[]).length)*40+40;}
 function s5GarageFire(S,dt){const G=S.gar=S.gar||{};
@@ -3510,7 +3512,7 @@ ov.addEventListener('click',e=>{
     if(k.startsWith('4a')){FA_VIEW=k.split(':')[1].split(',').filter(Boolean);const L=k[2]==='o'?faOpenList():faEndList();cineLoad(L);startIntro(back,L);return;}
     if(k[0]==='6'){const L=k==='6i'?s6IntroList():s6EndList();cineLoad(L);startIntro(back,L);return;}
     if(k[0]==='5'){const p=k.split(':');let L;S5_VIEW={bruno:p[1]!=='0',volt:p[1]!=='hext',hex:p[0]!=='5r'||p[1]==='mom',town:p[1]!=='mom'};S5_VIEW.squad=S5_SQUAD.filter(id=>S5_VIEW[id]!==false);
-      if(p[0]==='5i')L=s5IntroList();else if(p[0]==='5p')L=s5PostList();else if(p[0]==='5e')L=s5EndList();
+      if(p[0]==='5i')L=s5IntroList();else if(p[0]==='5p')L=s5PostList();else if(p[0]==='5e')L=s5KeysList().concat(s5EndList());
       else{if(p[1]==='hext')S5_VIEW.volt=false;L=s5RitualList(p[1]);if(p[2]==='w')L=L.concat(s5WinList(p[1]));if(p[2]==='l')L=L.concat(s5LoseList(p[1]));}
       L=L.map(s=>s.mini?Object.assign({},s,{choiceAt:null,mini:null}):s);
       cineLoad(L);startIntro(()=>{S5_VIEW=null;back();},L);return;}

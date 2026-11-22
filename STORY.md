@@ -38,6 +38,7 @@
   - At the door, pick who guards; the other searches inside. The guard and the squad hold for as long as the clock runs.
   - Inside: 8 pieces of furniture, MELEE to search; the keys are in random ones each run. Zombies smash through windows and grab you (you can't move until you shoot or hit them off), and zombies outside block your path: they cost time, not health.
   - Nobody can die at the station. If the clock runs out, the horde kills the entire party: game over.
+  - Finding the last key plays the keys-in-the-drawer cutscene, then play resumes. Reaching the garage plays the jeep cutscene and ends the stage.
   - Finding the keys isn't the end: the searcher heads back out the door, rejoins the guard, and both run the keys back to the garage while the clock keeps running. Zombies come mostly from the garage side on the way back.
   - The squad holding the garage fires at any zombie in range and turns to shoot ones coming from behind.
 - Ending cutscene: the keys, the jeep bursting out of the garage onto the road to Mega City.
