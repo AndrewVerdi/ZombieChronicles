@@ -962,7 +962,7 @@ const BOARDS=[
  {k:'3f',name:'Stage 3 · The Forest',waves:[1,2,3,4,'end'],heroes:w=>w==='end'||w>1?['rook','hex']:['rook']},
  {k:'4a',name:'Stage 4 · Cyber Future (town route)',waves:['f1','f2','f3','f4','vault'],heroes:w=>['rook','blaze','bruno'].concat(['f3','f4','vault'].includes(w)?['volt']:[])},
  {k:'4b',name:'Stage 4 · Cyber Future (forest route)',waves:[1,'f1','f2','f3'],heroes:w=>w==='f3'?['rook','hex','volt']:['rook','hex']},
- {k:'5',name:'Stage 5 · The Forest Run',waves:['w1','rit','post'],heroes:()=>['rook','hex','volt','bruno','blaze'],route:1}];
+ {k:'5',name:'Stage 5 · The Forest Run',waves:['w1','rit','post'],heroes:w=>((LSEL&&LSEL.route)||save.route||'highway')==='backroad'||w==='post'?['rook','hex','volt','bruno','blaze']:['rook','volt','bruno','blaze'],route:1}];
 let LSEL=null,LOADSEL=null;
 function reachOf(k){if(k==='5')return (save.reach&&save.reach['5'])||(save.s5Done?3:0);if(k==='4a')return (save.reach&&save.reach['4a'])||(save.cfaDone?5:0);if(k==='4b')return (save.reach&&save.reach['4b'])||(save.cfbDone?4:0);const R0=(save.reach&&save.reach[k])||0,c=save.cleared||0;
   if(k==='1')return Math.max(R0,c>=1?5:Math.min(5,(save.best||0)+1),1);
