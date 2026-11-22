@@ -44,7 +44,7 @@
 - Ending cutscene: the keys, the jeep bursting out of the garage onto the road to Mega City.
 
 ## Stage 6: The Drive (built)
-- Seat screen first: every living hero must ride, someone must drive. Placing a hero shows what they do in that seat, but not how good they are there: the rankings are for the player to discover. Saved between tries.
+- Seat screen first: every living hero must ride, someone must drive. All seats start empty every time. Placing a hero shows what they do in that seat, but not how good they are there: the rankings are for the player to discover.
 - Controls: ◀ ▶ steer, GAS, BRAKE (or arrows/WASD). The seated heroes aim and fire on their own.
 - Route, continuous along one road: forest dirt road → back road → on-ramp → highway → the overrun base → the road to Mega City → the city grid. Roughly 3–4 minutes of driving.
 - Small zombies (grunts, runners, screechers) are run over above ~95 speed and chip the jeep a little. Armored and Brutes ram the jeep hard; zombies that reach it bite until shot off. Wrecks, sandbags and trucks litter the road; hitting walls fast hurts.

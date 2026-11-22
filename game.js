@@ -2259,7 +2259,7 @@ function s6Roster(){return S6_HEROES.filter(id=>id==='cmd'||save.heroes[id]);}
 function s6AutoSeat(){const have=s6Roster(),out={};S6_SEATS.forEach((s,i)=>{if(have[i])out[s]=have[i];});return out;}
 function s6Start(at,skip){at=at||'start';stageRevive();for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
   R={stage:6,s6:1,wave:1,wall:0,wallMax:1,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,dead:[],queue:[],kills:0,spawnLeft:0,spawnTotal:0,proj:[],sayQ:[],s6at:at,s6hp:save.ckpt&&save.ckpt.stage==='6'&&save.ckpt.hp||null};
-  S6_SEATSEL={seats:Object.assign({},save.seats6&&s6SeatsValid(save.seats6)?save.seats6:s6AutoSeat()),pick:null};
+  S6_SEATSEL={seats:{},pick:null};
   if(at==='start'&&!skip){const L=s6IntroList();cineLoad(L);startIntro(()=>{state='seat6';ui();},L);return;}
   state='seat6';ui();}
 function s6SeatsValid(s){const have=s6Roster(),v=Object.values(s);return v.length===have.length&&have.every(id=>v.includes(id))&&!!s.driver;}
