@@ -40,6 +40,18 @@
   - Nobody can die at the station. If the clock runs out, the horde kills the entire party: game over.
 - Ending cutscene: the keys, the jeep bursting out of the garage onto the road to Mega City.
 
+## Stage 6: The Drive (built)
+- Seat screen first: every living hero must ride, someone must drive. Each seat shows stars from the rank lists; Auto fills by rank. Saved between tries.
+- Controls: ◀ ▶ steer, GAS, BRAKE (or arrows/WASD). The seated heroes aim and fire on their own.
+- Route, continuous along one road: forest dirt road → back road → on-ramp → highway → the overrun base → the road to Mega City → the city grid. Roughly 3–4 minutes of driving.
+- Small zombies (grunts, runners, screechers) are run over above ~95 speed and chip the jeep a little. Armored and Brutes ram the jeep hard; zombies that reach it bite until shot off. Wrecks, sandbags and trucks litter the road; hitting walls fast hurts.
+- The Ward wakes on the highway and chases the jeep for the rest of the stage, rubber-banding to stay close. He slams the jeep when he catches it and throws debris (a red circle warns where it lands). Fill his stagger bar with fire and he's knocked down for about 6 seconds, then gets back up.
+- Hex standing: heals the jeep every 7 s and cuts damage 15%. Blaze in the front seat, or standing and firing forward, slowly damages the jeep.
+- Mega City: a grid of blocks with barricaded streets; a radar arrow points to Frost's building. Reaching its lobby plays the crash-through cutscene.
+- Checkpoints: start, the highway, the city (jeep health carried).
+- Losing: the jeep is destroyed → game over in either mode.
+- Art: the jeep, roads, city and cutscenes are stand-ins (code-drawn / older images) until the Stage 6 art arrives.
+
 ## Roadmap: stages 5 to 10 (planned, not built)
 - **Stage 5:** distress call from Frost, holed up on a Mega City rooftop in a helicopter; she needs support and a pilot, and knows where a cure might be. The squad fires a grappling hook past the wall, zip-lines away from the horde into the forest, and heads for a ranger station with a vehicle. Town-route players can save and recruit Hex here, only if they have Volt.
   - Screechers appear in Stage 5 on both routes. The squad comes upon a ritual: Momma and a circle of Screechers levitating Hex.
