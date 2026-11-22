@@ -22,10 +22,11 @@
 ## Stage 5: The Forest Run (built)
 - Opening cutscene: Frost's radio call, the grappling line over the wall, the zip line into the forest, sneaking toward a ranger station, then screams in the woods.
 - Wave 1: Screechers circle the squad, then every regular enemy (grunts, runners, armored, Screechers, 2 Brutes; doubled in Horde).
+- Before wave 1 (and the ritual checkpoint), the player picks up to 3 heroes to fight beside the Commander; the rest travel with the squad and count for the story (Volt for the mini-game, Bruno for the lock, everyone at the station).
 - The ritual (cutscene, then):
   - Town route with Volt: Volt's mini-game, played inside the cutscene. Hold to charge, let go with the meter in the green, 3 surges before the ritual bar fills. Win: Hex is saved and joins. Lose: fight Momma, turned Hex and Screechers.
   - Town route, no Volt: fight Momma, turned Hex and Screechers.
-  - Forest route with Hex: the Screechers are reviving Momma. With Volt: the same mini-game; win and Momma stays dead, lose and fight Momma reborn (1.5x health, enraged from the start) with Screechers. No Volt: straight to Momma reborn.
+  - Hex in the squad (either route): the Screechers are reviving Momma. With Volt: the same mini-game; win and Momma stays dead, lose and fight Momma reborn (1.5x health, enraged from the start) with Screechers. No Volt: straight to Momma reborn.
   - Forest route, Hex never joined: fight turned Hex and Screechers.
   - Turned Hex: floats in, throws green orbs that stun, blinks around, calls Screechers. Killing Momma doesn't kill her. If she's defeated, she's gone for good.
 - The ranger station (side-scroller):

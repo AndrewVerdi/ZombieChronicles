@@ -1857,6 +1857,17 @@ function s5Base(){roadScroll=0;SX=0;camX=0;forestLoad();
     queue:[],kills:0,spawnLeft:0,spawnTotal:0,spawnT:2,bossPending:false,crateAt:[],jeepAt:-1,proj:[],sayQ:[]};}
 function s5Start(at,skip){at=at||'w1';stageRevive();storyParty(S5_SQUAD);
   for(const id of['cmd',...Object.keys(save.heroes)])if(at==='w1')setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
+  const av=S5_SQUAD.filter(id=>save.heroes[id]);
+  if(at!=='post'&&av.length>MAX_ACTIVE){S5_SP={at,skip,sel:save.active.filter(id=>av.includes(id)).slice(0,MAX_ACTIVE)};state='pick5s';ui();return;}
+  save.active=av.slice(0,MAX_ACTIVE);s5Go(at,skip);}
+let S5_SP=null;
+function s5SquadHTML(){const av=S5_SQUAD.filter(id=>save.heroes[id]),need=Math.min(MAX_ACTIVE,av.length),ok=S5_SP.sel.length===need;
+  return `<h2>Stage 5: The Forest Run</h2><div class="stripe"></div><p class="sub">Choose who fights beside the Commander. Everyone else travels with the squad.</p>
+  <div class="chips"><button class="chip on" disabled>Commander</button>${av.map(id=>`<button class="chip ${S5_SP.sel.includes(id)?'on':''}" data-act="p5s" data-id="${id}">${HEROES[id].name}</button>`).join('')}</div>
+  <p class="sub">${S5_SP.sel.length}/${need} chosen</p><div class="btns"><button class="btn" data-act="p5sgo" ${ok?'':'disabled style="opacity:.4"'}>Into the forest</button></div>`;}
+function s5SquadAct(a,b){if(a==='p5s'){const id=b.dataset.id,L=S5_SP.sel;if(L.includes(id))S5_SP.sel=L.filter(x=>x!==id);else if(L.length<MAX_ACTIVE)L.push(id);ui();return;}
+  save.active=S5_SP.sel.slice();persist();const{at,skip}=S5_SP;S5_SP=null;s5Go(at,skip);}
+function s5Go(at,skip){
   s5Base();sideLoad();
   if(at==='rit'){s5Ritual();return;}
   if(at==='post'){s5Post();return;}
@@ -1876,7 +1887,7 @@ function s5WaveDone(){if(R.s5Done)return;R.s5Done=1;SND.waveClear();healRecovery
   if(R.s5ph==='fight'){const won=1;setTimeout(()=>{R.banner=null;s5AfterFight();},1500);}}
 
 /* ---------- the ritual ---------- */
-function s5Kind(){if(s5Town())return s5Alive('volt')?'hexv':'hext';return s5Alive('hex')?'mom':'hext';}
+function s5Kind(){if(s5Alive('hex'))return'mom';if(s5Town())return s5Alive('volt')?'hexv':'hext';return'hext';}
 function s5Ritual(){s5Base();R.s5ph='rit';s5Ckpt('rit');const k=R.s5kind=s5Kind(),L=s5RitualList(k);cineLoad(L);cineLoad(s5WinList(k).concat(s5LoseList(k)));
   cine0pick=null;cineLastMini=null;
   startIntro(()=>{const res=cineLastMini;cineLastMini=null;cine0pick=null;
@@ -2013,7 +2024,7 @@ const S5F={desk:[138,30,591,324],cabinet:[728,25,884,329],locker:[1029,25,1192,3
 function s5fur(k,x,base,sc,alpha){const b=S5F[k];if(!b||!s5ok(S5FURN))return false;const w=(b[2]-b[0])*sc,h=(b[3]-b[1])*sc;ctx.globalAlpha=alpha==null?1:alpha;ctx.drawImage(S5FURN,b[0]/2,b[1]/2,(b[2]-b[0])/2,(b[3]-b[1])/2,x-w/2,base-h,w,h);ctx.globalAlpha=1;return true;}
 const S5_ITEMS=[['desk','DESK'],['cabinet','FILE CABINET'],['locker','LOCKER'],['shelf','BOOKSHELF'],['trunk','FOOTLOCKER'],['drawers','DRESSER'],['table','MAP TABLE'],['gunrack','GUN CABINET']];
 let S5_PICK=null;
-function s5Team(){return['cmd',...save.active.filter(id=>save.heroes[id])];}
+function s5Team(){return['cmd',...S5_SQUAD.filter(id=>save.heroes[id])];}
 function s5Post(){s5Base();s5ArtLoad();R.s5ph='post';s5Ckpt('post');const L=s5PostList();cineLoad(L);
   startIntro(()=>{const T=s5Team();R.s5keys=s5HasBruno()?1:2;R.clock=R.s5keys>1?480:HORDE()?180:300;
     if(T.length===2&&T.includes('bruno')){R.s5go=['cmd'];R.s5jeep=['bruno'];R.clock=60;s5Outside();return;}
@@ -2972,7 +2983,7 @@ function ui(){
   ov.classList.toggle('title-mode',state==='menu'||state==='splash');
   if(state==='splash'){ov.innerHTML=`<div class="mscreen" data-act="begin"><div class="mbg"></div><div class="mglow"></div><div class="mgrain"></div><div class="mvig" style="background:rgba(11,8,14,.55)"></div>
     <div class="msplash"><div class="mlogo"></div><button class="mbtn play" data-act="begin">Tap to start</button><div class="mrot"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="7" y="2" width="10" height="20" rx="2" fill="none" stroke="currentColor" stroke-width="2"/><path d="M3 14a9 9 0 0 0 6 6M21 10a9 9 0 0 0-6-6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>Rotate your phone sideways for widescreen</div><div class="mbest">Sound on for the full experience</div></div></div>`;return;}
-  ov.classList.toggle('paper',['inter','roster','load','options','credits','bye','over','win','win2','stat','modes','gallery','win3','win3f','pick4a','win4a','pick5','guard5','win5'].includes(state));
+  ov.classList.toggle('paper',['inter','roster','load','options','credits','bye','over','win','win2','stat','modes','gallery','win3','win3f','pick4a','win4a','pick5','pick5s','guard5','win5'].includes(state));
   if(state==='menu'){
     ov.innerHTML=`<div class="mscreen"><div class="mbg"></div><div class="mglow"></div>
       <div class="mgas g1"></div><div class="mgas g2"></div><div class="mgrain"></div><div class="mvig"></div>
@@ -3080,6 +3091,7 @@ function ui(){
     <div class="row"><span class="sub">Squad standing</span><span class="big">${['cmd',...save.active].length}</span></div>
     <div class="row"><span class="sub">Score</span><span class="big">${save.gold.toLocaleString()}</span></div>
     <div class="btns"><button class="btn" data-act="s5">On to Stage 5</button><button class="btn ghost" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="cfb">Play Stage 4 again</button></div>`;
+  }else if(state==='pick5s'){html=s5SquadHTML();
   }else if(state==='pick5'){html=s5PickHTML();
   }else if(state==='guard5'){html=s5GuardHTML();
   }else if(state==='win5'){html=s5WinHTML();
@@ -3123,6 +3135,7 @@ ov.addEventListener('click',e=>{
   else if(a==='s5retry'){const at=save.reach&&R&&R.s5ph?(R.s5ph==='w1'?'w1':R.s5ph==='post'?'post':'rit'):'w1';SX=0;camX=0;R=null;s5Start(at,1);return;}
   else if(a==='s5'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:'5'});}SX=0;camX=0;s5Start('w1');return;}
   else if(a==='p5'||a==='p5go'||a==='g5'){s5PickAct(a,b);return;}
+  else if(a==='p5s'||a==='p5sgo'){s5SquadAct(a,b);return;}
   else if(a==='cfaretry'){const at=R.cfaAt,tn=R.cfaTurned0;SX=0;camX=0;R=null;cfaStart(at,tn,1);return;}
   else if(a==='cfa'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:'4a'});}SX=0;camX=0;cfaStart('f1');return;}
   else if(a==='p4'||a==='p4go'){cfaPickAct(a,b);return;}
@@ -3135,7 +3148,7 @@ ov.addEventListener('click',e=>{
   else if(a==='gallery'){state='gallery';ui();return;}
   else if(a==='gal'){const k=b.dataset.k,back=()=>{CREW_VIEW=null;FA_VIEW=null;state='gallery';ui();};
     if(k.startsWith('4a')){FA_VIEW=k.split(':')[1].split(',').filter(Boolean);const L=k[2]==='o'?faOpenList():faEndList();cineLoad(L);startIntro(back,L);return;}
-    if(k[0]==='5'){const p=k.split(':');let L;S5_VIEW={bruno:p[1]!=='0',volt:p[1]!=='hext',town:p[1]!=='mom'};S5_VIEW.squad=S5_SQUAD.filter(id=>S5_VIEW[id]!==false);
+    if(k[0]==='5'){const p=k.split(':');let L;S5_VIEW={bruno:p[1]!=='0',volt:p[1]!=='hext',hex:p[0]!=='5r'||p[1]==='mom',town:p[1]!=='mom'};S5_VIEW.squad=S5_SQUAD.filter(id=>S5_VIEW[id]!==false);
       if(p[0]==='5i')L=s5IntroList();else if(p[0]==='5p')L=s5PostList();else if(p[0]==='5e')L=s5EndList();
       else{if(p[1]==='hext')S5_VIEW.volt=false;L=s5RitualList(p[1]);if(p[2]==='w')L=L.concat(s5WinList(p[1]));if(p[2]==='l')L=L.concat(s5LoseList(p[1]));}
       L=L.map(s=>s.mini?Object.assign({},s,{choiceAt:null,mini:null}):s);
