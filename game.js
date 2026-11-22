@@ -1281,7 +1281,7 @@ function sideUpdate(dt){const S=R.side;if(!S)return;t+=dt;S.t+=dt;cfbTick(dt);if
   // camera
   const tgt=S.x-WW/2+S.face*90;S.cam+=(Math.max(0,Math.min(S.len-WW,tgt))-S.cam)*Math.min(1,dt*4);
   // spawn triggers: appear at the edge of the screen
-  for(const g of S.trig){if(g.done)continue;const near=S.floor===2?S.x<g.x+WW*.6:S.x>g.x-WW*.6;if(near){g.done=1;const ex=g.side>0?S.cam+WW+40:S.cam-40;const z=sideEnemy(g.type,ex,{aggro:1});if(g.hp)z.hp=z.max=g.hp;if(g.skin&&z.type==='grunt')z.skin=g.skin;}}
+  for(const g of S.trig){if(g.done)continue;const near=(S.floor===2||S.rev)?S.x<g.x+WW*.6:S.x>g.x-WW*.6;if(near){g.done=1;const ex=g.side>0?S.cam+WW+40:S.cam-40;const z=sideEnemy(g.type,ex,{aggro:1});if(g.hp)z.hp=z.max=g.hp;if(g.skin&&z.type==='grunt')z.skin=g.skin;}}
   // floor 3: clock stops once you reach the fight
   if(S.floor===2&&S.door&&!S.vfl&&Math.abs(S.x-S.door.x)<900){S.vfl=1;cineLoad(VF);}
   if(!R.cfa&&S.floor===3&&!R.clockStop&&S.x>S.bar.x-900){R.clockStop=1;if(!R.cfLost){R.sayQ.unshift({who:'bruno',txt:"Commander! Over here!",t:2.6});}}
@@ -2029,7 +2029,7 @@ const S5_ITEMS=[['desk','DESK'],['cabinet','FILE CABINET'],['locker','LOCKER'],[
 let S5_PICK=null;
 function s5Team(){return['cmd',...S5_SQUAD.filter(id=>save.heroes[id])];}
 function s5Post(){s5Base();s5ArtLoad();R.s5ph='post';s5Ckpt('post');const L=s5PostList();cineLoad(L);
-  startIntro(()=>{const T=s5Team();R.s5keys=s5HasBruno()?1:2;R.clock=R.s5keys>1?480:HORDE()?180:300;
+  startIntro(()=>{R.s5ret=0;R.clockStop=0;const T=s5Team();R.s5keys=s5HasBruno()?1:2;R.clock=R.s5keys>1?480:HORDE()?180:300;
     if(T.length===2&&T.includes('bruno')){R.s5go=['cmd'];R.s5jeep=['bruno'];R.clock=60;s5Outside();return;}
     if(T.length<=2){R.s5go=T.slice();R.s5jeep=[];s5Outside();return;}
     S5_PICK=[];state='pick5';ui();},L);}
@@ -2049,7 +2049,10 @@ function s5Outside(){story('ranger_post',{go:R.s5go,jeep:R.s5jeep});R.sideActive
   R.sayQ.push({who:R.s5go[0]==='cmd'?'cmd':R.s5go[0],txt:R.s5go.length>1?"Station's on the right. Move!":R.s5keys>1?"I'll find the keys. Hold them off!":"I'll find it. Hold them off!",t:3});}
 function s5Members(){const S=R.side;if(!S)return['cmd'];const L=S.floor===2?[R.s5in]:R.s5go;return L.filter(id=>id==='cmd'||save.heroes[id]);}
 function s5Floor(S,f,F,H){S.items=[];S.wins=[];S.grab=null;
-  if(f===1){S.postX=F.len-260;
+  if(f===1&&R.s5ret){S.postX=F.len-260;S.rev=1;S.x=S.postX-30;S.face=-1;S.garX=s5GarX();
+    const n=Math.round((R.s5keys>1?6:12)*H);for(let i=0;i<n;i++)S.trig.push({x:S.postX-200-i*(S.postX-S.garX-300)/n-Math.random()*60,side:i%4===3?1:-1,type:'grunt'});
+    S.trickT=3;R.banner={txt:'KEYS IN HAND · BACK TO THE GARAGE',t:2.6,col:'#b6f23a'};}
+  else if(f===1){S.postX=F.len-260;
     const n=Math.round((R.s5keys>1?9:18)*H);for(let i=0;i<n;i++)S.trig.push({x:520+i*(S.postX-700)/n+Math.random()*60,side:i%5===4?-1:1,type:'grunt'});
     S.trickT=5;R.banner={txt:'GET TO THE STATION',t:2.4,col:'#ffc53d'};}
   else{const it=S5_ITEMS.slice().sort(()=>Math.random()-.5),ks=[0,1,2,3,4,5,6,7].sort(()=>Math.random()-.5).slice(0,R.s5keys||1);S.found=0;
@@ -2072,9 +2075,12 @@ function s5ZAI(e,S,dt){if(!e.win)return false;
 function s5Update(S,dt){
   if(S.grab&&S.grab.dead){S.grab=null;S.lock=0;}
   if(S.floor===1){
-    S.trickT-=dt;if(S.trickT<=0){S.trickT=(HORDE()?2.2:3.2)*(R.s5keys>1?2:1)*(.7+Math.random()*.6);const side=Math.random()<.75?1:-1;sideEnemy('grunt',side>0?S.cam+WW+40:S.cam-40,{aggro:1});}
-    if(S.x>=S.postX-4&&S.exitT<0){S.exitT=.9;S.entering=1;SND.whoosh();}
+    S.trickT-=dt;if(S.trickT<=0){S.trickT=(HORDE()?2.2:3.2)*(R.s5keys>1?2:1)*(.7+Math.random()*.6);const side=Math.random()<.75?(S.rev?-1:1):(S.rev?1:-1);sideEnemy('grunt',side>0?S.cam+WW+40:S.cam-40,{aggro:1});}
+    s5GarageFire(S,dt);
+    if(S.rev){if(S.x<=S.garX+8&&!R.clockStop)s5Arrive(S);}
+    else if(S.x>=S.postX-4&&S.exitT<0){S.exitT=.9;S.entering=1;SND.whoosh();}
     return false;}
+  if(R.s5ret&&S.x<=78&&S.exitT<0){S.exitT=.9;S.entering=1;SND.whoosh();}
   // inside: searching, windows, the guard
   if(S.search){S.search.t+=dt;if(S.search.t>=.9){const it=S.search.it;it.done=1;S.lock=0;S.search=null;
       if(it.key){S.found++;R.tx.push({sx:it.x,txt:it.key+'!',t:1.6,col:'#b6f23a'});SND.levelUp();if(S.found>=(R.s5keys||1)){s5KeyFound(S);return false;}R.banner={txt:it.key+' · '+(R.s5keys-S.found)+' TO GO',t:2,col:'#b6f23a'};return false;}R.tx.push({sx:it.x,txt:'NOTHING',t:1.1,col:'#efe6dc'});SND.click();}}
@@ -2099,9 +2105,24 @@ function s5Fall(id){const S=R.side;if(id==='cmd'){R.over=true;gameOver();return;
   S.active=s5Members()[0];S.grab=null;S.lock=0;S.search=null;}
 function s5Melee(S){if(S.floor!==2||S.grab)return false;const it=S.items.find(i=>!i.done&&Math.abs(i.x-S.x)<70);if(!it)return false;
   S.search={it,t:0};S.lock=1;S.melA=.35;S.anT=.35;S.melT=.9;SND.click();return true;}
-function s5KeyFound(S){R.clockStop=1;S.lock=1;R.banner={txt:'GOT THE KEYS!',t:3,col:'#b6f23a'};SND.waveClear();story('jeep_key_found',{left:Math.round(R.clock)});
-  setTimeout(s5Finish,1800);}
-function s5Exit(S){if(S.floor===1){if(R.s5go.length>1){S.on=0;state='guard5';ui();}else{R.s5in=R.s5go[0];R.s5guard=null;sideStart(2);}}}
+function s5KeyFound(S){R.s5ret=1;S.lock=0;R.banner={txt:(R.s5keys>1?'GOT THE KEYS':'GOT THE JEEP KEY')+' · BACK OUT THE DOOR',t:3,col:'#b6f23a'};SND.waveClear();story('jeep_key_found',{left:Math.round(R.clock)});
+  for(const it of S.items)it.done=1;
+  R.sayQ.push({who:R.s5in==='cmd'?'cmd':R.s5in,txt:"Got it! Coming out!",t:2.4});}
+/* the garage squad: everyone left at the jeep fires at anything in range, turning to face it */
+function s5GarX(){return 300+Math.max(0,(R.s5jeep||[]).length)*40+40;}
+function s5GarageFire(S,dt){const G=S.gar=S.gar||{};
+  (R.s5jeep||[]).forEach((id,i)=>{if(id!=='cmd'&&!save.heroes[id])return;const g=G[id]=G[id]||{cd:Math.random()*.5,face:1,muz:0};const x=300+i*40;
+    if(g.muz>0)g.muz-=dt;g.cd-=dt;if(g.cd>0)return;
+    let best=null,bd=560;for(const e of S.en){if(e.dead||e.win)continue;const d=Math.abs(e.x-x);if(d<bd){bd=d;best=e;}}
+    if(!best){g.cd=.2;return;}
+    g.face=best.x<x?-1:1;const W=SIDE_W[id]||{rate:.4,mul:1},rate=Math.max(.35,(W.rate||.4)*1.6);g.cd=rate*(.85+Math.random()*.3);g.muz=.08;
+    const dmg=Math.max(20,st(id).dmg*(W.mul||1)*.8);sideDmg(best,best.type==='brute'?dmg*.5:dmg,id,0);
+    S.zaps.push({pts:[[x+g.face*28*SK,GY-60*SK],[best.x,GY-70*SK]],t:.05,col:id==='volt'?'#b6f23a':id==='blaze'?'#ff6a2b':'#ffe08a'});
+    if(Math.random()<.35)SND.shot(SHOT_KIND[id]||'rifle',0);});}
+function s5Arrive(S){R.clockStop=1;S.lock=1;R.banner={txt:'MADE IT · '+(R.s5keys>1?'OPEN THE GARAGE':'START THE JEEP'),t:3,col:'#b6f23a'};SND.waveClear();story('keys_returned',{left:Math.round(R.clock)});
+  setTimeout(s5Finish,1600);}
+function s5Exit(S){if(S.floor===2&&R.s5ret){R.sideActive=R.s5in;R.s5guard=null;sideStart(1);return;}
+  if(S.floor===1){if(R.s5go.length>1){S.on=0;state='guard5';ui();}else{R.s5in=R.s5go[0];R.s5guard=null;sideStart(2);}}}
 function s5Finish(){if(R.s5End)return;R.s5End=1;if(R.side)R.side.on=0;const L=s5EndList();cineLoad(L);
   startIntro(()=>{save.cleared=Math.max(save.cleared||0,5);save.s5Done=1;legacyStage(5);delete save.ckpt;persist();state='win5';ui();},L);}
 function s5WinHTML(){return `<h1 class="title">STAGE 5<span>COMPLETE</span></h1><div class="stripe"></div>
@@ -2123,13 +2144,13 @@ function s5BG(S){const c=S.cam;
     const open=R.s5keys===1;if(open&&s5ok(S5JEEP)){const x0=L+250*k-c,y0=300*k,w=295*k,h=288*k;ctx.drawImage(S5JEEP,x0,y0,w,h);ctx.strokeStyle='#2a1810';ctx.lineWidth=3;ctx.strokeRect(x0,y0,w,h);}else if(open){const x0=L+250*k-c,y0=300*k,w=295*k,h=288*k;ctx.fillStyle='#0b0610';ctx.fillRect(x0,y0,w,h);
       ctx.fillStyle='#3a4a2a';ctx.fillRect(x0+w*.12,y0+h*.55,w*.76,h*.3);ctx.fillRect(x0+w*.28,y0+h*.36,w*.44,h*.2);ctx.fillStyle='#ffc53d';ctx.fillRect(x0+w*.16,y0+h*.6,8,5);ctx.fillRect(x0+w*.8,y0+h*.6,8,5);
       ctx.fillStyle='#111';ctx.beginPath();ctx.arc(x0+w*.25,y0+h*.88,h*.1,0,6.283);ctx.arc(x0+w*.75,y0+h*.88,h*.1,0,6.283);ctx.fill();}
-    const gx=150-c;for(let i=0;i<R.s5jeep.length;i++){const id=R.s5jeep[i];if(id==='cmd'||save.heroes[id])sd(id,'shoot',Math.floor(t*10+i*3),gx+150+i*40,false,.95);}
-    ctx.fillStyle='#b6f23a';ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='center';if(S.x<S.postX-200)ctx.fillText('→',S.postX-c,GY-140);return;}
+    const gx=150-c;for(let i=0;i<R.s5jeep.length;i++){const id=R.s5jeep[i];if(id==='cmd'||save.heroes[id]){const g=S.gar&&S.gar[id];sd(id,'shoot',Math.floor(t*10+i*3),gx+150+i*40,g?g.face<0:false,.95);}}
+    ctx.fillStyle='#b6f23a';ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='center';if(S.rev)ctx.fillText('← GARAGE',Math.max(60,S.garX-c),GY-150);else if(S.x<S.postX-200)ctx.fillText('→',S.postX-c,GY-140);return;}
   if(S.floor===2&&s5ok(S5IN)){const I=S5IN,k=(GY+6)/610,w=2172*k;ctx.fillStyle='#1a0f0f';ctx.fillRect(0,0,WW,WH);
     for(let x=-(c%w)-w;x<WW;x+=w)ctx.drawImage(I,x,0,w+1,724*k);if(724*k<WH){ctx.fillStyle='#2a160e';ctx.fillRect(0,724*k-1,WW,WH);}
     for(const wn of S.wins){if(!wn.broke)continue;const x=wn.x-c;if(x<-90||x>WW+90)continue;s5fur('window',x,(300+125)*k,k*.88);}
     const dx=70-c;ctx.fillStyle='#0b0610';ctx.fillRect(dx-34,GY-130,68,132);ctx.strokeStyle='#5a3020';ctx.lineWidth=5;ctx.strokeRect(dx-34,GY-130,68,132);
-    for(const it of S.items){const x=it.x-c;if(x<-120||x>WW+120)continue;s5Item(it,x);}return;}
+    for(const it of S.items){const x=it.x-c;if(x<-120||x>WW+120)continue;s5Item(it,x);}if(R.s5ret){ctx.fillStyle='#b6f23a';ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText('← OUT',Math.max(50,dx),GY-145);}return;}
   s5BG0(S);}
 function s5BG0(S){const c=S.cam;
   if(S.floor===1){const g=ctx.createLinearGradient(0,0,0,GY);g.addColorStop(0,'#1a0f2a');g.addColorStop(.6,'#4a1f3a');g.addColorStop(1,'#ff6a2b');ctx.fillStyle=g;ctx.fillRect(0,0,WW,GY);
@@ -2140,7 +2161,7 @@ function s5BG0(S){const c=S.cam;
       ctx.fillStyle='#0b0610';ctx.fillRect(gx-100,GY-130,200,130);const open=R.s5keys===1;
       if(!open){ctx.fillStyle='#6a5a62';for(let k=0;k<6;k++)ctx.fillRect(gx-100,GY-130+k*22,200,18);ctx.fillStyle='#ffc53d';ctx.fillRect(gx-8,GY-50,16,18);}
       else{ctx.fillStyle='#3a4a2a';ctx.fillRect(gx-80,GY-62,160,44);ctx.fillRect(gx-50,GY-92,100,30);ctx.fillStyle='#111';ctx.beginPath();ctx.arc(gx-50,GY-16,16,0,6.283);ctx.arc(gx+50,GY-16,16,0,6.283);ctx.fill();}
-      for(let i=0;i<R.s5jeep.length;i++){const id=R.s5jeep[i];if(id==='cmd'||save.heroes[id])sd(id,'shoot',Math.floor(t*10+i*3),gx+110+i*36,false,.9);}
+      for(let i=0;i<R.s5jeep.length;i++){const id=R.s5jeep[i];if(id==='cmd'||save.heroes[id]){const g=S.gar&&S.gar[id];sd(id,'shoot',Math.floor(t*10+i*3),gx+150+i*40,g?g.face<0:false,.9);}}
       ctx.fillStyle='#efe6dc';ctx.font='10px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText('GARAGE',gx,GY-178);}
     // the station
     const sx=S.postX-c;if(sx>-320&&sx<WW+320){ctx.fillStyle='#4a2f2a';ctx.fillRect(sx-110,GY-200,320,200);ctx.fillStyle='#3a2420';for(let k=0;k<10;k++)ctx.fillRect(sx-110,GY-200+k*20,320,3);
@@ -2177,7 +2198,7 @@ function s5DrawSide(S,c){for(const q of R.tx){if(q.sx==null)continue;ctx.globalA
   if(S.grab){const x=S.x-c;ctx.strokeStyle='#ff4d5e';ctx.lineWidth=2;ctx.beginPath();ctx.arc(x,GY-70,46+Math.sin(t*14)*3,0,6.283);ctx.stroke();}}
 function s5HUD(cx){ctx.fillStyle='#0d1016cc';ctx.fillRect(cx-130,6,260,26);const c=R.clock;
   ctx.fillStyle=R.clockStop?'#5ee08a':c<30&&(t%1<.5)?'#ff4d5e':'#ffc53d';ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='center';
-  ctx.fillText(R.clockStop?'GOT THE KEYS':(R.s5keys>1?'THE GARAGE HOLDS · ':'THE JEEP HOLDS · ')+fmtClock(c),cx,24);
+  ctx.fillText(R.clockStop?'MADE IT':R.s5ret?'KEYS IN HAND · GET BACK · '+fmtClock(c):(R.s5keys>1?'THE GARAGE HOLDS · ':'THE JEEP HOLDS · ')+fmtClock(c),cx,24);
   if(R.side&&R.side.floor===2){const G=R.s5guard;ctx.fillStyle='#0d1016cc';ctx.fillRect(cx-130,34,260,18);ctx.fillStyle='#efe6dc';ctx.font='9px Bungee, Impact, sans-serif';
     ctx.fillText('KEYS '+(R.side.found||0)+'/'+(R.s5keys||1)+(G?'  ·  '+(G.id==='cmd'?'COMMANDER':HEROES[G.id].name.toUpperCase())+' HOLDS THE DOOR':''),cx,47);}}
 
@@ -2195,11 +2216,11 @@ const S6_RANK={driver:['cmd','rook','blaze','volt','hex','bruno'],front:['volt',
   rearL:['blaze','rook','hex','volt','bruno','cmd'],rearR:['blaze','rook','hex','volt','bruno','cmd'],
   stand:['hex','volt','cmd','bruno','blaze','rook'],back:['bruno','blaze','cmd','rook','hex','volt']};
 const S6_NOTE={
-  driver:{cmd:'Best handling.',rook:'Sharp handling.',blaze:'Good handling.',volt:'Average handling.',hex:'Loose handling.',bruno:'Heavy, slow to turn.'},
-  front:{volt:'Chain lightning, the most damage.',rook:'Dual pistols hit two targets at once.',cmd:'High rate of fire.',bruno:'Strong blasts, but only up close.',hex:'Strong orbs, but slow.',blaze:'Her flame slowly damages the jeep.'},
-  rearL:{blaze:'Constant fire keeps enemies back.',rook:'Quick dual-pistol fire.',hex:'Homing orbs find the closest threat.',volt:'Chain lightning, one direction.',bruno:'Spray for close enemies.',cmd:'Rapid fire, one direction at a time.'},
-  stand:{hex:'Protection spell heals the jeep every 7 seconds.',volt:'Chain lightning in every direction.',cmd:'360° bullet spray.',bruno:'360° spray, strong only up close.',blaze:'Strong flame, but firing ahead damages the jeep.',rook:'Weak pistol damage.'},
-  back:{bruno:'Strongest attack backward.',blaze:'Strong flame behind.',cmd:'Steady fire behind.',rook:'Light pistol fire.',hex:'Slow orbs.',volt:'Weakest backward.'}};
+  driver:{cmd:'Takes the wheel. Steers the jeep.',rook:'Takes the wheel. Steers the jeep.',blaze:'Takes the wheel. Steers the jeep.',volt:'Takes the wheel. Steers the jeep.',hex:'Takes the wheel. Steers the jeep.',bruno:'Takes the wheel. Steers the jeep.'},
+  front:{volt:'Chain lightning at what\'s ahead.',rook:'Dual pistols, two targets at once.',cmd:'Rifle fire at what\'s ahead.',bruno:'Shotgun blasts at what\'s ahead.',hex:'Magic orbs at what\'s ahead.',blaze:'Flamethrower out over the hood.'},
+  rearL:{blaze:'Flamethrower out the side.',rook:'Dual pistols out the side.',hex:'Homing orbs that seek the closest threat.',volt:'Chain lightning out the side.',bruno:'Shotgun spray out the side.',cmd:'Rifle fire out the side.'},
+  stand:{hex:'A protection spell over the jeep.',volt:'Chain lightning in every direction.',cmd:'Rifle fire in every direction.',bruno:'Shotgun spray in every direction.',blaze:'Flamethrower in every direction.',rook:'Pistol fire in every direction.'},
+  back:{bruno:'Shotgun at anything behind.',blaze:'Flamethrower at anything behind.',cmd:'Rifle at anything behind.',rook:'Pistols at anything behind.',hex:'Orbs at anything behind.',volt:'Lightning at anything behind.'}};
 S6_NOTE.rearR=S6_NOTE.rearL;
 const S6_MULT=[1.4,1.2,1.0,.85,.7,.55];
 const S6_W={cmd:{rate:.11,dmg:26,range:400,col:'#ffd27a'},rook:{rate:.2,dmg:24,range:330,n:2,col:'#ff8a3d'},volt:{rate:.6,dmg:70,range:330,ch:3,col:'#a98bff'},
@@ -2233,8 +2254,7 @@ function s6Open(x,y){if(x>=X_CITY-CS*1.2&&x>=X_CROAD+600)return cityOpen(x,y);if
 /* ---------- state ---------- */
 let S6_SEATSEL=null;
 function s6Roster(){return S6_HEROES.filter(id=>id==='cmd'||save.heroes[id]);}
-function s6AutoSeat(){const have=s6Roster(),out={};const order=['driver','stand','front','back','rearL','rearR'];const used=new Set();
-  for(const s of order){const pick=S6_RANK[s].find(id=>have.includes(id)&&!used.has(id));if(pick){out[s]=pick;used.add(pick);}}return out;}
+function s6AutoSeat(){const have=s6Roster(),out={};S6_SEATS.forEach((s,i)=>{if(have[i])out[s]=have[i];});return out;}
 function s6Start(at,skip){at=at||'start';stageRevive();for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
   R={stage:6,s6:1,wave:1,wall:0,wallMax:1,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,dead:[],queue:[],kills:0,spawnLeft:0,spawnTotal:0,proj:[],sayQ:[],s6at:at,s6hp:save.ckpt&&save.ckpt.stage==='6'&&save.ckpt.hp||null};
   S6_SEATSEL={seats:Object.assign({},save.seats6&&s6SeatsValid(save.seats6)?save.seats6:s6AutoSeat()),pick:null};
@@ -2242,14 +2262,14 @@ function s6Start(at,skip){at=at||'start';stageRevive();for(const id of REVD)if(s
   state='seat6';ui();}
 function s6SeatsValid(s){const have=s6Roster(),v=Object.values(s);return v.length===have.length&&have.every(id=>v.includes(id))&&!!s.driver;}
 function s6SeatHTML(){const S=S6_SEATSEL,have=s6Roster(),nm=id=>id==='cmd'?'Commander':HEROES[id].name;
-  const seatOf=id=>Object.keys(S.seats).find(k=>S.seats[k]===id);const star=(s,id)=>{const r=S6_RANK[s].indexOf(id);return'★'.repeat(5-r)+'☆'.repeat(r);};
+  const seatOf=id=>Object.keys(S.seats).find(k=>S.seats[k]===id);
   const rows=S6_SEATS.map(s=>{const id=S.seats[s];return `<div class="row" style="align-items:center;gap:8px;flex-wrap:wrap"><span class="sub" style="min-width:128px"><b>${S6_SEATNAME[s]}</b></span>
-    <button class="chip ${S.pick===s?'on':''}" data-act="s6seat" data-s="${s}" style="min-width:120px">${id?nm(id)+' <span style="color:#ffc53d">'+star(s,id)+'</span>':'empty'}</button>
+    <button class="chip ${S.pick===s?'on':''}" data-act="s6seat" data-s="${s}" style="min-width:120px">${id?nm(id):'empty'}</button>
     <span class="sub" style="flex:1;min-width:160px;font-size:12px">${id?S6_NOTE[s][id]:''}</span></div>`;}).join('');
-  const picker=S.pick?`<p class="sub">Who sits in <b>${S6_SEATNAME[S.pick]}</b>?</p><div class="chips">${have.map(id=>`<button class="chip ${S.seats[S.pick]===id?'on':''}" data-act="s6hero" data-id="${id}">${nm(id)} <span style="color:#ffc53d">${star(S.pick,id)}</span></button>`).join('')}${S.seats[S.pick]&&S.pick!=='driver'?'<button class="chip" data-act="s6hero" data-id="">Leave empty</button>':''}</div>`:'<p class="sub">Tap a seat to change who sits there. Everyone has to ride somewhere.</p>';
+  const picker=S.pick?`<p class="sub">Who sits in <b>${S6_SEATNAME[S.pick]}</b>?</p><div class="chips">${have.map(id=>`<button class="chip ${S.seats[S.pick]===id?'on':''}" data-act="s6hero" data-id="${id}">${nm(id)}</button>`).join('')}${S.seats[S.pick]&&S.pick!=='driver'?'<button class="chip" data-act="s6hero" data-id="">Leave empty</button>':''}</div>`:'<p class="sub">Tap a seat to change who sits there. Everyone has to ride somewhere.</p>';
   const ok=s6SeatsValid(S.seats);
-  return `<h2>The jeep</h2><div class="stripe"></div><p class="sub">Only the jeep's health matters on this drive. If it's destroyed, it's over.</p>${rows}${picker}
-  <div class="btns"><button class="btn" data-act="s6go" ${ok?'':'disabled style="opacity:.4"'}>Drive</button><button class="btn ghost" data-act="s6auto">Best fit</button></div>${ok?'':'<p class="sub" style="color:#ff4d5e">Seat everyone, and someone has to drive.</p>'}`;}
+  return `<h2>The jeep</h2><div class="stripe"></div><p class="sub">Only the jeep's health matters on this drive. If it's destroyed, it's over. Where everyone sits matters; work out who belongs where.</p>${rows}${picker}
+  <div class="btns"><button class="btn" data-act="s6go" ${ok?'':'disabled style="opacity:.4"'}>Drive</button></div>${ok?'':'<p class="sub" style="color:#ff4d5e">Seat everyone, and someone has to drive.</p>'}`;}
 function s6SeatAct(a,b){const S=S6_SEATSEL;
   if(a==='s6seat'){S.pick=S.pick===b.dataset.s?null:b.dataset.s;}
   else if(a==='s6hero'){const id=b.dataset.id,s=S.pick;if(!s)return;const was=Object.keys(S.seats).find(k=>S.seats[k]===id),cur=S.seats[s];

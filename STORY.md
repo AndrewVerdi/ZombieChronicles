@@ -38,10 +38,12 @@
   - At the door, pick who guards; the other searches inside. The guard and the squad hold for as long as the clock runs.
   - Inside: 8 pieces of furniture, MELEE to search; the keys are in random ones each run. Zombies smash through windows and grab you (you can't move until you shoot or hit them off), and zombies outside block your path: they cost time, not health.
   - Nobody can die at the station. If the clock runs out, the horde kills the entire party: game over.
+  - Finding the keys isn't the end: the searcher heads back out the door, rejoins the guard, and both run the keys back to the garage while the clock keeps running. Zombies come mostly from the garage side on the way back.
+  - The squad holding the garage fires at any zombie in range and turns to shoot ones coming from behind.
 - Ending cutscene: the keys, the jeep bursting out of the garage onto the road to Mega City.
 
 ## Stage 6: The Drive (built)
-- Seat screen first: every living hero must ride, someone must drive. Each seat shows stars from the rank lists; Auto fills by rank. Saved between tries.
+- Seat screen first: every living hero must ride, someone must drive. Placing a hero shows what they do in that seat, but not how good they are there: the rankings are for the player to discover. Saved between tries.
 - Controls: ◀ ▶ steer, GAS, BRAKE (or arrows/WASD). The seated heroes aim and fire on their own.
 - Route, continuous along one road: forest dirt road → back road → on-ramp → highway → the overrun base → the road to Mega City → the city grid. Roughly 3–4 minutes of driving.
 - Small zombies (grunts, runners, screechers) are run over above ~95 speed and chip the jeep a little. Armored and Brutes ram the jeep hard; zombies that reach it bite until shot off. Wrecks, sandbags and trucks litter the road; hitting walls fast hurts.
