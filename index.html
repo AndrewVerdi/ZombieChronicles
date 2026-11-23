@@ -222,13 +222,13 @@ h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute
   <div class="overlay" id="ov"></div>
 </div>
 
-<script>window.__VER='54bd1cb8cf';
+<script>window.__VER='e07e60cb7a';
 if('serviceWorker' in navigator){navigator.serviceWorker.register('sw.js').catch(()=>{});}
 // when the app comes back from the background, check for a newer version and reload if the player is on a menu
 document.addEventListener('visibilitychange',()=>{if(document.hidden)return;
   fetch('version.json?t='+Date.now(),{cache:'no-store'}).then(r=>r.json()).then(d=>{
     if(d.v&&d.v!==window.__VER&&window.__canReload&&window.__canReload())location.reload();}).catch(()=>{});});
 </script>
-<script src="game.js?v=54bd1cb8cf"></script>
+<script src="game.js?v=e07e60cb7a"></script>
 </body>
 </html>

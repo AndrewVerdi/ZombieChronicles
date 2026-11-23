@@ -54,6 +54,8 @@
 - Checkpoints: start, the highway, the city (jeep health carried).
 - Losing: the jeep is destroyed → game over in either mode.
 - Art (in): top-down jeep (clean / battered under half health / wrecked), dirt, asphalt and base-concrete ground, road props (wrecks, police car, box truck, sandbags, jersey barriers, burning barrels), roadside dressing (pines, guard rails, tents, watchtowers, crates, a dead tank), Mega City rooftops and Frost's helipad tower.
+- Top-down Ward (walk / slam / knocked down) and top-down Grunt, Runner, Screecher, Armored and Brute (walk, lunge, flattened corpse).
+- Ending is per driver: the mirror shot and full-squad chase exist for every driver; the full-squad lobby crash for all but Rook (falls back to the empty-jeep crash).
 - Cutscenes: opening = Frost on the radio → squad boarding → the Commander at the wheel. Ending = Ward in the rear-view mirror (Commander driving) → full-squad chase (full squad + Commander driving) → through the lobby glass (full-squad or empty-jeep version) → the stairwell (full-squad or Commander-alone version).
 - Damage was lowered once the art went in; final balance comes later.
 
