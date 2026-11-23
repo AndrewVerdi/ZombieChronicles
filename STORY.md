@@ -53,7 +53,9 @@
 - Mega City: a grid of blocks with barricaded streets; a radar arrow points to Frost's building. Reaching its lobby plays the crash-through cutscene.
 - Checkpoints: start, the highway, the city (jeep health carried).
 - Losing: the jeep is destroyed → game over in either mode.
-- Art: the jeep, roads, city and cutscenes are stand-ins (code-drawn / older images) until the Stage 6 art arrives.
+- Art (in): top-down jeep (clean / battered under half health / wrecked), dirt, asphalt and base-concrete ground, road props (wrecks, police car, box truck, sandbags, jersey barriers, burning barrels), roadside dressing (pines, guard rails, tents, watchtowers, crates, a dead tank), Mega City rooftops and Frost's helipad tower.
+- Cutscenes: opening = Frost on the radio → squad boarding → the Commander at the wheel. Ending = Ward in the rear-view mirror (Commander driving) → full-squad chase (full squad + Commander driving) → through the lobby glass (full-squad or empty-jeep version) → the stairwell (full-squad or Commander-alone version).
+- Damage was lowered once the art went in; final balance comes later.
 
 ## Roadmap: stages 5 to 10 (planned, not built)
 - **Stage 5:** distress call from Frost, holed up on a Mega City rooftop in a helicopter; she needs support and a pilot, and knows where a cure might be. The squad fires a grappling hook past the wall, zip-lines away from the horde into the forest, and heads for a ranger station with a vehicle. Town-route players can save and recruit Hex here, only if they have Volt.
