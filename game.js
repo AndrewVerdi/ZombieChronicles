@@ -2404,14 +2404,16 @@ function s6Update(dt){const D=R.s6;if(!D)return;dt=Math.min(dt,.05);t+=dt;D.t+=d
   const steer=(Rr?1:0)-(L?1:0),c=Math.cos(D.a),n=Math.sin(D.a);let fw=D.vx*c+D.vy*n,lat=-D.vx*n+D.vy*c;
   if(G)fw+=(fw<0?520:300)*dt;else if(V)fw-=(fw>0?560:200)*dt;else if(B){fw=fw>0?Math.max(0,fw-560*dt):Math.min(0,fw+560*dt);}else fw-=Math.sign(fw)*Math.min(Math.abs(fw),90*dt);
   fw=Math.max(-170,Math.min(450,fw));
-  const ts=Math.min(1,Math.abs(fw)/170)*Math.sign(fw||1);D.a+=steer*2.5*D.hand*ts*dt;
+  const ts=Math.min(1,Math.abs(fw)/170)*Math.sign(fw||1);D.a+=steer*2.5*D.hand*ts*dt;if(D.av){D.a+=D.av*dt;D.av*=Math.pow(.015,dt);if(Math.abs(D.av)<.01)D.av=0;}if(D.hitCd>0)D.hitCd-=dt;
   lat*=Math.pow(.5,dt*(4+8*D.hand));const c2=Math.cos(D.a),n2=Math.sin(D.a);D.vx=c2*fw-n2*lat;D.vy=n2*fw+c2*lat;
   const nx=D.x+D.vx*dt,ny=D.y+D.vy*dt,fx=nx+Math.cos(D.a)*26*Math.sign(fw||1),fy=ny+Math.sin(D.a)*26*Math.sign(fw||1);
   let bump=!s6Open(nx,ny)||!s6Open(fx,fy),obh=null;
   let obp=null;for(const o of D.ob){const q=s6ObN(o,nx,ny);if(q[0]<o.r+26){obh=o;obp=q;break;}}
-  if(bump||obh){const sp=Math.hypot(D.vx,D.vy);if(sp>140){s6Hurt(D,(sp-120)*.03,0,'wall');R.shake=Math.max(R.shake,.2);SND.wallHit&&SND.wallHit();}
-    if(obh){const dx=nx-obp[1],dy=ny-obp[2],d=Math.hypot(dx,dy)||1;D.vx=dx/d*sp*.35;D.vy=dy/d*sp*.35;}
-    else{let ok=0;if(s6Open(nx,D.y)&&s6Open(nx+Math.cos(D.a)*20,D.y)){D.x=nx;D.vy*=-.25;D.vx*=.7;ok=1;}else if(s6Open(D.x,ny)&&s6Open(D.x,ny+Math.sin(D.a)*20)){D.y=ny;D.vx*=-.25;D.vy*=.7;ok=1;}if(!ok){D.vx*=-.3;D.vy*=-.3;}}}
+  if(bump||obh){const sp=Math.hypot(D.vx,D.vy);if(sp>140&&!(D.hitCd>0)){D.hitCd=.4;s6Hurt(D,(sp-120)*.03,0,'wall');R.shake=Math.max(R.shake,Math.min(.35,sp/1300));SND.wallHit&&SND.wallHit();}
+    if(obh){const dx=nx-obp[1],dy=ny-obp[2],d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,vn=D.vx*ux+D.vy*uy;
+      if(vn<0){D.vx-=1.2*vn*ux;D.vy-=1.2*vn*uy;D.vx*=.82;D.vy*=.82;const cr=Math.cos(D.a)*uy-Math.sin(D.a)*ux;D.av=(D.av||0)+Math.sign(cr||1)*Math.min(1.6,-vn/260);}
+      const pen=obh.r+26-d;if(pen>0){D.x+=ux*Math.min(pen,4);D.y+=uy*Math.min(pen,4);}D.x+=D.vx*dt*.5;D.y+=D.vy*dt*.5;}
+    else{let ok=0;if(s6Open(nx,D.y)&&s6Open(nx+Math.cos(D.a)*20,D.y)){D.x=nx;D.vy*=-.2;D.vx*=.85;ok=1;}else if(s6Open(D.x,ny)&&s6Open(D.x,ny+Math.sin(D.a)*20)){D.y=ny;D.vx*=-.2;D.vy*=.85;ok=1;}if(!ok){D.vx*=-.15;D.vy*=-.15;D.av=(D.av||0)+(Math.random()<.5?-1:1)*Math.min(1.2,sp/350);}}}
   else{D.x=nx;D.y=ny;}
   const tl=D.trail[D.trail.length-1];if(Math.hypot(D.x-tl[0],D.y-tl[1])>18){D.trail.push([D.x,D.y]);if(D.trail.length>260)D.trail.shift();}
   D.best=Math.max(D.best,D.x);
@@ -2520,8 +2522,8 @@ function s6Ground(D,X,Y,Z,x0,x1,y0,y1){
     const zc=s6Zone((x0+x1)/2),rp=s6Pat(zc==='forest'||zc==='back'?'dirt':zc==='base'?'conc':'asph',X,Y,Z);ctx.fillStyle=rp||(zc==='forest'?'#5a4128':zc==='base'?'#4a4740':'#34363b');ctx.fill();
     ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=6*Z;ctx.stroke();
     // lane markings
-    ctx.strokeStyle='rgba(239,230,220,.55)';ctx.lineWidth=3*Z;ctx.setLineDash([26*Z,26*Z]);
-    for(const off of (zc==='hwy'?[-115,0,115]:zc==='forest'?[]:[0])){ctx.beginPath();for(let x=Math.max(X_BACK,Math.floor(x0/st)*st);x<=Math.min(x1,X_CITY);x+=st)ctx.lineTo(X(x),Y(cyAt(x)+off*(hwAt(x)/230)));ctx.stroke();}ctx.setLineDash([]);
+    ctx.strokeStyle='rgba(225,215,200,.32)';ctx.lineWidth=2.4*Z;ctx.lineCap='butt';const offs=zc==='hwy'?[-115,0,115]:(zc==='ramp'||zc==='croad')?[0]:[];
+    if(offs.length){ctx.beginPath();const DS=60;for(let x=Math.floor(x0/DS)*DS;x<=Math.min(x1,X_CITY);x+=DS){if(x<X_RAMP)continue;for(const off of offs){const k=hwAt(x)/230;ctx.moveTo(X(x),Y(cyAt(x)+off*k));ctx.lineTo(X(x+24),Y(cyAt(x+24)+off*k));}}ctx.stroke();}
     // edges: trees in the forest, rails on the highway, fences at the base
     for(let x=Math.floor(x0/60)*60;x<=Math.min(x1,X_CITY);x+=60){const z=s6Zone(x),c=cyAt(x),h=hwAt(x);
       if(z==='forest'||z==='back'||z==='ramp'){const dense=z==='ramp'?1:3;for(const s of[-1,1])for(let k=0;k<dense;k++){const hh=hash3(x*7+s*13+k*31),yy=c+s*(h+34+k*60+hh*30);if(yy<y0-60||yy>y1+60)continue;const d=(64+hh*44)*Z;if(!s6Spr('tree'+Math.floor(hh*3*.999),X(x+hh*40),Y(yy),d))s6Tree(X(x+hh*40),Y(yy),d*.35);}}
