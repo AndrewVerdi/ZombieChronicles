@@ -2240,7 +2240,9 @@ function cyAt(x){if(x>=X_CROAD)return 0;
   if(x>=X_BACK-700&&x<X_BACK){const t=(x-X_BACK+700)/700,k=t*t*(3-2*t);return fo(x)*(1-k)+Math.sin(x/700)*160*k;}
   const f=x<X_BACK?fo(x):x<X_RAMP?Math.sin(x/700)*160:x<X_HWY?Math.sin(x/700)*160*(1-(x-X_RAMP)/(X_HWY-X_RAMP)):x<X_BASE?Math.sin((x-X_HWY)/900)*60:Math.sin((x-X_BASE)/900)*40*(1-Math.min(1,(x-X_BASE)/(X_CROAD-X_BASE)));
   return f;}
-function hwAt(x){return x<X_BACK?72:x<X_RAMP?95:x<X_HWY?95+(x-X_RAMP)/(X_HWY-X_RAMP)*135:x<X_BASE?230:x<X_CROAD?250:150;}
+function hwAt(x){const sm=(a,b,u)=>{u=Math.max(0,Math.min(1,u));return a+(b-a)*u*u*(3-2*u);};
+  if(x<X_BACK)return sm(72,95,(x-X_BACK+400)/400);if(x<X_RAMP)return 95;if(x<X_HWY)return 95+(x-X_RAMP)/(X_HWY-X_RAMP)*135;
+  if(x<X_BASE)return sm(230,250,(x-X_BASE+500)/500);if(x<X_CROAD)return sm(250,150,(x-X_CROAD+700)/700);return sm(150,CS,(x-X_CITY+1600)/1500);}
 /* city: vertical streets at X_CITY+i*CB (i 0..6), horizontal at j*CB (j -3..3); barricades close some blocks */
 const S6_LOBBY=[X_CITY+4.5*CB,-2*CB];
 const S6_BAR=[['h',0,3],['v',0,-2],['h',-1,4],['h',-2,0],['v',2,1],['v',5,-1],['h',1,1],['v',3,-3],['h',-3,2],['v',6,-2]];
@@ -2327,7 +2329,7 @@ function s6Enemies(D,dt){const sp=Math.hypot(D.vx,D.vy);
     if(!(e.stun>0)&&d>e.r+32){e.x+=dx/d*e.spd*dt;e.y+=dy/d*e.spd*dt;e.wob+=dt*e.spd/30;}
     if(d<e.r+36){const b=S6_E[e.type];
       if(sp>95&&b.run){s6Kill(e,'run');s6Hurt(D,b.run,1,'run');D.vx*=.97;D.vy*=.97;continue;}
-      if(sp>70&&b.ram&&!e.rammed){e.rammed=.6;s6Hurt(D,b.ram,0,'ram');s6DmgE(e,e.type==='brute'?300:180);D.vx*=e.type==='brute'?.2:.45;D.vy*=e.type==='brute'?.2:.45;R.shake=.35;SND.wallHit&&SND.wallHit();e.kb=[-dx/d*160,-dy/d*160];continue;}
+      if(sp>70&&b.ram&&!e.rammed){e.rammed=.6;s6Hurt(D,b.ram,0,'ram');s6DmgE(e,e.type==='brute'?300:180);D.vx*=e.type==='brute'?.2:.45;D.vy*=e.type==='brute'?.2:.45;R.shake=Math.max(R.shake,.25);SND.wallHit&&SND.wallHit();e.kb=[-dx/d*160,-dy/d*160];continue;}
       e.atkT-=dt;if(e.atkT<=0){e.atkT=1;s6Hurt(D,b.bite,0,'bite');}}
     if(e.rammed>0)e.rammed-=dt;}
   R.en=R.en.filter(e=>!e.dead);}
@@ -2345,16 +2347,16 @@ function s6WardWake(D,quiet){if(D.ward)return;const W=D.ward={d:-700,hp:0,stag:H
 function s6WardTick(D,dt){const W=D.ward;if(!W)return;if(W.hitT>0)W.hitT-=dt;if(W.roar>0)W.roar-=dt;
   // he follows the jeep's trail, so he goes where the jeep went
   const tr=D.trail;let L=0;const seg=[];for(let i=tr.length-1;i>0;i--){const l=Math.hypot(tr[i][0]-tr[i-1][0],tr[i][1]-tr[i-1][1]);seg.push(l);L+=l;}
-  const H=HORDE(),base=(H?325:300);
+  const H=HORDE(),base=(H?370:345);
   if(W.down>0){W.down-=dt;W.d-=Math.max(0,Math.hypot(D.vx,D.vy))*dt*0;if(W.down<=0){W.stag=W.stagMax;W.roar=1;R.banner={txt:'THE WARD IS BACK UP',t:2,col:'#ff4d5e'};SND.groan(0,.8);}}
-  else{const gap=-W.d,sp=gap>900?470:gap>500?base*1.15:base;W.d=Math.min(-20,W.d+sp*dt-Math.hypot(D.vx,D.vy)*dt);W.wob+=dt*6;}
+  else{const gap=-W.d,sp=gap>900?530:gap>500?base*1.15:base;W.d=Math.min(-20,W.d+sp*dt-Math.hypot(D.vx,D.vy)*dt);W.wob+=dt*6;}
   if(W.down>0){W.d-=Math.hypot(D.vx,D.vy)*dt;}
   W.d=Math.max(W.d,-Math.min(L,1400));
   // position: walk back along the trail by |d|
   let need=-W.d,i=tr.length-1,k=0;while(i>0&&need>seg[k]){need-=seg[k];i--;k++;}
   if(i>0){const a=tr[i],b=tr[i-1],q=need/(seg[k]||1);W.x=a[0]+(b[0]-a[0])*q;W.y=a[1]+(b[1]-a[1])*q;}else{W.x=tr[0][0];W.y=tr[0][1];}
   if(W.slamT>0)W.slamT-=dt;
-  if(!(W.down>0)&&-W.d<95&&W.slamT<=0){W.slamT=1.6;s6Hurt(D,HORDE()?24:16,0,'slam');R.shake=.6;SND.explosion(.5);W.d=-160;D.vx+=Math.cos(D.a)*120;D.vy+=Math.sin(D.a)*120;R.banner={txt:'SLAMMED',t:1,col:'#ff4d5e'};}
+  if(!(W.down>0)&&-W.d<95&&W.slamT<=0){W.slamT=1.6;s6Hurt(D,HORDE()?24:16,0,'slam');R.shake=.45;SND.explosion(.5);W.d=-160;D.vx+=Math.cos(D.a)*120;D.vy+=Math.sin(D.a)*120;R.banner={txt:'SLAMMED',t:1,col:'#ff4d5e'};}
   W.thrT-=dt;if(!(W.down>0)&&W.thrT<=0&&-W.d<900){W.thrT=HORDE()?5:7;const lead=.9,tx=D.x+D.vx*lead,ty=D.y+D.vy*lead;D.fx.push({k:'throw',x0:W.x,y0:W.y,x:tx,y:ty,t:0,T:lead});SND.whoosh();}}
 function s6WardHit(W,d){if(!W||W.down>0)return;W.stag-=d;W.hitT=.1;if(W.stag<=0){W.down=HORDE()?5:6.5;W.stag=0;R.banner={txt:'THE WARD IS DOWN',t:2,col:'#b6f23a'};SND.groan(0,1);R.shake=.3;}}
 
@@ -2409,7 +2411,7 @@ function s6Update(dt){const D=R.s6;if(!D)return;dt=Math.min(dt,.05);t+=dt;D.t+=d
   const nx=D.x+D.vx*dt,ny=D.y+D.vy*dt,fx=nx+Math.cos(D.a)*26*Math.sign(fw||1),fy=ny+Math.sin(D.a)*26*Math.sign(fw||1);
   let bump=!s6Open(nx,ny)||!s6Open(fx,fy),obh=null;
   let obp=null;for(const o of D.ob){const q=s6ObN(o,nx,ny);if(q[0]<o.r+26){obh=o;obp=q;break;}}
-  if(bump||obh){const sp=Math.hypot(D.vx,D.vy);if(sp>140&&!(D.hitCd>0)){D.hitCd=.4;s6Hurt(D,(sp-120)*.03,0,'wall');R.shake=Math.max(R.shake,Math.min(.35,sp/1300));SND.wallHit&&SND.wallHit();}
+  if(bump||obh){const sp=Math.hypot(D.vx,D.vy);if(sp>140&&!(D.hitCd>0)){D.hitCd=.4;s6Hurt(D,(sp-120)*.03,0,'wall');R.shake=Math.max(R.shake,Math.min(.25,sp/1600));SND.wallHit&&SND.wallHit();}
     if(obh){const dx=nx-obp[1],dy=ny-obp[2],d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d,vn=D.vx*ux+D.vy*uy;
       if(vn<0){D.vx-=1.2*vn*ux;D.vy-=1.2*vn*uy;D.vx*=.82;D.vy*=.82;const cr=Math.cos(D.a)*uy-Math.sin(D.a)*ux;D.av=(D.av||0)+Math.sign(cr||1)*Math.min(1.6,-vn/260);}
       const pen=obh.r+26-d;if(pen>0){D.x+=ux*Math.min(pen,4);D.y+=uy*Math.min(pen,4);}D.x+=D.vx*dt*.5;D.y+=D.vy*dt*.5;}
@@ -2477,7 +2479,7 @@ function s6Pat(k,X,Y,Z){const im=k==='dirt'?S6DIRT:k==='asph'?S6ASPH:S6CONC;if(!
 function s6Draw(){const D=R.s6;if(!D)return;const sp=Math.hypot(D.vx,D.vy),la=Math.min(1,sp/400)*170;
   const cx=D.x+Math.cos(D.a)*la,cy=D.y+Math.sin(D.a)*la*.6,Z=S6_ZOOM,X=x=>(x-cx)*Z+WW/2,Y=y=>(y-cy)*Z+WH/2;
   const x0=cx-WW/2/Z-40,x1=cx+WW/2/Z+40,y0=cy-WH/2/Z-40,y1=cy+WH/2/Z+40;
-  ctx.save();if(R.shake>0)ctx.translate((Math.random()-.5)*8,(Math.random()-.5)*8);
+  ctx.save();if(R.shake>0){const k=Math.min(1,R.shake/.5)*4.5;ctx.translate(Math.sin(t*47)*k,Math.cos(t*39)*k*.8);}
   s6Ground(D,X,Y,Z,x0,x1,y0,y1);
   for(const f of D.fx)if(f.k==='splat'&&f.ty&&S6M['z_'+f.ty+'5']&&s6ok(S6SPR)){s6SprF('z_'+f.ty+'5',X(f.x),Y(f.y)+f.r*Z*.6,f.r*Z*(f.ty==='brute'?2.6:3.2),f.lf,Math.min(1,f.t/2));}else if(f.k==='splat'){ctx.globalAlpha=Math.min(1,f.t/2)*.8;ctx.fillStyle=f.col;ctx.beginPath();ctx.ellipse(X(f.x),Y(f.y),f.r*1.3*Z,f.r*.9*Z,f.x%3,0,6.283);ctx.fill();ctx.globalAlpha=1;}
   for(const o of D.ob){if(o.x<x0-60||o.x>x1+60||o.y<y0-60||o.y>y1+60)continue;s6Prop(o,X(o.x),Y(o.y),Z);}
@@ -2513,13 +2515,16 @@ function s6Draw(){const D=R.s6;if(!D)return;const sp=Math.hypot(D.vx,D.vy),la=Ma
   if(D.dmgT>0){ctx.fillStyle='rgba(255,40,40,'+D.dmgT*.6+')';ctx.fillRect(0,0,WW,WH);}
   s6HUD(D);}
 function s6Tree(x,y,r){ctx.fillStyle='#0f1a12';ctx.beginPath();ctx.arc(x+3,y+4,r,0,6.283);ctx.fill();ctx.fillStyle='#1f3a22';ctx.beginPath();ctx.arc(x,y,r,0,6.283);ctx.fill();ctx.fillStyle='#2d5230';ctx.beginPath();ctx.arc(x-r*.25,y-r*.25,r*.55,0,6.283);ctx.fill();}
+const S6_BW={[X_CITY]:1500};
+function s6GMix(x,typ){const bs=[X_BACK,X_RAMP,X_HWY,X_BASE,X_CROAD,X_CITY];for(const b of bs){const w=S6_BW[b]||320,c=b===X_CITY?b-500:b;if(Math.abs(x-c)<w){const zl=s6Zone(b-1),zr=s6Zone(b+1);if(typ(zl)===typ(zr))break;let u=(x-c+w)/(2*w);u=u*u*(3-2*u);return[[zl,1],[zr,u]];}}return[[s6Zone(x),1]];}
+function s6Blend(x0,x1,typ,tint,base,X,Y,Z,sy,sh){const STP=36;for(let x=Math.floor(x0/STP)*STP;x<=x1;x+=STP){const sx=X(x),w=STP*Z+1;
+    for(const[z,a]of s6GMix(x+STP/2,typ)){if(a<=.01)continue;ctx.globalAlpha=a;const p=s6Pat(typ(z),X,Y,Z);ctx.fillStyle=p||base(z);ctx.fillRect(sx,sy,w,sh);const tn=tint(z);if(tn){ctx.fillStyle=tn;ctx.fillRect(sx,sy,w,sh);}}}ctx.globalAlpha=1;}
 function s6Ground(D,X,Y,Z,x0,x1,y0,y1){
   const z0=s6Zone(Math.max(0,x0)),bgc={forest:'#14231a',back:'#2a2a1a',ramp:'#22241f',hwy:'#1d1f22',base:'#26231c',croad:'#1d1c22',city:'#121318'};
-  const zz=s6Zone(D.x),offT={forest:'dirt',back:'dirt',ramp:'dirt',hwy:'dirt',base:'conc',croad:'dirt',city:'asph'}[zz],offP=s6Pat(offT,X,Y,Z);
-  ctx.fillStyle=bgc[zz];ctx.fillRect(0,0,WW,WH);if(offP){ctx.fillStyle=offP;ctx.fillRect(0,0,WW,WH);ctx.fillStyle={forest:'rgba(6,16,8,.72)',back:'rgba(10,14,6,.66)',base:'rgba(8,6,10,.5)',city:'rgba(6,6,10,.35)'}[zz]||'rgba(8,6,10,.66)';ctx.fillRect(0,0,WW,WH);}
+  s6Blend(x0,x1,z=>({forest:'dirt',back:'dirt',ramp:'dirt',hwy:'dirt',base:'conc',croad:'dirt',city:'asph'})[z],z=>({forest:'rgba(6,16,8,.72)',back:'rgba(10,14,6,.66)',base:'rgba(8,6,10,.5)',city:'rgba(6,6,10,.35)',croad:'rgba(8,6,10,.55)'})[z]||'rgba(8,6,10,.66)',z=>bgc[z],X,Y,Z,0,WH);
   if(x0<X_CITY+200){// the road as a strip
     const st=16;ctx.beginPath();for(let x=Math.floor(x0/st)*st;x<=Math.min(x1,X_CITY+40);x+=st)ctx.lineTo(X(x),Y(cyAt(x)-hwAt(x)));for(let x=Math.min(x1,X_CITY+40);x>=Math.floor(x0/st)*st;x-=st)ctx.lineTo(X(x),Y(cyAt(x)+hwAt(x)));ctx.closePath();
-    const zc=s6Zone((x0+x1)/2),rp=s6Pat(zc==='forest'||zc==='back'?'dirt':zc==='base'?'conc':'asph',X,Y,Z);ctx.fillStyle=rp||(zc==='forest'?'#5a4128':zc==='base'?'#4a4740':'#34363b');ctx.fill();
+    const zc=s6Zone((x0+x1)/2);ctx.save();ctx.clip();s6Blend(x0,x1,z=>z==='forest'||z==='back'?'dirt':z==='base'?'conc':'asph',z=>z==='forest'||z==='back'?'rgba(40,24,10,.12)':'rgba(0,0,0,0)',z=>z==='forest'||z==='back'?'#5a4128':z==='base'?'#4a4740':'#34363b',X,Y,Z,0,WH);ctx.restore();
     ctx.strokeStyle='rgba(0,0,0,.45)';ctx.lineWidth=6*Z;ctx.stroke();
     // lane markings
     ctx.strokeStyle='rgba(225,215,200,.32)';ctx.lineWidth=2.4*Z;ctx.lineCap='butt';const offs=zc==='hwy'?[-115,0,115]:(zc==='ramp'||zc==='croad')?[0]:[];
@@ -2527,11 +2532,14 @@ function s6Ground(D,X,Y,Z,x0,x1,y0,y1){
     // edges: trees in the forest, rails on the highway, fences at the base
     for(let x=Math.floor(x0/60)*60;x<=Math.min(x1,X_CITY);x+=60){const z=s6Zone(x),c=cyAt(x),h=hwAt(x);
       if(z==='forest'||z==='back'||z==='ramp'){const dense=z==='ramp'?1:3;for(const s of[-1,1])for(let k=0;k<dense;k++){const hh=hash3(x*7+s*13+k*31),yy=c+s*(h+34+k*60+hh*30);if(yy<y0-60||yy>y1+60)continue;const d=(64+hh*44)*Z;if(!s6Spr('tree'+Math.floor(hh*3*.999),X(x+hh*40),Y(yy),d))s6Tree(X(x+hh*40),Y(yy),d*.35);}}
-      if(z==='hwy'||z==='ramp'||z==='croad'){if(Math.round(x/60)%2===0)for(const s of[-1,1]){const a=s6RoadA(x+60);if(!s6Spr('rail',X(x+60),Y(c+s*(h+8)),124*Z,a)){ctx.fillStyle='#8a94a6';ctx.fillRect(X(x),Y(c+s*(h+6))-2,120*Z+1,4);}}
+      if(z==='hwy'||z==='ramp'||(z==='croad'&&x<X_CITY-1700)){if(Math.round(x/60)%2===0)for(const s of[-1,1]){const a=s6RoadA(x+60);if(!s6Spr('rail',X(x+60),Y(c+s*(h+8)),124*Z,a)){ctx.fillStyle='#8a94a6';ctx.fillRect(X(x),Y(c+s*(h+6))-2,120*Z+1,4);}}
         if(z==='hwy')for(const s of[-1,1]){const hh=hash3(x*3+s);if(hh<.12){const yy=c+s*(h+70+hh*400);if(!s6Spr(hh<.05?'cop':'car',X(x),Y(yy),80*Z,s6RoadA(x)+hh*20,hh<.06,.85)){ctx.fillStyle='#2a2d22';ctx.fillRect(X(x),Y(yy),50*Z,40*Z);}}
           else if(hh>.88){const d=(70+hh*30)*Z;s6Spr('tree'+Math.floor(hh*30)%3,X(x),Y(c+s*(h+90+hh*260)),d);}}}
       else if(z==='base'){if(Math.round(x/60)%2===0)for(const s of[-1,1]){if(!s6Spr('barrier',X(x),Y(c+s*(h+16)),62*Z,s6RoadA(x))){ctx.fillStyle='#6a6a5a';ctx.fillRect(X(x),Y(c+s*(h+12))-3,60*Z+1,6);}}
         for(const s of[-1,1]){const hh=hash3(x*5+s*7);if(hh<.3){const k=['tent','tower','crates','tank','tent','sand'][Math.floor(hh/.3*6)%6],w={tent:96,tower:66,crates:60,tank:150,sand:72}[k];s6Spr(k,X(x+10),Y(c+s*(h+80+hh*150)),w*Z);}}}}
+    if(s6ok(S6SPR)&&S6M.roof0&&x1>X_CROAD+400)for(let x=Math.floor(Math.max(x0-400,X_CROAD+400)/200)*200;x<=Math.min(x1+400,X_CITY-CB*.6);x+=200){const p=(x-X_CROAD)/(X_CITY-X_CROAD),c=cyAt(x),h=hwAt(x);
+      for(const sd of[-1,1])for(let k=0;k<3;k++){const hh=hash3(x*11+sd*5+k*17);if(hh>p*p*1.3+.05)continue;const sz=(160+hh*180)*(0.6+p*.6),yy=c+sd*(h+50+k*230+hh*50+sz/2);
+        s6Spr('roof'+Math.floor(hash3(x+k*3+sd)*4*.999),X(x),Y(yy),sz*Z);}}
     if(x0<X_BASE+40&&x1>X_BASE-40){for(const s of[-1,1]){ctx.fillStyle='#5a5a4a';ctx.fillRect(X(X_BASE-14),Y(cyAt(X_BASE)+s*(hwAt(X_BASE)+20)),28*Z,s*400*Z);}ctx.fillStyle='#ffc53d';ctx.font='12px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText('FORT HOLDOUT',X(X_BASE),Y(cyAt(X_BASE)-hwAt(X_BASE)-30));}}
   if(x1>X_CITY-200){// city: streets and blocks
     const ap=s6Pat('asph',X,Y,Z);ctx.fillStyle=ap||'#1b1c21';for(let i=0;i<=6;i++){const x=X_CITY+i*CB;ctx.fillRect(X(x-CS),Y(-3*CB-CS),2*CS*Z,6*CB*Z+2*CS*Z);}
