@@ -59,6 +59,15 @@
 - Cutscenes: opening = Frost on the radio → squad boarding → the Commander at the wheel. Ending = Ward in the rear-view mirror (Commander driving) → full-squad chase (full squad + Commander driving) → through the lobby glass (full-squad or empty-jeep version) → the stairwell (full-squad or Commander-alone version).
 - Damage was lowered once the art went in; final balance comes later.
 
+## Stage 7: Nova's Watch (built, stand-in art)
+- Static first-person sniper as Nova on the rooftop across from Frost's tower. Drag to look around (the roof with Frost and the helipad above, the tower's floors below). ZOOM cycles 1x / 2.5x / 5x (scope view with sway at 2.5x and 5x). SHOOT fires; 5-round magazine, bolt between shots, reload when empty. Headshots hit much harder.
+- Team pick: everyone splits between the West and East stairwells, 3 max each; the Commander alone picks one. No stats are shown: the mix decides how well each team climbs (Bruno takes hits for his team, Hex heals hers, Volt chains, Blaze burns crowds, Rook and the Commander hit single targets hard).
+- The teams climb 12 floors (floors 29-40) on their own, fighting grunts, runners, armored and brutes in the windows. If a team's health runs out, one of its members goes down for good (the Commander last); the team regroups. If the Commander goes down, it's over. Teams recover a little on each stairwell.
+- Frost holds the roof alone until the teams arrive: zombies come out of the roof door and over the edge. If she's overrun, it's over. Arrows at the screen edge point to each team and Frost and flash red when they take damage.
+- When every surviving team reaches the roof, the Ward climbs the face of the tower. The squad and Frost fire down (minimal damage). Nova: hands make him slip (a short cooldown between slips), the head does more damage, and red canisters in the windows blow up for big damage and a long slip when he's close. If he reaches the roof he sweeps it: Frost, the squad and the helicopter go over the edge (game over). When his health runs out he falls and lands on Nova's building, breaking it open to the horde.
+- Ending: full squad (Commander, Hex, Volt, Bruno, Rook, Blaze, plus Frost) → they go back for Nova (rescue mission coming next); anyone missing → they thank Nova, she tells them to go, they fly off. Frost joins the roster either way.
+- Checkpoints: the start (team pick) and the roof fight.
+
 ## Roadmap: stages 5 to 10 (planned, not built)
 - **Stage 5:** distress call from Frost, holed up on a Mega City rooftop in a helicopter; she needs support and a pilot, and knows where a cure might be. The squad fires a grappling hook past the wall, zip-lines away from the horde into the forest, and heads for a ranger station with a vehicle. Town-route players can save and recruit Hex here, only if they have Volt.
   - Screechers appear in Stage 5 on both routes. The squad comes upon a ritual: Momma and a circle of Screechers levitating Hex.
