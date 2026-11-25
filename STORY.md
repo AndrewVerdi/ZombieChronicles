@@ -75,6 +75,17 @@
 - Ending: full squad alive → they go back for Nova (rescue mission next); anyone missing → they thank Nova, she tells them to go, they fly off. Frost joins the roster either way.
 - Checkpoints: the start (team pick) and the roof fight.
 
+## Nova's rescue (planned, after Stage 7)
+Only happens if everyone is alive at the end of Stage 7. Each hero has a job:
+- Commander: preps the helicopter on Frost's roof. No time to fly it to Nova.
+- Hex: teleports the team to Nova's building (cutscene). If the mission succeeds, she teleports everyone back (another cutscene).
+- Frost: keeps the fires down so the building holds.
+- Volt: powers Nova's high-security door and stays at the circuit.
+- Bruno: defends Volt.
+- Rook: protects Frost.
+- Blaze: goes alone to get Nova.
+Gameplay details still to be decided.
+
 ## Roadmap: stages 5 to 10 (planned, not built)
 - **Stage 5:** distress call from Frost, holed up on a Mega City rooftop in a helicopter; she needs support and a pilot, and knows where a cure might be. The squad fires a grappling hook past the wall, zip-lines away from the horde into the forest, and heads for a ranger station with a vehicle. Town-route players can save and recruit Hex here, only if they have Volt.
   - Screechers appear in Stage 5 on both routes. The squad comes upon a ritual: Momma and a circle of Screechers levitating Hex.
