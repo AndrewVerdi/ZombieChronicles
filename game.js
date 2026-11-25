@@ -2638,7 +2638,8 @@ const S7_HEROES=['cmd','rook','hex','volt','bruno','blaze'];
 const S7_SW=1700,S7_SH=2760,S7_RY=330,S7_NF=12,S7_FH=185,S7_CORE=[836,864];
 const S7_HALF={A:[452,826],B:[874,1248]};
 const S7_SLOTS=['lead','mid','rear'],S7_SLOTN={lead:'Lead',mid:'Middle',rear:'Rear'};
-/* position ratings (hidden from the player): stars per slot */
+/* position ratings, shown on the pick screen: stars per slot */
+const s7Stars=(id,s)=>{const n=S7_STAR[id][s];return '<span style="color:#ffc53d">'+'★'.repeat(n)+'</span><span style="opacity:.35">'+'★'.repeat(3-n)+'</span>';};
 const S7_STAR={bruno:{lead:3,mid:1,rear:3},blaze:{lead:2,mid:1,rear:3},cmd:{lead:2,mid:2,rear:2},hex:{lead:1,mid:3,rear:2},rook:{lead:3,mid:2,rear:2},volt:{lead:2,mid:1,rear:3}};
 const S7_SM={1:.65,2:1,3:1.35};
 const S7_HP={cmd:100,rook:85,hex:75,volt:90,bruno:150,blaze:110};
@@ -2646,13 +2647,13 @@ const S7_DPS={cmd:22,rook:25,hex:17,volt:19,bruno:24,blaze:13};
 /* what each hero does in each slot (shown when placed; no ratings shown) */
 const S7_NOTE={
   bruno:{lead:'Shotgun ahead, shoulder-rams anything that gets close.',mid:'Shotgun either way, shoulder-rams anything close.',rear:'Shotgun behind, shoulder-rams anything that catches up.'},
-  blaze:{lead:'Flames ahead. The team waits while she burns.',mid:'Flames either way. Fire forward can catch the lead.',rear:'Flames behind the team.'},
+  blaze:{lead:'Flames ahead. The floor burns for a moment, so the team waits.',mid:'Flames either way. Fire forward can catch the lead, and the burning floor ahead hurts anyone who walks in.',rear:'Flames behind the team.'},
   cmd:{lead:'Assault rifle ahead, rifle-butt up close.',mid:'Assault rifle either way, rifle-butt up close.',rear:'Assault rifle behind, rifle-butt up close.'},
   hex:{lead:'Hex bolts ahead, now and then throws a zombie out a window.',mid:'Raises a force bubble over the team. Breaks after 100 damage, then she needs 30 seconds.',rear:'Hex bolts behind, now and then throws a zombie out a window.'},
   rook:{lead:'Two pistols ahead, sword for anything close.',mid:'Two pistols either way, sword for anything close.',rear:'Two pistols behind, sword for anything close.'},
   volt:{lead:'Chain lightning ahead. Pops armored heads up close.',mid:'Chain lightning either way. Can arc into a teammate.',rear:'Chain lightning behind. Pops armored heads up close.'}};
 const S7_COMBO=[['bruno','blaze','Love connection','+10% damage'],['cmd','rook','The mentor','20% critical hits'],['hex','volt','Charged up','Hex kills set off chain lightning'],['bruno','cmd','Old friends','+15% health'],['hex','blaze','Bitch boss','No friendly fire from Blaze, Hex throws zombies twice as often'],['rook','volt','Sharpened','Melee 35% stronger']];
-const S7_E={grunt:{hp:185,spd:42,dps:6,h:118},runner:{hp:65,spd:95,dps:5,h:112},armored:{hp:500,spd:32,dps:10,h:124},brute:{hp:1500,spd:38,dps:16,h:160}};
+const S7_E={grunt:{hp:185,spd:42,dps:6,h:118},runner:{hp:65,spd:95,dps:5,h:112},armored:{hp:500,spd:32,dps:10,h:124},brute:{hp:1500,spd:38,dps:12,h:160}};
 let S7_PICK=null;
 function s7Floor(f){const top=S7_RY+40+(S7_NF-f)*S7_FH;return{top,feet:top+S7_FH-22};}
 function s7Roster(){return S7_HEROES.filter(id=>id==='cmd'||save.heroes[id]);}
@@ -2674,13 +2675,13 @@ function s7PickHTML(){const P=S7_PICK,have=s7Roster(),placed=id=>P.A.includes(id
   const box=k=>`<div style="flex:1;min-width:230px;border:2px solid #ffc53d55;border-radius:10px;padding:8px">
     <p class="sub"><b>${k==='A'?'West stairwell':'East stairwell'}</b></p>
     ${S7_SLOTS.map((s,i)=>{const id=P[k][i],on=P.sel&&P.sel.k===k&&P.sel.i===i;return `<div style="display:flex;gap:6px;align-items:center;margin:4px 0">
-      <button class="chip${on?' on':''}" data-act="s7slot" data-k="${k}" data-i="${i}" style="min-width:150px;text-align:left">${S7_SLOTN[s]}: ${id?s7Name(id):'<span style="opacity:.6">tap to place</span>'}</button>
+      <button class="chip${on?' on':''}" data-act="s7slot" data-k="${k}" data-i="${i}" style="min-width:150px;text-align:left">${S7_SLOTN[s]}: ${id?s7Name(id)+' '+s7Stars(id,s):'<span style="opacity:.6">tap to place</span>'}</button>
       ${id?`<button class="chip" data-act="s7clr" data-k="${k}" data-i="${i}">✕</button>`:''}</div>${id?`<p class="sub" style="font-size:12px;margin:0 0 4px 6px;opacity:.85">${S7_NOTE[id][s]}</p>`:''}`;}).join('')}
     <div style="margin-top:4px">${combos(k)}</div></div>`;
   return `<h1 class="title">STAGE 7<span>NOVA'S WATCH</span></h1><div class="stripe"></div>
   <p class="sub">${solo?"The Commander climbs alone. Pick his stairwell. Zombies will use the empty one to reach Frost.":"Split the squad between the two stairwells and set the marching order. The lead fires ahead, the middle either way, the rear covers the back. An empty stairwell lets zombies climb to Frost."}</p>
   <div style="display:flex;gap:10px;flex-wrap:wrap;margin:8px 0">${box('A')}${box('B')}</div>
-  ${P.sel?`<p class="sub">Place in ${P.sel.k==='A'?'West':'East'} · ${S7_SLOTN[S7_SLOTS[P.sel.i]]}:</p><div class="chips">${have.map(id=>`<button class="chip" data-act="s7hero" data-id="${id}">${s7Name(id)}${placed(id)?' ↺':''}</button>`).join('')}</div>`
+  ${P.sel?`<p class="sub">Place in ${P.sel.k==='A'?'West':'East'} · ${S7_SLOTN[S7_SLOTS[P.sel.i]]}:</p><div class="chips">${have.map(id=>`<button class="chip" data-act="s7hero" data-id="${id}">${s7Name(id)} ${s7Stars(id,S7_SLOTS[P.sel.i])}${placed(id)?' ↺':''}</button>`).join('')}</div>`
     :free.length?`<p class="sub">Still to place: ${free.map(s7Name).join(', ')}. Tap a slot.</p>`:''}
   <div class="btns"><button class="btn" data-act="s7go" ${ok?'':'disabled'}>Climb</button><button class="btn ghost" data-act="menu">Back to title</button></div>`;}
 function s7PickAct(a,b){const P=S7_PICK,d=b.dataset;
@@ -2701,7 +2702,7 @@ function s7Alive(g){return g.order.filter(id=>id&&g.hero[id]&&g.hero[id].hp>0);}
 function s7Begin(form,at,frostHp){const H=HORDE();
   const teams=[];for(const k of['A','B'])if(form[k]&&form[k].some(Boolean))teams.push(s7Team(k,form[k]));
   const empty=['A','B'].filter(k=>!teams.some(g=>g.k===k));
-  const S=R.s7={on:1,t:0,at,teams,empty,en:[],roof:[],fx:[],can:[],climb:[],climbT:6,
+  const S=R.s7={on:1,t:0,at,teams,empty,burn:[],en:[],roof:[],fx:[],can:[],climb:[],climbT:6,
     cam:{x:850,y:S7_RY+260},zoom:0,ptr:{},fireCd:0,mag:5,rel:0,breath:0,pant:0,hold:0,
     frost:{hp:frostHp||(H?260:300),max:H?260:300,x:860,fireT:0,dmgT:0,tg:null},roofT:6,boss:null,phase:'climb',warn:{}};
   for(const g of S.teams)s7FloorSpawn(S,g);
@@ -2714,7 +2715,7 @@ function s7Begin(form,at,frostHp){const H=HORDE();
 function s7Z(type,o){const b=S7_E[type];return Object.assign({type,hp:b.hp,max:b.hp,wob:Math.random()*8,atk:0,hitT:0,dead:0,dt:0,arms:2,legs:1,stun:0,kb:0,frz:0,frozen:0,face:1,hs:0},o);}
 function s7FloorSpawn(S,g){const H=HORDE()?1.35:1,f=g.f,[x0,x1]=S7_HALF[g.k],sz=g.order.filter(Boolean).length;let n=Math.round((5+f*.6)*H*(.55+.15*sz));
   const types=[];for(let i=0;i<n;i++){const q=Math.random();types.push(q<.3?'runner':(f>=4&&q<.48)?'armored':'grunt');}
-  if(f%3===0||(HORDE()&&f%4===0))types.push('brute');
+  if(HORDE()?(f===8||f===10||f===12):(f===9||f===12))types.push('brute');
   types.forEach((ty,i)=>{const ahead=i<types.length*.72;const x=ahead?(g.dir>0?Math.min(x1-10,g.x+160+Math.random()*(x1-g.x-170)):Math.max(x0+10,g.x-160-Math.random()*(g.x-x0-170))):(g.dir>0?x0+6:x1-6);
     S.en.push(s7Z(ty,{f,k:g.k,x,dl:ahead?0:5+Math.random()*10+i}));});}
 /* hero geometry: compact marching order, lead in front */
@@ -2756,10 +2757,11 @@ function s7TeamUpdate(S,g,dt){if(!s7Alive(g).length)return;if(g.flash>0)g.flash-
     if(g.stT<=0){g.f++;if(g.f>S7_NF){g.state='roof';g.x=g.k==='A'?700:1020;R.banner={txt:(g.k==='A'?'WEST':'EAST')+' TEAM IS ON THE ROOF',t:2.4,col:'#5ee08a'};SND.waveClear&&SND.waveClear();return;}
       g.dir=-g.dir;g.x=g.dir>0?S7_HALF[g.k][0]+100:S7_HALF[g.k][1]-100;g.state='walk';s7FloorSpawn(S,g);}return;}
   const live=S.en.filter(e=>!e.dead&&e.f===g.f&&e.k===g.k&&!(e.dl>0)),[x0,x1]=S7_HALF[g.k],pos=s7Pos(g),al=s7Alive(g);
+  if(!g.hb)for(const b of S.burn)if(b.f===g.f&&b.k===g.k)for(const id of al)if(id!=='blaze'&&pos[id]>b.x0&&pos[id]<b.x1)s7HurtHero(S,g,id,(b.big?14:4)*dt);
   const ahead=live.filter(e=>(e.x-g.x)*g.dir>0);
   /* fight */
   g.halt=0;for(const id of al)s7HeroAct(S,g,id,pos[id],live,dt);
-  const near=ahead.some(e=>Math.abs(e.x-g.x)<240);
+  const near=ahead.some(e=>Math.abs(e.x-g.x)<240)||S.burn.some(b=>b.f===g.f&&b.k===g.k&&(g.dir>0?b.x0-g.x<50&&b.x1>g.x:g.x-b.x1<50&&b.x0<g.x));
   if(near||g.halt){g.state='fight';}else{g.state='walk';g.x+=g.dir*50*dt;
     if((g.dir>0&&g.x>=x1-14)||(g.dir<0&&g.x<=x0+14)){g.x=Math.max(x0+14,Math.min(x1-14,g.x));
       if(!live.length){S.en=S.en.filter(e=>!(e.f===g.f&&e.k===g.k&&e.dl>0));g.state='stairs';g.stT=2.2;}}}}
@@ -2781,6 +2783,7 @@ function s7HeroAct(S,g,id,x,live,dt){const h=g.hero[id],slot=s7Alive(g).length==
   const d=S7_DPS[id]*.25;
   if(id==='blaze'){const big=h.inf>0,R0=big?250:160;for(const q of tg)if(q.d<R0)s7TeamHit(S,g,id,q.e,d*(big?10:1));
     if(aim===g.dir&&slot!=='lead'&&slot!=='solo'){g.halt=1;if(!g.hb){const al=s7Alive(g),pos=s7Pos(g);for(const o of al)if(o!==id&&(pos[o]-x)*aim>0)s7HurtHero(S,g,o,(big?8:2)*.25);}}
+    if(aim===g.dir){const a0=x+aim*20,a1=x+aim*R0*.8;S.burn.push({f:g.f,k:g.k,x0:Math.min(a0,a1),x1:Math.max(a0,a1),t:2,big});}
     S.fx.push({k:'flame',x:x+aim*14,y:F.feet-66,a:aim,r:R0,t:.22,big});return;}
   if(id==='volt'){const ch=tg.slice(0,3);let px=x+aim*12;ch.forEach((q,i)=>{s7TeamHit(S,g,id,q.e,d*(i?.6:1));S.fx.push({k:'zap',x1:px,y1:F.feet-68,x2:q.e.x,y2:F.feet-60,t:.12});px=q.e.x;});
     if(slot==='mid'&&Math.random()<.05){const al=s7Alive(g),pos=s7Pos(g),mate=al.find(o=>o!==id&&(pos[o]-x)*aim>0);if(mate){s7HurtHero(S,g,mate,5);S.fx.push({k:'zap',x1:x,y1:F.feet-68,x2:pos[mate],y2:F.feet-70,t:.15});}}return;}
@@ -2877,6 +2880,7 @@ function s7Update(dt){const S=R.s7;if(!S||!S.on)return;dt=Math.min(dt,.05);t+=dt
   if(S.pant>0){S.pant-=dt;S.breath=Math.max(0,S.breath-dt*.9);}else if(S.hold){S.breath+=dt;if(S.breath>=3.5){S.pant=4;S.hold=0;R.banner={txt:'OUT OF BREATH',t:1.2,col:'#ff4d5e'};}}else S.breath=Math.max(0,S.breath-dt*1.2);
   for(const f of S.fx){f.t-=dt;if(f.vx!=null){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vy+=600*dt;}}S.fx=S.fx.filter(f=>f.t>0);
   if(R.over&&!(S.boss&&S.boss.fall))return;
+  for(const b of S.burn)b.t-=dt;S.burn=S.burn.filter(b=>b.t>0);
   for(const g of S.teams)s7TeamUpdate(S,g,dt);s7EnUpdate(S,dt);s7ClimbUpdate(S,dt);s7RoofUpdate(S,dt);
   if(S.phase==='climb'&&S.teams.every(g=>g.state==='roof'||!s7Alive(g).length)){
     if(!S.teams.some(g=>s7Alive(g).length)){R.over=true;R.s7Fail='cmd';s7Lose();return;}s7BossStart(S);}
@@ -2954,6 +2958,7 @@ function s7Draw(){const S=R.s7;if(!S)return;const sc=s7Scale(S),Z=S7_Z[S.zoom];
       if(hash3(f*13+(k==='A'?1:2))<.5){ctx.fillStyle='rgba(255,150,60,.10)';ctx.fillRect(x0,F.top+20,x1-x0,S7_FH-38);}}
     ctx.fillStyle='#352d3a';ctx.fillRect(420,F.top,860,16);ctx.fillStyle='#9a8fa6';ctx.font='bold 14px Bungee, Impact, sans-serif';ctx.textAlign='left';ctx.fillText(String(28+f),428,F.top+34);}
   for(const c of S.can){if(!c.alive)continue;ctx.fillStyle='#b8321e';ctx.fillRect(c.x-12,c.y-24,24,48);ctx.fillStyle='#ffcf3a';ctx.fillRect(c.x-12,c.y-10,24,8);ctx.fillStyle='#3a1a14';ctx.fillRect(c.x-8,c.y-28,16,6);}
+  for(const b of S.burn){const F=s7Floor(b.f);ctx.globalCompositeOperation='lighter';for(let x=b.x0;x<b.x1;x+=14){const fl=(Math.sin(t*20+x)*.5+.5)*Math.min(1,b.t);ctx.fillStyle=`rgba(255,${120+fl*80|0},30,${.25+.35*fl})`;ctx.beginPath();ctx.ellipse(x,F.feet-6-fl*8,9,8+fl*14,0,0,6.283);ctx.fill();}ctx.globalCompositeOperation='source-over';}
   for(const e of S.en){if(e.dl>0)continue;s7Zombie(e,s7Floor(e.f).feet);}
   for(const e of S.climb){const F=s7Floor(Math.min(e.f,S7_NF));if(e.st>0){if(e.st<1)continue;}s7Zombie(e,F.feet);}
   /* the teams in formation */
