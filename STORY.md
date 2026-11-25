@@ -59,7 +59,9 @@
 - Cutscenes: opening = Frost on the radio → squad boarding → the Commander at the wheel. Ending = Ward in the rear-view mirror (Commander driving) → full-squad chase (full squad + Commander driving) → through the lobby glass (full-squad or empty-jeep version) → the stairwell (full-squad or Commander-alone version).
 - Damage was lowered once the art went in; final balance comes later.
 
-## Stage 7: Nova's Watch (built, stand-in art)
+## Stage 7: Nova's Watch (built)
+- Layout: each half-floor is three rooms wide (its own room in the middle, two borrowed and mirrored from floors at least 4 away), so a floor takes a team ~20 seconds to cross before the stairwell. Aiming: the crosshair moves on its own and the view follows it, so every edge of the tower can be reached.
+- Frost's roof: zombies only come out of her stairwell door, so she defends one direction. A steady trickle, and every 40-55 seconds a big group comes up the stairs at once (Nova warns first).
 - Static first-person sniper as Nova on the rooftop across from Frost's tower. Drag to look around (the roof with Frost above, the tower's floors 29-40 below). ZOOM cycles 1x / 2.5x / 5x (scope sway at 2.5x and 5x). HOLD steadies the scope; held past 3.5 s she runs out of breath and the scope shakes hard for 4 s. SHOOT fires; 5-round magazine, bolt between shots, reload when empty.
 - Shot placement: headshots kill grunts and runners outright; brutes take 3 headshots. Arm or leg hits on grunts and brutes take the limb off (no arm = weaker bites, no legs = crawls slowly). Armored only take damage through the gaps (the neck slit under the helmet and the waist gap); everything else pings off.
 - Team pick: West and East stairwells, each with Lead / Middle / Rear slots (3 max per side). Lead fires only ahead, middle either way, rear only behind; the last one standing fires both ways. Position ratings (1-3 stars, shown on the pick screen) scale each hero's effectiveness:
