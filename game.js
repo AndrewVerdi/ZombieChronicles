@@ -2901,6 +2901,7 @@ function s7Full(){return['hex','volt','bruno','rook','blaze'].every(id=>save.her
 function s7WinHTML(){const o=save.nrOut;const txt=o==='saved'?"Nova is safe and with the squad, and so is Frost. Hex brought everyone back to the helicopter."
     :o==='empty'?"Everyone made it back to Hex, but Nova didn't."
     :o==='retreat'?"The rescue fell apart. Hex pulled everyone out without Nova."
+    :o==='locked'?"Volt fell and the security door sealed itself, trapping "+((save.nrTrapped||[]).map(id=>HEROES[id]?HEROES[id].name:id).join(' and ')||'the runner')+" in Nova's building with the brute. Hex brought the rest back."
     :o==='collapse'?"Nova's building came down. Only the Commander and Hex made it out."
     :"Not everyone made it. Nova told them to go, and they flew off without her.";
   return `<h1 class="title">STAGE 7<span>COMPLETE</span></h1><div class="stripe"></div>
@@ -3064,7 +3065,7 @@ function nrStart(skip){stageRevive();for(const id of REVD)if(save.heroes[id])set
   R={stage:7,nr:null,wave:1,wall:0,wallMax:1,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,dead:[],queue:[],kills:0,spawnLeft:0,spawnTotal:0,proj:[],sayQ:[],clock:0};
   const H=HORDE();R.nr={ph:'in',party:NR_SQUAD.filter(nrAlive),fire:0,novaT:H?250:300,fireSet:0,doorSet:0,stay:{fire:[],door:[]},solo:null,novaGot:0,novaLost:0,brute:0,jam:0,trick:3,sim:{},done:0};
   for(const id of R.nr.party)setHp(id,maxHp(id));
-  markReach('7','rescue');save.ckpt={stage:'7',wave:'rescue'};persist();
+  delete save.nrTrapped;markReach('7','rescue');save.ckpt={stage:'7',wave:'rescue'};persist();
   const go=()=>{R.sideActive=R.nr.party.includes('blaze')?'blaze':R.nr.party[0];sideStart(1);
     R.banner={txt:'NOVA\'S BUILDING · GET TO NOVA',t:3,col:'#ffc53d'};
     R.sayQ=[{who:'hex',txt:"I'll hold the way back open. Don't make me wait.",t:3.2},{who:'frost',txt:"I can feel the heat from here. The fires are below us.",t:3.2}];};
@@ -3081,7 +3082,8 @@ function nrBounds(S){const N=R.nr;if(S.floor===1)return[70,2740];if(S.floor===2)
 function nrTick(dt){const N=R.nr;if(!N||N.done)return;if(R.say&&!R.side){R.say.t-=dt;if(R.say.t<=0)R.say=null;}if(!R.say&&R.sayQ&&R.sayQ.length)R.say=R.sayQ.shift();
   const S=R.side;if(!S)return;
   /* Nova's clock */
-  if(!N.novaGot&&!N.novaLost){N.novaT-=dt;if(N.novaT<=0){N.novaT=0;nrTooLate();}}
+  if(N.locked){N.lockT-=dt;if(N.lockT<=0){nrLocked();return;}}
+  if(!N.novaGot&&!N.novaLost&&!N.locked){N.novaT-=dt;if(N.novaT<=0){N.novaT=0;nrTooLate();}}
   /* the fire */
   const fr=nrAlive('frost'),atPost=N.stay.fire.includes('frost')&&fr,guarded=atPost&&N.stay.fire.includes('rook')&&nrAlive('rook');
   let rate=(HORDE()?1/420:1/480)*100;rate*=!N.fireSet?1.5:atPost?(guarded?1:1.5):fr?2.6:4;
@@ -3102,6 +3104,7 @@ function nrUpdate(S,dt){const N=R.nr;if(N.done)return true;
   if(S.doorT>0){S.doorT-=dt;if(S.doorT<=0){S.lock=0;if(N.ph==='in'){S.exitT=.9;S.entering=1;SND.whoosh();}}}
   /* steady trickle of the horde from below */
   N.trick-=dt;const live=S.en.filter(e=>!e.dead&&!e.chase).length;if(N.trick<=0){N.trick=(HORDE()?2.6:3.4)*(.7+Math.random()*.6);if(live<7){const ahead=Math.random()<.7,dir=S.face*(ahead?1:-1);sideEnemy('grunt',dir>0?S.cam+WW+40:S.cam-40,{aggro:1});}}
+  if(N.locked)return false;
   /* way in */
   if(N.ph==='in'){
     if(S.floor===1&&!N.fireSet&&S.x>=NR_FIRE-30)nrAtFire(S);
@@ -3115,7 +3118,7 @@ function nrUpdate(S,dt){const N=R.nr;if(N.done)return true;
       R.banner={txt:'FROST AND ROOK FALL IN · THE FIRE WILL SPREAD',t:2.6,col:'#ff7a2e'};R.sayQ.push({who:'frost',txt:"I've let go of it. Run!",t:2.6});}
     if(S.floor===1&&S.x<=NR_HEX+50)nrHome();}
   return false;}
-function nrExit(S){const N=R.nr;if(N.ph==='in'){if(S.floor===1)sideStart(2);else if(S.floor===2)sideStart(3);}else{if(S.floor===3)sideStart(2);else if(S.floor===2)sideStart(1);}}
+function nrExit(S){const N=R.nr;if(N.locked)return;if(N.ph==='in'){if(S.floor===1)sideStart(2);else if(S.floor===2)sideStart(3);}else{if(S.floor===3)sideStart(2);else if(S.floor===2)sideStart(1);}}
 function nrAtFire(S){const N=R.nr;N.fireSet=1;
   if(!nrAlive('frost')){nrRetreat('frost');return;}
   const goOn=nrAlive('blaze')||nrAlive('bruno');N.stay.fire=['frost'].concat(nrAlive('rook')&&goOn?['rook']:[]);
@@ -3145,10 +3148,21 @@ function nrFall(id){const N=R.nr,S=R.side;
   if(id==='nova'){N.novaLost=1;}
   if(id==='frost'&&!N.fireSet){nrRetreat('frost');return;}
   if(id==='volt'&&!N.doorSet){nrRetreat('volt');return;}
-  if(id==='volt'&&N.doorSet&&N.stay.door.includes('volt')){N.jam=1;R.sayQ.unshift({who:'bruno',txt:"Volt's down! The door's stuck open!",t:3});}
+  if(id==='volt'&&N.doorSet&&N.stay.door.includes('volt')&&!N.locked){nrLock();persist();return;}
+  if(N.locked){if(S&&!nrMembers().includes(S.active))S.active=nrMembers()[0];persist();return;}
   if(S&&!nrMembers().includes(S.active))S.active=nrMembers()[0];
   if(!nrMembers().length){if(N.ph==='in'&&!N.doorSet)nrRetreat('none');else nrEnd('lost');}
   persist();}
+function nrLock(){const N=R.nr,S=R.side;
+  if(N.ph==='in'&&S&&S.floor===2){/* still on this side of the door: nobody's trapped, but the door's dead */for(const id of N.stay.door)if(nrAlive(id))N.party.push(id);N.stay.door=[];nrRetreat('volt');return;}
+  N.locked=1;R.say=null;N.lockT=3.2;
+  R.banner={txt:'VOLT IS DOWN · THE DOOR SLAMS SHUT',t:3,col:'#ff4d5e'};SND.explosion(.6);R.shake=.4;
+  R.sayQ=[{who:N.stay.door.includes('bruno')&&nrAlive('bruno')?'bruno':'hex',txt:"The door's sealed! They're locked in there with it!",t:3}];
+  if(S&&!N.brute){N.brute=1;nrBruteSpawn(S);}}
+function nrLocked(){const N=R.nr;if(N.done)return;N.done=1;const trapped=N.party.filter(nrAlive);story('nova_rescue_locked_in',{trapped});
+  for(const id of trapped.concat(['nova'])){if(save.heroes[id]){delete save.heroes[id];if(save.downed)delete save.downed[id];if(id!=='nova'&&!save.fallen.includes(id))save.fallen.push(id);}}
+  save.active=save.active.filter(id=>save.heroes[id]);save.novaLost=1;save.nrTrapped=trapped.filter(id=>id!=='nova');
+  const L=nrLockedList(N.solo,N.novaGot);cineLoad(L);if(R.side)R.side.on=0;startIntro(()=>nrWrap('locked'),L);}
 function nrRetreat(why){const N=R.nr;if(N.done)return;N.done=1;story('nova_rescue_retreat',{why});save.novaLost=1;delete save.heroes.nova;
   const L=nrRetreatList(why);cineLoad(L);if(R.side)R.side.on=0;startIntro(()=>nrWrap('retreat'),L);}
 function nrCollapse(){const N=R.nr;if(N.done)return;N.done=1;story('nova_building_collapsed',{});
@@ -3175,7 +3189,7 @@ function nrDrawSide(S,c){const N=R.nr;if(!N)return;
       if(N.stay.fire.includes('rook')&&nrAlive('rook')){sd('rook','shoot',Math.floor(t*10),fx-70,true);nrBar(fx-70,'rook');}}}
   /* the security door */
   if(S.floor===2){const x=NR_DOOR-c;ctx.fillStyle='#14161c';ctx.fillRect(x-60,GY-190,120,190);ctx.strokeStyle='#8a94a6';ctx.lineWidth=4;ctx.strokeRect(x-60,GY-190,120,190);
-    const open=N.doorSet&&!N.doorShut;ctx.fillStyle=open?'#05060a':'#3a4250';ctx.fillRect(x-52,GY-182,104,182);if(!open){ctx.fillStyle='#ffc53d';for(let i=0;i<5;i++)ctx.fillRect(x-52,GY-160+i*34,104,8);}
+    const open=N.doorSet&&!N.doorShut&&!N.locked;ctx.fillStyle=open?'#05060a':'#3a4250';ctx.fillRect(x-52,GY-182,104,182);if(!open){ctx.fillStyle='#ffc53d';for(let i=0;i<5;i++)ctx.fillRect(x-52,GY-160+i*34,104,8);}
     ctx.fillStyle='#b6f23a';ctx.font='10px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText('SECURITY',x,GY-198);
     if(N.stay.door.includes('volt')&&nrAlive('volt')){sd('volt','shoot',Math.floor(t*10),x+100,true);for(let k=0;k<2;k++){ctx.strokeStyle='#d6ff7a';ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x+80,GY-70);for(let q=1;q<5;q++)ctx.lineTo(x+80-q*7+(Math.random()-.5)*10,GY-70-q*14+(Math.random()-.5)*8);ctx.stroke();}nrBar(x+100,'volt');}
     if(N.stay.door.includes('bruno')&&nrAlive('bruno')){sd('bruno','shoot',Math.floor(t*8)%4,x+170,false);nrBar(x+170,'bruno');}}
@@ -3185,7 +3199,7 @@ function nrDrawSide(S,c){const N=R.nr;if(!N)return;
 function nrBar(x,id){const f=Math.max(0,getHp(id)/maxHp(id));ctx.fillStyle='#0008';ctx.fillRect(x-22,GY-SH-10,44,5);ctx.fillStyle=R.nr.sim[id]>0?'#ff4d5e':'#5ee08a';ctx.fillRect(x-22,GY-SH-10,44*f,5);}
 function nrHUD(cx){const N=R.nr;ctx.fillStyle='#0d1016cc';ctx.fillRect(cx-150,6,300,40);ctx.textAlign='center';ctx.font='11px Bungee, Impact, sans-serif';
   ctx.fillStyle=N.novaLost?'#ff4d5e':N.novaGot?'#5ee08a':N.novaT<45&&(t%1<.5)?'#ff4d5e':'#ffc53d';
-  ctx.fillText(N.novaLost?'NOVA · LOST':N.novaGot?'NOVA · WITH YOU · BACK TO HEX':'REACH NOVA · '+fmtClock(N.novaT),cx,20);
+  ctx.fillText(N.locked?'THE DOOR IS SEALED · NO WAY BACK':N.novaLost?'NOVA · LOST':N.novaGot?'NOVA · WITH YOU · BACK TO HEX':'REACH NOVA · '+fmtClock(N.novaT),cx,20);
   ctx.fillStyle='#000a';ctx.fillRect(cx-140,28,280,9);const k=N.fire/100;ctx.fillStyle=k>.75?(t%.5<.25?'#ff4d5e':'#ff7a2e'):'#ff7a2e';ctx.fillRect(cx-140,28,280*k,9);
   ctx.fillStyle='#efe6dc';ctx.font='8px Bungee, Impact, sans-serif';ctx.fillText('FIRE',cx-150+16,36);
   /* who's holding where */
@@ -3200,6 +3214,9 @@ function nrHomeList(got){return got?[sh5('nr_h1','s6_e3_all',5,"Hex: \"Everyone'
   :[sh5('nr_h1','s6_e3',5,"Hex: \"Everyone's here. Hold on.\"",pushIn),sh5('nr_h3','s6_e3',5.5,"They came back without her.",pullOut,{fx:(c,tt)=>{c.dim(Math.max(0,(tt-4)*.7));}})];}
 function nrRetreatList(why){const line=why==='frost'?"Without Frost the fire takes the building. Hex: \"Fall back! Everyone to me!\"":why==='volt'?"Without Volt the door won't open. Hex: \"Fall back! Everyone to me!\"":"Hex: \"It's over. Fall back, now!\"";
   return[sh5('nr_r1','s6_e3',5.5,line,pushIn),sh5('nr_r2','s6_e3',5,"Nova (radio): \"Don't you dare come back for me. Go.\"",pullOut,{fx:(c,tt)=>{c.dim(Math.max(0,(tt-3.8)*.7));}})];}
+function nrLockedList(solo,got){const nm=solo==='bruno'?'Bruno':solo==='rook'?'Rook':'Blaze';
+  return[sh5('nr_l1','s6_e3',5.5,got?"Volt fell, and the door sealed itself. "+nm+" and Nova were on the wrong side of it, with the brute.":"Volt fell, and the door sealed itself. "+nm+" was on the wrong side of it, with the brute.",pushIn,{snd:()=>SND.explosion(.6),fx:(c,tt)=>{if(tt<1.2)c.shake=6;}}),
+    sh5('nr_l2','s6_e3',5,"Hex: \"We can't open it. Fall back, everyone left, to me.\"",pullOut,{fx:(c,tt)=>{c.dim(Math.max(0,(tt-3.8)*.7));}})];}
 function nrCollapseList(){return[sh5('nr_c1','s6_e2',5,"The fire reached the supports. Nova's building folded in on itself.",pullOut,{snd:()=>SND.explosion(1),fx:(c,tt)=>{if(tt<2)c.shake=8;}}),
   sh5('nr_c2','s6_e3',6,"Hex came through alone, onto Frost's roof. The Commander didn't ask. They lifted off, just the two of them.",pushIn,{fx:(c,tt)=>{c.dim(Math.max(0,(tt-4.6)*.7));}})];}
 
@@ -4189,7 +4206,7 @@ ov.addEventListener('click',e=>{
   else if(a==='gallery'){state='gallery';ui();return;}
   else if(a==='gal'){const k=b.dataset.k,back=()=>{CREW_VIEW=null;FA_VIEW=null;state='gallery';ui();};
     if(k.startsWith('4a')){FA_VIEW=k.split(':')[1].split(',').filter(Boolean);const L=k[2]==='o'?faOpenList():faEndList();cineLoad(L);startIntro(back,L);return;}
-    if(k==='7r'){const L=nrIntroList().concat(nrNovaList(),nrHomeList(true),nrHomeList(false).slice(1),nrRetreatList('frost'),nrCollapseList());cineLoad(L);startIntro(back,L);return;}
+    if(k==='7r'){const L=nrIntroList().concat(nrNovaList(),nrHomeList(true),nrHomeList(false).slice(1),nrRetreatList('frost'),nrLockedList('blaze',1),nrCollapseList());cineLoad(L);startIntro(back,L);return;}
     if(k[0]==='7'){const L=k==='7i'?s7IntroList():s7EndView();cineLoad(L);startIntro(back,L);return;}
     if(k[0]==='6'){const L=k==='6i'?s6IntroList():s6EndView();cineLoad(L);startIntro(back,L);return;}
     if(k[0]==='5'){const p=k.split(':');let L;S5_VIEW={bruno:p[1]!=='0',volt:p[1]!=='hext',hex:p[0]!=='5r'||p[1]==='mom',town:p[1]!=='mom'};S5_VIEW.squad=S5_SQUAD.filter(id=>S5_VIEW[id]!==false);
