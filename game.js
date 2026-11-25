@@ -2646,7 +2646,7 @@ const S7_HEROES=['cmd','rook','hex','volt','bruno','blaze'];
 const S7_SW=3100,S7_SH=2910,S7_RY=480,S7_NF=12,S7_FH=185,S7_CORE=[1534,1562],S7_BL=300,S7_BR=2796,S7_CX=1548,S7_PW=406;
 const S7_HALF={A:[332,1518],B:[1578,2764]};
 /* the roof: Frost's stairwell door on the left, helipad on the right */
-const S7_RX0=S7_CX-700,S7_DOOR=S7_RX0+158,S7_FROSTX=S7_DOOR+400;
+const S7_RX0=S7_CX-700,S7_DOOR=S7_RX0+158,S7_FROSTX=S7_RX0+840; /* at the foot of the helipad steps */
 const S7_SLOTS=['lead','mid','rear'],S7_SLOTN={lead:'Lead',mid:'Middle',rear:'Rear'};
 /* position ratings, shown on the pick screen: stars per slot */
 const s7Stars=(id,s)=>{const n=S7_STAR[id][s];return '<span style="color:#ffc53d">'+'★'.repeat(n)+'</span><span style="opacity:.35">'+'★'.repeat(3-n)+'</span>';};
@@ -2908,7 +2908,7 @@ function s7Sway(S){const z=S7_Z[S.zoom];let a=z===1?0:(z===5?7:3.5);if(S.pant>0)
   const f=S.pant>0?2.2:1;return[Math.sin(S.t*1.3*f)*a+Math.sin(S.t*3.1*f)*a*.4,Math.cos(S.t*1.1*f)*a*.8+(S.pant>0?Math.sin(S.t*5)*a*.5:0)];}
 
 /* ---------- update ---------- */
-function s7Update(dt){const S=R.s7;if(!S||!S.on)return;dt=Math.min(dt,.05);s7Clamp(S);t+=dt;S.t+=dt;if(R.shake>0)R.shake-=dt;
+function s7Update(dt){const S=R.s7;if(!S||!S.on)return;dt=Math.min(dt,.05);s7AimEase(S,dt);t+=dt;S.t+=dt;if(R.shake>0)R.shake-=dt;
   if(R.banner){R.banner.t-=dt;if(R.banner.t<=0)R.banner=null;}
   if(S.fireCd>0)S.fireCd-=dt;if(S.kick>0)S.kick-=dt*5;if(S.rel>0){S.rel-=dt;if(S.rel<=0){S.mag=5;SND.reload&&SND.reload();}}
   if(S.pant>0){S.pant-=dt;S.breath=Math.max(0,S.breath-dt*.9);}else if(S.hold){S.breath+=dt;if(S.breath>=3.5){S.pant=4;S.hold=0;R.banner={txt:'OUT OF BREATH',t:1.2,col:'#ff4d5e'};}}else S.breath=Math.max(0,S.breath-dt*1.2);
@@ -2958,15 +2958,21 @@ function s7Down(e){const S=R.s7;if(!S)return;const[x,y]=sideXY(e);try{cv.setPoin
   if(k==='b'){if(!(S.pant>0))S.hold=1;S.ptr[e.pointerId]={k};return;}
   S.ptr[e.pointerId]={k:'look',x,y};}
 const S7_SENS=[1.9,1.5,1.2];
-function s7Move(e){const S=R.s7;if(!S)return;const p=S.ptr[e.pointerId];if(!p||p.k!=='look')return;const[x,y]=sideXY(e),sc=s7Scale(S),k=S7_SENS[S.zoom]/sc;
-  S.aim.x+=(x-p.x)*k;S.aim.y+=(y-p.y)*k;p.x=x;p.y=y;s7Clamp(S);}
+function s7Move(e){const S=R.s7;if(!S)return;const p=S.ptr[e.pointerId];if(!p||p.k!=='look')return;const[x,y]=sideXY(e),sc=s7Scale(S);
+  /* slow drags are precise, quick flicks travel further */
+  const dx=x-p.x,dy=y-p.y,sp=Math.hypot(dx,dy),acc=.75+Math.min(1.1,sp/22),k=S7_SENS[S.zoom]*acc/sc;
+  const T=S.aimT||(S.aimT={x:S.aim.x,y:S.aim.y});T.x+=dx*k;T.y+=dy*k;p.x=x;p.y=y;s7ClampT(S);}
+function s7ClampT(S){const T=S.aimT;if(!T)return;T.x=Math.max(S7_BL-40,Math.min(S7_BR+40,T.x));T.y=Math.max(S7_RY-300,Math.min(S7_SH-40,T.y));}
+function s7AimEase(S,dt){const T=S.aimT||(S.aimT={x:S.aim.x,y:S.aim.y});if(T){const a=1-Math.exp(-dt*16);S.aim.x+=(T.x-S.aim.x)*a;S.aim.y+=(T.y-S.aim.y)*a;}
+  const sc=s7Scale(S),hw=WW/2/sc,hh=WH/2/sc,cx=Math.max(Math.min(hw,S7_SW/2),Math.min(S7_SW-Math.min(hw,S7_SW/2),S.aim.x)),cy=Math.max(S7_RY-340+hh,Math.min(S7_SH-hh*.6,S.aim.y)),b=1-Math.exp(-dt*9);
+  if(S.camE==null){S.cam.x=cx;S.cam.y=cy;S.camE=1;}else{S.cam.x+=(cx-S.cam.x)*b;S.cam.y+=(cy-S.cam.y)*b;}}
 function s7Up(e){const S=R.s7;if(!S)return;const p=S.ptr[e.pointerId];if(p&&p.k==='b')S.hold=0;delete S.ptr[e.pointerId];}
 function s7Scale(S){return WW/1500*S7_Z[S.zoom];}
-function s7Clamp(S){const sc=s7Scale(S),hw=WW/2/sc,hh=WH/2/sc;if(!S.aim)S.aim={x:S.cam.x,y:S.cam.y};
+function s7Clamp(S,keepT){const sc=s7Scale(S),hw=WW/2/sc,hh=WH/2/sc;if(!S.aim)S.aim={x:S.cam.x,y:S.cam.y};if(!keepT)S.aimT={x:S.aim.x,y:S.aim.y};
   S.aim.x=Math.max(S7_BL-40,Math.min(S7_BR+40,S.aim.x));S.aim.y=Math.max(S7_RY-300,Math.min(S7_SH-40,S.aim.y));
   S.cam.x=Math.max(Math.min(hw,S7_SW/2),Math.min(S7_SW-Math.min(hw,S7_SW/2),S.aim.x));S.cam.y=Math.max(S7_RY-340+hh,Math.min(S7_SH-hh*.6,S.aim.y));}
 window.addEventListener('keydown',e=>{if(state!=='snipe'||!R||!R.s7)return;const S=R.s7;if(e.key===' '){s7Fire(S);e.preventDefault();}if(e.key==='z'){S.zoom=(S.zoom+1)%3;}if(e.key==='Shift'&&!(S.pant>0))S.hold=1;
-  const st=60/S7_Z[S.zoom];if(e.key==='ArrowLeft')S.aim.x-=st;if(e.key==='ArrowRight')S.aim.x+=st;if(e.key==='ArrowUp')S.aim.y-=st;if(e.key==='ArrowDown')S.aim.y+=st;s7Clamp(S);});
+  const st=60/S7_Z[S.zoom],T=S.aimT||(S.aimT={x:S.aim.x,y:S.aim.y});if(e.key==='ArrowLeft')T.x-=st;if(e.key==='ArrowRight')T.x+=st;if(e.key==='ArrowUp')T.y-=st;if(e.key==='ArrowDown')T.y+=st;s7ClampT(S);});
 window.addEventListener('keyup',e=>{if(e.key==='Shift'&&R&&R.s7)R.s7.hold=0;});
 
 /* ---------- drawing ---------- */
