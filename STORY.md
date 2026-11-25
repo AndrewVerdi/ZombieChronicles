@@ -75,16 +75,14 @@
 - Ending: full squad alive → they go back for Nova (rescue mission next); anyone missing → they thank Nova, she tells them to go, they fly off. Frost joins the roster either way.
 - Checkpoints: the start (team pick) and the roof fight.
 
-## Nova's rescue (planned, after Stage 7)
-Only happens if everyone is alive at the end of Stage 7. Each hero has a job:
-- Commander: preps the helicopter on Frost's roof. No time to fly it to Nova.
-- Hex: teleports the team to Nova's building (cutscene). If the mission succeeds, she teleports everyone back (another cutscene).
-- Frost: keeps the fires down so the building holds.
-- Volt: powers Nova's high-security door and stays at the circuit.
-- Bruno: defends Volt.
-- Rook: protects Frost.
-- Blaze: goes alone to get Nova.
-Gameplay details still to be decided.
+## Nova's rescue (built, stand-in art; second part of Stage 7)
+Starts straight after the Stage 7 ending when everyone is alive. Side-scroller in Nova's building. You switch between Frost, Rook, Volt, Bruno and Blaze; the Commander preps the helicopter and Hex holds the way back at the landing (neither is playable).
+- Route in: Top Floors → Nova's Floor → Nova's Room. At the fire, Frost stays to hold it (Rook guards her). At the security door, Volt powers it and stays (Bruno guards him). One hero goes on alone: Blaze; if Blaze is dead, Bruno (Volt is then unguarded and gets worn down unless you're nearby); if both are dead, Rook leaves Frost to go (Frost unguarded, the fire grows faster).
+- Route back: once Nova is reached she joins (sniper rifle, dual knives up close) and a brute that can't be put down chases you, stopping every so often to catch its breath. Volt slams the door on it as you pass (unless Volt is dead: the door is stuck open and it keeps coming). Volt and Bruno rejoin, then Frost and Rook (the fire grows much faster once Frost lets go), then Hex teleports everyone back.
+- Clocks: REACH NOVA (5:00, Horde 4:10) and the FIRE bar (fills over ~8 min with Frost on it, faster before she's there or if she's unguarded, much faster once she leaves).
+- Outcomes: back to Hex with Nova → Nova and Frost join. Too late to Nova → she's lost, everyone heads back. Frost dies before reaching the fire or Volt before reaching the door (or nobody left to go alone) → retreat, Nova lost. Fire bar full → the building collapses: Frost, Rook, Volt, Bruno, Blaze and Nova are lost; only the Commander and Hex move on.
+- Heroes left at a job can only die if they have no backup.
+- Load screen: Stage 7 → "Nova's rescue".
 
 ## Roadmap: stages 5 to 10 (planned, not built)
 - **Stage 5:** distress call from Frost, holed up on a Mega City rooftop in a helicopter; she needs support and a pilot, and knows where a cure might be. The squad fires a grappling hook past the wall, zip-lines away from the horde into the forest, and heads for a ranger station with a vehicle. Town-route players can save and recruit Hex here, only if they have Volt.
