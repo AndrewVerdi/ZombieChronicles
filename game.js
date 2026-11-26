@@ -2920,7 +2920,7 @@ function s7BossUpdate(S,dt){const B=S.boss;if(!B)return;
   if(B.y<=S7_RY+10&&!R.over){R.over=true;R.s7Fail='ward';R.shake=1;SND.explosion(1);s7Lose();}}
 function s7BossHit(S,wx,wy){const B=S.boss;if(!B||B.fall)return false;const G=s7BossGeo(B);
   const[hx,hy,hr]=G.head;if(Math.hypot(wx-hx,wy-hy)<hr){B.hp-=105;B.hflash=.15;s7Pop(S,wx,wy,'#ff4d5e');return true;}
-  for(let i=0;i<2;i++){const[x,y,r]=G.hands[i];if(Math.hypot(wx-x,wy-y)<r){const h=B.hand[i];B.hp-=200;h.flash=.2;s7Pop(S,wx,wy,'#ffc53d');
+  for(let i=0;i<2;i++){const[x,y,r]=G.hands[i];if(Math.hypot(wx-x,wy-y)<r){const h=B.hand[i];B.hp-=40;h.flash=.2;s7Pop(S,wx,wy,'#ffc53d');
       /* seven hits on the same hand to break his grip; that hand then holds for 25 seconds */
       if(h.cd<=0)h.n=(h.n||0)+1;
       if(h.cd<=0&&h.n>=7){h.n=0;h.cd=25;B.drop=Math.max(B.drop,190);B.stag=Math.max(B.stag,1.1);R.shake=Math.max(R.shake||0,.25);SND.groan&&SND.groan(0,.7);}return true;}}
