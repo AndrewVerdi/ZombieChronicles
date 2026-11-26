@@ -2670,7 +2670,7 @@ const S7_NOTE={
 const S7_COMBO=[['bruno','blaze','Love connection','+10% damage'],['cmd','rook','The mentor','20% critical hits'],['hex','volt','Charged up','Hex kills set off chain lightning'],['bruno','cmd','Old friends','+15% health'],['hex','blaze','Bitch boss','No friendly fire from Blaze, Hex throws zombies twice as often'],['rook','volt','Sharpened','Melee 35% stronger']];
 const S7_E={grunt:{hp:185,spd:42,dps:5,h:94},runner:{hp:65,spd:95,dps:4,h:90},armored:{hp:500,spd:32,dps:8,h:99},brute:{hp:1500,spd:38,dps:12,h:128}};
 let S7_PICK=null;
-const S7ART_SRC={"st_up": "assets/s7/st_up.webp?v=304c429fee", "st_down": "assets/s7/st_down.webp?v=de082f29ac", "30A": "assets/s7/p30A.webp?v=b7e325f170", "39B": "assets/s7/p39B.webp?v=687a0e77f2", "31A": "assets/s7/p31A.webp?v=5a8f34fbd6", "37B": "assets/s7/p37B.webp?v=8251447487", "38B": "assets/s7/p38B.webp?v=1ca09bbee4", "29B": "assets/s7/p29B.webp?v=03000806d3", "30B": "assets/s7/p30B.webp?v=7ab5b2abe4", "33A": "assets/s7/p33A.webp?v=273a2a9727", "31B": "assets/s7/p31B.webp?v=56aa8af9a4", "34A": "assets/s7/p34A.webp?v=b7e48073db", "37A": "assets/s7/p37A.webp?v=589f332cfa", "32B": "assets/s7/p32B.webp?v=0850069a23", "35A": "assets/s7/p35A.webp?v=9eb32b6ba6", "36A": "assets/s7/p36A.webp?v=9c96fe164d", "39A": "assets/s7/p39A.webp?v=1e4eb22a84", "33B": "assets/s7/p33B.webp?v=9454054022", "34B": "assets/s7/p34B.webp?v=5d057013b6", "35B": "assets/s7/p35B.webp?v=0b34914ae4", "36B": "assets/s7/p36B.webp?v=9d124199b2", "29A": "assets/s7/p29A.webp?v=d2bc215065", "32A": "assets/s7/p32A.webp?v=0d19e0e0dc", "38A": "assets/s7/p38A.webp?v=4a69ea7635", "40A": "assets/s7/p40A.webp?v=e9f14e9ad2", "40B": "assets/s7/p40B.webp?v=9a9d7b0238", "sky": "assets/s7/sky.webp?v=5da02d456c", "roof": "assets/s7/roof.webp?v=f6a6597e88", "ledge": "assets/s7/ledge.webp?v=754a18d490", "ward": "assets/s7/ward.webp?v=efa7192fd1", "can": "assets/s7/can.webp?v=ca9ee34d82"},S7FLIP={"30A": 0, "39B": 0, "31A": 0, "37B": 0, "38B": 0, "29B": 0, "30B": 0, "33A": 0, "31B": 0, "34A": 0, "37A": 0, "32B": 0, "35A": 0, "36A": 0, "39A": 0, "33B": 0, "34B": 0, "35B": 0, "36B": 0, "29A": 0, "32A": 0, "38A": 0, "40A": 0, "40B": 0},S7A={};
+const S7ART_SRC={"bay0": "assets/s7/bay0.webp?v=b3efacf36d", "bay1": "assets/s7/bay1.webp?v=3b263ae81b", "bay2": "assets/s7/bay2.webp?v=68168767be", "st_up": "assets/s7/st_up.webp?v=304c429fee", "st_down": "assets/s7/st_down.webp?v=de082f29ac", "30A": "assets/s7/p30A.webp?v=b7e325f170", "39B": "assets/s7/p39B.webp?v=687a0e77f2", "31A": "assets/s7/p31A.webp?v=5a8f34fbd6", "37B": "assets/s7/p37B.webp?v=8251447487", "38B": "assets/s7/p38B.webp?v=1ca09bbee4", "29B": "assets/s7/p29B.webp?v=03000806d3", "30B": "assets/s7/p30B.webp?v=7ab5b2abe4", "33A": "assets/s7/p33A.webp?v=273a2a9727", "31B": "assets/s7/p31B.webp?v=56aa8af9a4", "34A": "assets/s7/p34A.webp?v=b7e48073db", "37A": "assets/s7/p37A.webp?v=589f332cfa", "32B": "assets/s7/p32B.webp?v=0850069a23", "35A": "assets/s7/p35A.webp?v=9eb32b6ba6", "36A": "assets/s7/p36A.webp?v=9c96fe164d", "39A": "assets/s7/p39A.webp?v=1e4eb22a84", "33B": "assets/s7/p33B.webp?v=9454054022", "34B": "assets/s7/p34B.webp?v=5d057013b6", "35B": "assets/s7/p35B.webp?v=0b34914ae4", "36B": "assets/s7/p36B.webp?v=9d124199b2", "29A": "assets/s7/p29A.webp?v=d2bc215065", "32A": "assets/s7/p32A.webp?v=0d19e0e0dc", "38A": "assets/s7/p38A.webp?v=4a69ea7635", "40A": "assets/s7/p40A.webp?v=e9f14e9ad2", "40B": "assets/s7/p40B.webp?v=9a9d7b0238", "sky": "assets/s7/sky.webp?v=5da02d456c", "roof": "assets/s7/roof.webp?v=f6a6597e88", "ledge": "assets/s7/ledge.webp?v=754a18d490", "ward": "assets/s7/ward.webp?v=efa7192fd1", "can": "assets/s7/can.webp?v=ca9ee34d82"},S7FLIP={"30A": 0, "39B": 0, "31A": 0, "37B": 0, "38B": 0, "29B": 0, "30B": 0, "33A": 0, "31B": 0, "34A": 0, "37A": 0, "32B": 0, "35A": 0, "36A": 0, "39A": 0, "33B": 0, "34B": 0, "35B": 0, "36B": 0, "29A": 0, "32A": 0, "38A": 0, "40A": 0, "40B": 0},S7A={};
 const S7WARD=[[0,0,380,482,0,[[45.8,106.7],[331.1,92.3]]],[382,0,387,487,0,[[46.8,89.6],[338.3,33.5]]],[771,0,406,475,0,[[46.1,110.5],[354.8,78.9]]],[1179,0,373,497,0,[[46.1,149.3],[328.2,34.1]]],[1554,0,364,451,1,[[44.7,104.8],[313.1,31.4]]],[0,499,461,438,1,[[49.4,106.9],[402.3,30.6]]],[463,499,443,400,1,[[44.7,28.3],[380.7,37.0]]],[908,499,582,459,2,[[133.9,134.1],[464.2,155.7]]],[1492,499,517,449,2,[[102.2,34.1],[456.5,71.6]]],[0,960,557,376,2,[[73.7,144.9],[508.6,106.0]]]],S7CAN=[[0, 0, 58, 160], [60, 0, 160, 160], [222, 0, 214, 66]];
 function s7ArtLoad(){for(const k in S7ART_SRC){if(S7A[k])continue;const im=new Image();im.decoding='async';im.src=S7ART_SRC[k];S7A[k]=im;}}
 const s7Img=k=>{const im=S7A[k];return im&&im.complete&&im.naturalWidth?im:null;};
@@ -2680,7 +2680,7 @@ function s7WardFr(B){const R0=S7WARD.filter(f=>f[4]===0),R1=S7WARD.filter(f=>f[4
 const S7WK=444/380;
 const s7ExitDir=(f,k)=>(k==='A'?1:-1)*(f%2?1:-1);
 function s7Stair(f,k,F){const[x0,x1]=S7_HALF[k],d=s7ExitDir(f,k);
-  for(const up of[1,0]){if(!up&&f===1)continue;const x=(up?d>0:d<0)?x1-38:x0+38,w=54,h=104,y=F.feet-h;
+  for(const up of[1,0]){if(!up&&f===1)continue;const x=(up?d>0:d<0)?x1-82:x0+82,w=54,h=104,y=F.feet-h;
     const SI=s7Img(up?'st_up':'st_down');if(SI){const H=150,W=H*177/300,left=x<(x0+x1)/2;ctx.save();ctx.translate(x,F.feet-H*.88);if(left)ctx.scale(-1,1);ctx.drawImage(SI,-W/2,0,W,H);ctx.restore();continue;}
     ctx.fillStyle='#2a2430';ctx.fillRect(x-w/2-6,y-6,w+12,h+6);ctx.fillStyle='#07060a';ctx.fillRect(x-w/2,y,w,h);
     ctx.strokeStyle='#3a3340';ctx.lineWidth=3;ctx.beginPath();for(let i=0;i<6;i++){const sy=y+h-8-i*15,sx=up?(d>0?x-w/2+i*8:x+w/2-i*8):(d>0?x+w/2-i*8:x-w/2+i*8);ctx.moveTo(sx,sy);ctx.lineTo(sx+(up?(d>0?8:-8):(d>0?-8:8)),sy);ctx.lineTo(sx+(up?(d>0?8:-8):(d>0?-8:8)),sy-15);}ctx.stroke();
@@ -2698,9 +2698,24 @@ function s7PanelSet(f,k){if(!S7PMAP){S7PMAP={};const use={},at={};
 /* the tower's outside skin: solid piers and floor slabs, glass between them */
 const S7_PIERS=(()=>{const P=[[S7_BL-40,S7_HALF.A[0]-2],[S7_HALF.A[1]+2,S7_HALF.B[0]-2],[S7_HALF.B[1]+2,S7_BR+40]];
   for(const k of['A','B']){const[x0,x1]=S7_HALF[k];for(const q of[1/3,2/3]){const c=x0+(x1-x0)*q;P.push([c-38,c+38]);}}return P;})();
-function s7InPier(wx,wy){const lo=s7Floor(S7_NF).top-20,hi=s7Floor(1).top+S7_FH;if(wy<lo||wy>hi)return false;
+const S7_BAYS=5,S7_BAYH=230,s7BayW=k=>(S7_HALF[k][1]-S7_HALF[k][0])/S7_BAYS;
+function s7InPierArt(wx,wy){const lo=s7Floor(S7_NF).top-20,hi=s7Floor(1).top+S7_FH+26;if(wy<lo||wy>hi)return false;
+  for(let f=1;f<=S7_NF;f++){const t=s7Floor(f).top;if(wy>=t-20&&wy<=t+22)return true;if(wy>=t+165&&wy<=t+S7_FH)return true;}
+  if(wx<S7_HALF.A[0]+33||wx>S7_HALF.B[1]-33||(wx>S7_HALF.A[1]-31&&wx<S7_HALF.B[0]+33))return true;
+  for(const k of['A','B']){const[x0]=S7_HALF[k],bw=s7BayW(k);for(let j=1;j<S7_BAYS;j++){const bx=x0+j*bw;if(wx>bx-31&&wx<bx+33)return true;}}return false;}
+function s7InPier(wx,wy){if(s7Img('bay0'))return s7InPierArt(wx,wy);const lo=s7Floor(S7_NF).top-20,hi=s7Floor(1).top+S7_FH;if(wy<lo||wy>hi)return false;
   if(S7_PIERS.some(p=>wx>=p[0]&&wx<=p[1]))return true;for(let f=1;f<=S7_NF;f++){const t=s7Floor(f).top;if(wy>=t-20&&wy<=t+16)return true;}return false;}
-function s7Facade(){const top=s7Floor(S7_NF).top,bot=s7Floor(1).top+S7_FH;
+function s7Facade(){const B0=s7Img('bay0');if(B0){const BI=[B0,s7Img('bay1')||B0,s7Img('bay2')||B0],pw=42*B0.naturalWidth/300;
+    const top=s7Floor(S7_NF).top-20,bot=s7Floor(1).top+S7_FH+28;
+    const pier=(a,b)=>{for(let y=top;y<bot;y+=S7_BAYH*.5){ctx.drawImage(B0,0,B0.naturalHeight*.25,pw,B0.naturalHeight*.5,a,y,b-a,S7_BAYH*.5+1);}};
+    pier(S7_BL-40,S7_HALF.A[0]+10);pier(S7_HALF.A[1]-10,S7_HALF.B[0]+10);pier(S7_HALF.B[1]-10,S7_BR+40);
+    for(let f=S7_NF;f>=1;f--){const F=s7Floor(f),y=F.top-19;for(const k of['A','B']){const[x0]=S7_HALF[k],bw=s7BayW(k);
+      for(let j=0;j<S7_BAYS;j++){const h=hash3(f*53+j*7+(k==='A'?0:29)),bi=h<.6?0:h<.85?1:2,x=x0+j*bw;
+        if(bi===0){ctx.fillStyle='rgba(120,150,200,.10)';ctx.fillRect(x+bw*.12,y+S7_BAYH*.18,bw*.76,S7_BAYH*.62);}
+        ctx.drawImage(BI[bi],x,y,bw+1,S7_BAYH);}}
+      ctx.fillStyle='#d8c8e0';ctx.font='bold 13px Bungee, Impact, sans-serif';ctx.textAlign='left';ctx.fillText(String(28+f),S7_BL-30,y+28);}
+    return;}
+  const top=s7Floor(S7_NF).top,bot=s7Floor(1).top+S7_FH;
   /* glass: a faint cool tint with streaky reflections, some panes blown out */
   for(let f=1;f<=S7_NF;f++){const F=s7Floor(f);for(let x=S7_BL;x<S7_BR;x+=116){if(hash3(f*31+x)<.22)continue;
       ctx.fillStyle='rgba(120,150,200,.10)';ctx.fillRect(x,F.top+16,114,S7_FH-36);ctx.fillStyle='rgba(220,230,255,.07)';ctx.beginPath();ctx.moveTo(x+14,F.top+16);ctx.lineTo(x+44,F.top+16);ctx.lineTo(x+6,F.top+S7_FH-20);ctx.lineTo(x,F.top+S7_FH-20);ctx.closePath();ctx.fill();}
@@ -2760,7 +2775,7 @@ function s7Begin(form,at,frostHp){const H=HORDE();
     cam:{x:S7_CX,y:S7_RY+260},aim:{x:S7_FROSTX-150,y:S7_RY-60},zoom:0,waveT:H?60:75,waveQ:0,waveSp:0,ptr:{},fireCd:0,mag:5,rel:0,breath:0,pant:0,hold:0,
     frost:{hp:frostHp||(H?260:300),max:H?260:300,x:S7_FROSTX,fireT:0,dmgT:0,tg:null},roofT:6,boss:null,phase:'climb',warn:{}};
   for(const g of S.teams)s7FloorSpawn(S,g);
-  [[3,'A'],[5,'B'],[6,'A'],[8,'B'],[10,'A'],[11,'B']].forEach(([f,k])=>{const F=s7Floor(f);const[x0,x1]=S7_HALF[k];let cx=x0+220+hash3(f*17)*(x1-x0-440);for(const p of S7_PIERS)if(cx>p[0]-30&&cx<p[1]+30)cx=p[1]+60;S.can.push({x:cx,y:F.feet-26,f,alive:1});});
+  [[3,'A'],[5,'B'],[6,'A'],[8,'B'],[10,'A'],[11,'B']].forEach(([f,k])=>{const F=s7Floor(f);const[x0,x1]=S7_HALF[k];let cx=x0+220+hash3(f*17)*(x1-x0-440);{const bw=(x1-x0)/5,j=Math.round((cx-x0)/bw);if(Math.abs(cx-(x0+j*bw))<70)cx=x0+j*bw+(j<5?bw/2:-bw/2);}S.can.push({x:cx,y:F.feet-26,f,alive:1});});
   if(at==='roof'){for(const g of S.teams){g.f=S7_NF+1;g.state='roof';g.x=S7_FROSTX+(g.k==='A'?110:190);}s7BossStart(S);}
   save.ckpt={stage:'7',wave:at,form:{A:form.A||[null,null,null],B:form.B||[null,null,null]},frost:S.frost.hp};markReach('7',at);persist();
   state='snipe';ui();last=performance.now();}
@@ -2820,7 +2835,7 @@ function s7TeamUpdate(S,g,dt){if(!s7Alive(g).length)return;if(g.mvT>0)g.mvT-=dt;
   g.halt=0;for(const id of al)s7HeroAct(S,g,id,pos[id],live,dt);
   const near=ahead.some(e=>Math.abs(e.x-g.x)<240)||S.burn.some(b=>b.f===g.f&&b.k===g.k&&(g.dir>0?b.x0-g.x<50&&b.x1>g.x:g.x-b.x1<50&&b.x0<g.x));
   if(near||g.halt){g.state='fight';}else{g.state='walk';g.x+=g.dir*100*dt;g.mvT=.3;
-    if((g.dir>0&&g.x>=x1-38)||(g.dir<0&&g.x<=x0+38)){g.x=Math.max(x0+38,Math.min(x1-38,g.x));
+    if((g.dir>0&&g.x>=x1-82)||(g.dir<0&&g.x<=x0+82)){g.x=Math.max(x0+82,Math.min(x1-82,g.x));
       S.en=S.en.filter(e=>!(e.f===g.f&&e.k===g.k&&!e.dead));g.state='stairs';g.stT=1.6;}}}
 function s7HeroAct(S,g,id,x,live,dt){const h=g.hero[id],slot=s7Alive(g).length===1?'solo':h.slot,F=s7Floor(g.f);
   const fwd=e=>(e.x-x)*g.dir>0,canSee=e=>slot==='solo'||slot==='mid'||(slot==='lead'?fwd(e):!fwd(e));
