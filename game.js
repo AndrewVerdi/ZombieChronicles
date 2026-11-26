@@ -2651,7 +2651,7 @@ const S7_RX0=S7_CX-700,S7_DOOR=S7_RX0+158,S7_FROSTX=S7_RX0+840; /* at the foot o
 const S7_SLOTS=['lead','mid','rear'],S7_SLOTN={lead:'Lead',mid:'Middle',rear:'Rear'};
 /* position ratings, shown on the pick screen: stars per slot */
 const s7Stars=(id,s)=>{const n=S7_STAR[id][s];return '<span style="color:#ffc53d">'+'★'.repeat(n)+'</span><span style="opacity:.35">'+'★'.repeat(3-n)+'</span>';};
-const S7_STAR={bruno:{lead:3,mid:1,rear:3},blaze:{lead:2,mid:1,rear:3},cmd:{lead:2,mid:2,rear:2},hex:{lead:1,mid:3,rear:2},rook:{lead:3,mid:2,rear:2},volt:{lead:2,mid:1,rear:3}};
+const S7_STAR={bruno:{lead:3,mid:1,rear:3},blaze:{lead:2,mid:1,rear:3},cmd:{lead:2,mid:3,rear:2},hex:{lead:1,mid:3,rear:2},rook:{lead:3,mid:2,rear:2},volt:{lead:2,mid:1,rear:3}};
 const S7_SM={1:.65,2:1,3:1.35};
 const S7_HP={cmd:100,rook:85,hex:75,volt:90,bruno:150,blaze:110};
 const S7_DPS={cmd:22,rook:25,hex:17,volt:19,bruno:24,blaze:13};
@@ -2659,12 +2659,12 @@ const S7_DPS={cmd:22,rook:25,hex:17,volt:19,bruno:24,blaze:13};
 const S7_NOTE={
   bruno:{lead:'Shotgun ahead, shoulder-rams anything that gets close.',mid:'Shotgun either way, shoulder-rams anything close.',rear:'Shotgun behind, shoulder-rams anything that catches up.'},
   blaze:{lead:'Flames ahead. The floor burns for a moment, so the team waits.',mid:'Flames either way. Fire forward can catch the lead, and the burning floor ahead hurts anyone who walks in.',rear:'Flames behind the team.'},
-  cmd:{lead:'Assault rifle ahead, rifle-butt up close.',mid:'Assault rifle either way, rifle-butt up close.',rear:'Assault rifle behind, rifle-butt up close.'},
-  hex:{lead:'Hex bolts ahead, now and then throws a zombie out a window.',mid:'Raises a force bubble over the team. Breaks after 100 damage, then she needs 30 seconds.',rear:'Hex bolts behind, now and then throws a zombie out a window.'},
+  cmd:{lead:'Assault rifle ahead, rifle-butt up close. An explosive round every 10 seconds.',mid:'Assault rifle either way, rifle-butt up close. An explosive round every 10 seconds.',rear:'Assault rifle behind, rifle-butt up close. An explosive round every 10 seconds.'},
+  hex:{lead:'Hex bolts ahead, now and then throws a zombie out a window.',mid:'Raises a force bubble over the team (breaks after 100 damage, back in 30 seconds) and fires hex bolts either way, now and then throwing a zombie out a window.',rear:'Hex bolts behind, now and then throws a zombie out a window.'},
   rook:{lead:'Two pistols ahead, sword for anything close.',mid:'Two pistols either way, sword for anything close.',rear:'Two pistols behind, sword for anything close.'},
   volt:{lead:'Chain lightning ahead. Pops armored heads up close.',mid:'Chain lightning either way. Can arc into a teammate.',rear:'Chain lightning behind. Pops armored heads up close.'}};
 const S7_COMBO=[['bruno','blaze','Love connection','+10% damage'],['cmd','rook','The mentor','20% critical hits'],['hex','volt','Charged up','Hex kills set off chain lightning'],['bruno','cmd','Old friends','+15% health'],['hex','blaze','Bitch boss','No friendly fire from Blaze, Hex throws zombies twice as often'],['rook','volt','Sharpened','Melee 35% stronger']];
-const S7_E={grunt:{hp:185,spd:42,dps:6,h:94},runner:{hp:65,spd:95,dps:5,h:90},armored:{hp:500,spd:32,dps:10,h:99},brute:{hp:1500,spd:38,dps:12,h:128}};
+const S7_E={grunt:{hp:185,spd:42,dps:5,h:94},runner:{hp:65,spd:95,dps:4,h:90},armored:{hp:500,spd:32,dps:8,h:99},brute:{hp:1500,spd:38,dps:12,h:128}};
 let S7_PICK=null;
 const S7ART_SRC={"30A": "assets/s7/p30A.webp?v=b7e325f170", "39B": "assets/s7/p39B.webp?v=687a0e77f2", "31A": "assets/s7/p31A.webp?v=5a8f34fbd6", "37B": "assets/s7/p37B.webp?v=8251447487", "38B": "assets/s7/p38B.webp?v=1ca09bbee4", "29B": "assets/s7/p29B.webp?v=03000806d3", "30B": "assets/s7/p30B.webp?v=7ab5b2abe4", "33A": "assets/s7/p33A.webp?v=273a2a9727", "31B": "assets/s7/p31B.webp?v=56aa8af9a4", "34A": "assets/s7/p34A.webp?v=b7e48073db", "37A": "assets/s7/p37A.webp?v=589f332cfa", "32B": "assets/s7/p32B.webp?v=0850069a23", "35A": "assets/s7/p35A.webp?v=9eb32b6ba6", "36A": "assets/s7/p36A.webp?v=9c96fe164d", "39A": "assets/s7/p39A.webp?v=1e4eb22a84", "33B": "assets/s7/p33B.webp?v=9454054022", "34B": "assets/s7/p34B.webp?v=5d057013b6", "35B": "assets/s7/p35B.webp?v=0b34914ae4", "36B": "assets/s7/p36B.webp?v=9d124199b2", "29A": "assets/s7/p29A.webp?v=d2bc215065", "32A": "assets/s7/p32A.webp?v=0d19e0e0dc", "38A": "assets/s7/p38A.webp?v=4a69ea7635", "40A": "assets/s7/p40A.webp?v=e9f14e9ad2", "40B": "assets/s7/p40B.webp?v=9a9d7b0238", "sky": "assets/s7/sky.webp?v=5da02d456c", "roof": "assets/s7/roof.webp?v=f6a6597e88", "ledge": "assets/s7/ledge.webp?v=754a18d490", "ward": "assets/s7/ward.webp?v=efa7192fd1", "can": "assets/s7/can.webp?v=ca9ee34d82"},S7FLIP={"30A": 0, "39B": 0, "31A": 0, "37B": 0, "38B": 0, "29B": 0, "30B": 0, "33A": 0, "31B": 0, "34A": 0, "37A": 0, "32B": 0, "35A": 0, "36A": 0, "39A": 0, "33B": 0, "34B": 0, "35B": 0, "36B": 0, "29A": 0, "32A": 0, "38A": 0, "40A": 0, "40B": 0},S7A={};
 const S7WARD=[[0,0,380,482,0,[[45.8,106.7],[331.1,92.3]]],[382,0,387,487,0,[[46.8,89.6],[338.3,33.5]]],[771,0,406,475,0,[[46.1,110.5],[354.8,78.9]]],[1179,0,373,497,0,[[46.1,149.3],[328.2,34.1]]],[1554,0,364,451,1,[[44.7,104.8],[313.1,31.4]]],[0,499,461,438,1,[[49.4,106.9],[402.3,30.6]]],[463,499,443,400,1,[[44.7,28.3],[380.7,37.0]]],[908,499,582,459,2,[[133.9,134.1],[464.2,155.7]]],[1492,499,517,449,2,[[102.2,34.1],[456.5,71.6]]],[0,960,557,376,2,[[73.7,144.9],[508.6,106.0]]]],S7CAN=[[0, 0, 58, 160], [60, 0, 160, 160], [222, 0, 214, 66]];
@@ -2749,7 +2749,9 @@ function s7Begin(form,at,frostHp){const H=HORDE();
 /* ---------- enemies ---------- */
 function s7Z(type,o){const b=S7_E[type];return Object.assign({type,hp:b.hp,max:b.hp,wob:Math.random()*8,atk:0,hitT:0,dead:0,dt:0,arms:2,legs:1,stun:0,kb:0,frz:0,frozen:0,face:1,hs:0},o);}
 function s7FloorSpawn(S,g){const H=HORDE()?1.35:1,f=g.f,[x0,x1]=S7_HALF[g.k],sz=g.order.filter(Boolean).length;let n=Math.round((5+f*.6)*H*(.55+.15*sz)*1.35);
-  const types=[];for(let i=0;i<n;i++){const q=Math.random();types.push(q<.3?'runner':(f>=4&&q<.48)?'armored':'grunt');}
+  n=Math.round(n*.8);const types=[];for(let i=0;i<n;i++){const q=Math.random();types.push(q<.3?'runner':'grunt');}
+  /* armored: at most one per floor early, two from floor 9, placed apart */
+  const na=f<4?0:f<9?(Math.random()<.6?1:0):HORDE()?2:1+(Math.random()<.4?1:0);for(let i=0;i<na;i++)types[Math.min(types.length-1,Math.floor((i+.5)*types.length/na))]='armored';
   if(HORDE()?(f===8||f===10||f===12):(f===9||f===12))types.push('brute');
   types.forEach((ty,i)=>{const ahead=i<types.length*.72;const x=ahead?(g.dir>0?Math.min(x1-10,g.x+160+Math.random()*(x1-g.x-170)):Math.max(x0+10,g.x-160-Math.random()*(g.x-x0-170))):(g.dir>0?x0+6:x1-6);
     S.en.push(s7Z(ty,{f,k:g.k,x,dl:ahead?0:5+Math.random()*10+i}));});}
@@ -2804,8 +2806,6 @@ function s7HeroAct(S,g,id,x,live,dt){const h=g.hero[id],slot=s7Alive(g).length==
   const fwd=e=>(e.x-x)*g.dir>0,canSee=e=>slot==='solo'||slot==='mid'||(slot==='lead'?fwd(e):!fwd(e));
   const tg=live.filter(canSee).map(e=>({e,d:Math.abs(e.x-x)})).filter(q=>q.d<(id==='blaze'?(h.inf>0?250:160):330)).sort((a,b)=>a.d-b.d);
   if(!tg.length){return;}const e0=tg[0].e,aim=Math.sign(e0.x-x)||g.dir;h.aim=aim;
-  /* hex in the middle: bubble only, no attacks */
-  if(id==='hex'&&slot==='mid')return;
   /* melee first */
   if(tg[0].d<55){
     if(id==='bruno'&&h.ram<=0){h.ram=3;e0.kb=aim*110;e0.stun=1;s7TeamHit(S,g,id,e0,50,1);S.fx.push({k:'ram',x:e0.x,y:F.feet-60,t:.25});SND.punch&&SND.punch();}
@@ -2813,6 +2813,9 @@ function s7HeroAct(S,g,id,x,live,dt){const h=g.hero[id],slot=s7Alive(g).length==
     else if(id==='rook'&&h.mcd<=0&&e0.type!=='brute'&&e0.type!=='armored'){h.mcd=.7;s7TeamHit(S,g,id,e0,60,1);S.fx.push({k:'slash',x:e0.x,y:F.feet-60,t:.18,a:aim});}
   }
   if(id==='volt'&&h.vcd<=0){const ar=tg.find(q=>q.e.type==='armored'&&q.d<90);if(ar){h.chg+=dt;if(h.chg>=.8){h.chg=0;h.vcd=5;S.fx.push({k:'zap',x1:x+aim*12,y1:F.feet-70,x2:ar.e.x,y2:F.feet-S7_E.armored.h*.85,t:.3});s7Kill(S,ar.e);S.fx.push({k:'pop',x:ar.e.x,y:F.feet-S7_E.armored.h*.85,t:.3,col:'#b6f23a'});}return;}else h.chg=0;}
+  if(id==='cmd'){h.gl=(h.gl==null?3:h.gl)-dt;if(h.gl<=0){const near=tg.find(q=>q.d>70&&q.d<330);if(near){h.gl=10;const cx=near.e.x;
+      for(const e of live){const dd=Math.abs(e.x-cx);if(dd<120)s7TeamHit(S,g,id,e,(e.type==='armored'?320:240)*(1-dd/160));}
+      S.fx.push({k:'boom',x:cx,y:F.feet-30,t:.5,T:.5,s:.45});S.fx.push({k:'tr',x1:x+aim*20,y1:F.feet-70,x2:cx,y2:F.feet-40,t:.12,col:'#ffb347'});R.shake=Math.max(R.shake||0,.12);SND.explosion&&SND.explosion(.35);return;}}}
   if(id==='blaze'){if(h.infCd>0)return;if(h.inf<=0&&tg[0].d<60){h.inf=3;R.banner={txt:'BLAZE: INFERNO',t:.9,col:'#ff7a2e'};}}
   h.fireT-=dt;if(h.fireT>0)return;h.fireT=.25;h.fire=.12;g.flash=.08;
   const d=S7_DPS[id]*.25;
@@ -3068,7 +3071,7 @@ function s7Draw(){const S=R.s7;if(!S)return;const sc=s7Scale(S),Z=S7_Z[S.zoom];
     al.slice().reverse().forEach((id,ri)=>{const h=g.hero[id],x=pos[id];if((h.fire>0||(id==='volt'&&h.chg>0)))h.shT=.35;
       const firing=(h.shT||0)>0,row=moving?(firing&&SIDEM[id]&&SIDEM[id].rshoot&&h.aim===g.dir?'rshoot':'run'):firing?'shoot':'idle';
       if(row!==h.row){h.row=row;h.ph=0;}const fps=row==='run'||row==='rshoot'?11:row==='shoot'?10:5;
-      s7SideSpr(id,row,Math.floor(h.ph*fps)+ri*3,x,F.feet,id==='bruno'?104:94,h.aim<0,fade);
+      s7SideSpr(id,row,Math.floor(h.ph*fps)+ri*3,x,F.feet,id==='bruno'?104:94,((h.shT||0)>0?h.aim:g.dir)<0,fade);
       if(h.dmgT>0){ctx.fillStyle='rgba(255,40,40,.25)';ctx.fillRect(x-22,F.feet-118,44,118);}
       if(id==='hex'&&h.slot==='mid'&&h.bubCd>0){ctx.fillStyle='#c9a7ff';ctx.font='11px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText(Math.ceil(h.bubCd)+'s',x,F.feet-128);}
       if(id==='blaze'&&h.infCd>0){ctx.fillStyle='#ff9a5a';ctx.font='11px Bungee, Impact, sans-serif';ctx.textAlign='center';ctx.fillText('COOLING',x,F.feet-128);}
@@ -3106,7 +3109,7 @@ function s7Draw(){const S=R.s7;if(!S)return;const sc=s7Scale(S),Z=S7_Z[S.zoom];
     else if(f.k==='blood'){ctx.fillStyle=`rgba(150,10,10,${1-q})`;for(let i=0;i<8;i++){const a=i*.8;ctx.fillRect(f.x+Math.cos(a)*q*30,f.y+Math.sin(a)*q*30+q*q*30,4,4);}}
     else if(f.k==='ping'){ctx.strokeStyle='#ffe9a0';ctx.lineWidth=2;for(let i=0;i<4;i++){const a=i*1.57+.4;ctx.beginPath();ctx.moveTo(f.x,f.y);ctx.lineTo(f.x+Math.cos(a)*(.25-f.t)*90,f.y+Math.sin(a)*(.25-f.t)*90);ctx.stroke();}}
     else if(f.k==='frz'||f.k==='shatter'){ctx.fillStyle=`rgba(190,240,255,${f.k==='frz'?f.t/.4:1-q})`;const n=f.k==='frz'?6:14;for(let i=0;i<n;i++){const a=i*6.283/n;const d=f.k==='frz'?20:q*80;ctx.fillRect(f.x+Math.cos(a)*d-3,f.y+Math.sin(a)*d+(f.k==='shatter'?q*q*60:0)-3,6,6);}}
-    else if(f.k==='boom'){const r=40+q*220;ctx.globalCompositeOperation='lighter';const gg=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gg.addColorStop(0,`rgba(255,240,180,${1-q})`);gg.addColorStop(.4,`rgba(255,140,40,${.8*(1-q)})`);gg.addColorStop(1,'rgba(255,60,20,0)');ctx.fillStyle=gg;ctx.beginPath();ctx.arc(f.x,f.y,r,0,6.283);ctx.fill();ctx.globalCompositeOperation='source-over';}}
+    else if(f.k==='boom'){const r=(40+q*220)*(f.s||1);ctx.globalCompositeOperation='lighter';const gg=ctx.createRadialGradient(f.x,f.y,0,f.x,f.y,r);gg.addColorStop(0,`rgba(255,240,180,${1-q})`);gg.addColorStop(.4,`rgba(255,140,40,${.8*(1-q)})`);gg.addColorStop(1,'rgba(255,60,20,0)');ctx.fillStyle=gg;ctx.beginPath();ctx.arc(f.x,f.y,r,0,6.283);ctx.fill();ctx.globalCompositeOperation='source-over';}}
   const LG=s7Img('ledge');if(LG){ctx.fillStyle='#16121a';ctx.fillRect(-300,S7_SH-14,S7_SW+600,420);for(let i=0;i<3;i++){const x=-300+i*1278;if(i%2){ctx.save();ctx.translate(x+1280,S7_SH-410);ctx.scale(-1,1);ctx.drawImage(LG,0,0,1280,426);ctx.restore();}else ctx.drawImage(LG,x,S7_SH-410,1280,426);}}
   else{ctx.fillStyle='#16121a';ctx.fillRect(-300,S7_SH-90,S7_SW+600,400);ctx.fillStyle='#2a2230';ctx.fillRect(-300,S7_SH-98,S7_SW+600,14);}
   ctx.restore();
