@@ -2659,7 +2659,7 @@ const S7_DPS={cmd:22,rook:25,hex:17,volt:19,bruno:24,blaze:13};
 const S7_NOTE={
   bruno:{lead:'Shotgun ahead, shoulder-rams anything that gets close.',mid:'Shotgun either way, shoulder-rams anything close.',rear:'Shotgun behind, shoulder-rams anything that catches up.'},
   blaze:{lead:'Flames ahead. The floor burns for a moment, so the team waits.',mid:'Flames either way. Fire forward can catch the lead, and the burning floor ahead hurts anyone who walks in.',rear:'Flames behind the team.'},
-  cmd:{lead:'Assault rifle ahead, rifle-butt up close. An explosive round every 10 seconds.',mid:'Assault rifle either way, rifle-butt up close. An explosive round every 10 seconds.',rear:'Assault rifle behind, rifle-butt up close. An explosive round every 10 seconds.'},
+  cmd:{lead:'Assault rifle ahead, rifle-butt up close.',mid:'Assault rifle either way, rifle-butt up close. An explosive round every 10 seconds.',rear:'Assault rifle behind, rifle-butt up close.'},
   hex:{lead:'Hex bolts ahead, now and then throws a zombie out a window.',mid:'Raises a force bubble over the team (breaks after 100 damage, back in 30 seconds) and fires hex bolts either way, now and then throwing a zombie out a window.',rear:'Hex bolts behind, now and then throws a zombie out a window.'},
   rook:{lead:'Two pistols ahead, sword for anything close.',mid:'Two pistols either way, sword for anything close.',rear:'Two pistols behind, sword for anything close.'},
   volt:{lead:'Chain lightning ahead. Pops armored heads up close.',mid:'Chain lightning either way. Can arc into a teammate.',rear:'Chain lightning behind. Pops armored heads up close.'}};
@@ -2813,7 +2813,7 @@ function s7HeroAct(S,g,id,x,live,dt){const h=g.hero[id],slot=s7Alive(g).length==
     else if(id==='rook'&&h.mcd<=0&&e0.type!=='brute'&&e0.type!=='armored'){h.mcd=.7;s7TeamHit(S,g,id,e0,60,1);S.fx.push({k:'slash',x:e0.x,y:F.feet-60,t:.18,a:aim});}
   }
   if(id==='volt'&&h.vcd<=0){const ar=tg.find(q=>q.e.type==='armored'&&q.d<90);if(ar){h.chg+=dt;if(h.chg>=.8){h.chg=0;h.vcd=5;S.fx.push({k:'zap',x1:x+aim*12,y1:F.feet-70,x2:ar.e.x,y2:F.feet-S7_E.armored.h*.85,t:.3});s7Kill(S,ar.e);S.fx.push({k:'pop',x:ar.e.x,y:F.feet-S7_E.armored.h*.85,t:.3,col:'#b6f23a'});}return;}else h.chg=0;}
-  if(id==='cmd'){h.gl=(h.gl==null?3:h.gl)-dt;if(h.gl<=0){const near=tg.find(q=>q.d>70&&q.d<330);if(near){h.gl=10;const cx=near.e.x;
+  if(id==='cmd'&&(slot==='mid'||slot==='solo')){h.gl=(h.gl==null?3:h.gl)-dt;if(h.gl<=0){const near=tg.find(q=>q.d>70&&q.d<330);if(near){h.gl=10;const cx=near.e.x;
       for(const e of live){const dd=Math.abs(e.x-cx);if(dd<120)s7TeamHit(S,g,id,e,(e.type==='armored'?320:240)*(1-dd/160));}
       S.fx.push({k:'boom',x:cx,y:F.feet-30,t:.5,T:.5,s:.45});S.fx.push({k:'tr',x1:x+aim*20,y1:F.feet-70,x2:cx,y2:F.feet-40,t:.12,col:'#ffb347'});R.shake=Math.max(R.shake||0,.12);SND.explosion&&SND.explosion(.35);return;}}}
   if(id==='blaze'){if(h.infCd>0)return;if(h.inf<=0&&tg[0].d<60){h.inf=3;R.banner={txt:'BLAZE: INFERNO',t:.9,col:'#ff7a2e'};}}
