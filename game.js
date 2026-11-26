@@ -2725,7 +2725,7 @@ function s7PickAct(a,b){const P=S7_PICK,d=b.dataset;
   if(a==='s7clr'){P[d.k][+d.i]=null;ui();return;}
   if(a==='s7hero'&&P.sel){const id=d.id;for(const k of['A','B'])P[k]=P[k].map(h=>h===id?null:h);P[P.sel.k][P.sel.i]=id;
     const nx=['A','B'].flatMap(k=>[0,1,2].map(i=>({k,i}))).find(q=>!P[q.k][q.i]);P.sel=s7Roster().every(h=>P.A.includes(h)||P.B.includes(h))?null:(nx||null);ui();return;}
-  if(a==='s7go'){s7Begin({A:P.A.slice(),B:P.B.slice()},'start',null);}}
+  if(a==='s7go'){s7Begin({A:P.A.slice(),B:P.B.slice()},R.s7at==='roof'?'roof':'start',null);}}
 
 /* ---------- setup ---------- */
 function s7Team(k,order){const g={k,order:order.slice(),f:1,dir:k==='A'?1:-1,state:'walk',stT:0,flash:0,dmgT:0,hero:{},halt:0};
