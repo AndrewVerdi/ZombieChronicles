@@ -279,9 +279,9 @@ if(!Array.isArray(save.fallen))save.fallen=[];save.gold=Math.floor(save.gold||0)
 save.active=save.active.filter(h=>save.heroes[h]);
 function persist(){try{localStorage.setItem(KEY,JSON.stringify(save));}catch(e){}}
 /* checkpoint: the wave you're on, so Continue drops you back at its start */
-function checkpoint(){if(!R)return;if(R.s5||R.s6||R.s7)return;if(R.cfa){cfaCkpt(R.cfaAt||'f1');return;}if(R.cfb){cfbCkpt(R.cfbAt||1);return;}markReach(R.forest?'3f':String(R.stage||1),R.stage===2?1:R.wave);save.ckpt={stage:R.forest?'3f':(R.stage||1),wave:R.stage===2?1:R.wave,hex:!!save.heroes.hex};persist();}
+function checkpoint(){if(!R)return;if(R.s5||R.s6||R.s7||R.s8)return;if(R.cfa){cfaCkpt(R.cfaAt||'f1');return;}if(R.cfb){cfbCkpt(R.cfbAt||1);return;}markReach(R.forest?'3f':String(R.stage||1),R.stage===2?1:R.wave);save.ckpt={stage:R.forest?'3f':(R.stage||1),wave:R.stage===2?1:R.wave,hex:!!save.heroes.hex};persist();}
 function clearCkpt(){if(save.ckpt){delete save.ckpt;persist();}}
-const ckptLabel=c=>c.stage==='7'?'Stage 7 · Nova\'s Watch, '+(c.wave==='rescue'?'Nova\'s rescue':c.wave==='roof'?'the roof':'the climb'):c.stage==='6'?'Stage 6 · The Drive, '+(c.wave==='start'?'the forest road':c.wave==='hwy'?'the highway':'Mega City'):c.stage==='5'?'Stage 5 · The Forest Run, '+(c.wave==='w1'?'wave 1':c.wave==='rit'?'the ritual':'the ranger station'):c.stage==='4a'?'Stage 4 · Cyber Future, '+(c.wave==='vault'?'containment':c.wave==='f4'?'the hall':'floor '+String(c.wave).slice(1)):c.stage===2?'Stage 2 · The Escape':c.stage===3?(c.wave==='end'?'Stage 3 · The Empty Town, ending':'Stage 3 · The Empty Town, wave '+c.wave):c.stage==='4b'?'Stage 4 · Cyber Future, '+(c.wave===1?'the courtyard':'floor '+String(c.wave).slice(1)):c.stage==='3f'?(c.wave==='end'?'Stage 3 · The Forest, ending':'Stage 3 · The Forest, wave '+c.wave):'Stage 1 · wave '+c.wave;
+const ckptLabel=c=>c.stage==='8'?'Stage 8 · The Island, wave '+c.wave:c.stage==='7'?'Stage 7 · Nova\'s Watch, '+(c.wave==='rescue'?'Nova\'s rescue':c.wave==='roof'?'the roof':'the climb'):c.stage==='6'?'Stage 6 · The Drive, '+(c.wave==='start'?'the forest road':c.wave==='hwy'?'the highway':'Mega City'):c.stage==='5'?'Stage 5 · The Forest Run, '+(c.wave==='w1'?'wave 1':c.wave==='rit'?'the ritual':'the ranger station'):c.stage==='4a'?'Stage 4 · Cyber Future, '+(c.wave==='vault'?'containment':c.wave==='f4'?'the hall':'floor '+String(c.wave).slice(1)):c.stage===2?'Stage 2 · The Escape':c.stage===3?(c.wave==='end'?'Stage 3 · The Empty Town, ending':'Stage 3 · The Empty Town, wave '+c.wave):c.stage==='4b'?'Stage 4 · Cyber Future, '+(c.wave===1?'the courtyard':'floor '+String(c.wave).slice(1)):c.stage==='3f'?(c.wave==='end'?'Stage 3 · The Forest, ending':'Stage 3 · The Forest, wave '+c.wave):'Stage 1 · wave '+c.wave;
 function resumeCkpt(){const c=save.ckpt;if(!c)return;if(!legacy().current)legacyStart(save.mode||'normal');SX=0;camX=0;
   if(c.stage===2)startStage2();
   else if(c.stage===3){startStage3();if(c.wave==='end'){R.wave=3;startTownEnd();}else if(c.wave>1)startWave3(c.wave);}
@@ -290,6 +290,7 @@ function resumeCkpt(){const c=save.ckpt;if(!c)return;if(!legacy().current)legacy
   else if(c.stage==='5'){s5Start(c.wave,1);}
   else if(c.stage==='6'){s6Start(c.wave,1);}
   else if(c.stage==='7'){s7Start(c.wave,1);}
+  else if(c.stage==='8'){s8Start(c.wave,1);}
   else if(c.stage==='3f'){startForest();if(c.wave==='end'){if(c.hex&&save.away&&save.away.hex){save.heroes.hex=save.away.hex;delete save.away.hex;if(save.active.length<MAX_ACTIVE)save.active.push('hex');}R.wave=4;startForestEnd();}else if(c.wave>1){if(c.hex&&save.away&&save.away.hex){save.heroes.hex=save.away.hex;delete save.away.hex;if(save.active.length<MAX_ACTIVE)save.active.push('hex');}startWaveF(c.wave);}}
   else newRun(c.wave);}
 
@@ -757,7 +758,7 @@ function drawForestWorld(dt){
   if(state==='play'&&!(R&&R.cfb))roadScroll+=dt*WALK;
   ctx.save();ctx.imageSmoothingEnabled=false;
   ctx.fillStyle='#0c0814';ctx.fillRect(-20,-20,WW+40,WH+40);
-  if(skyfReady){ctx.imageSmoothingEnabled=true;const sh=152,sw=sh*SKYFIMG.width/SKYFIMG.height;ctx.drawImage(SKYFIMG,WW/2-sw/2,HOR+5-sh,sw,sh);ctx.imageSmoothingEnabled=false;}
+  if(R&&R.s8)s8Horizon();else if(skyfReady){ctx.imageSmoothingEnabled=true;const sh=152,sw=sh*SKYFIMG.width/SKYFIMG.height;ctx.drawImage(SKYFIMG,WW/2-sw/2,HOR+5-sh,sw,sh);ctx.imageSmoothingEnabled=false;}
   if(trailReady){const HWs=647,TL=HWs*2*TRAILIMG.height/TRAILIMG.width,Wt=TRAILIMG.width,Ht=TRAILIMG.height;ctx.fillStyle='#0d110c';ctx.fillRect(-20,HOR,WW+40,WH);
     for(let y=WH+30;y>HOR+1;y-=1){const k=(y-HOR)/CAMH,z=F/k-D;if(z>4200)break;let v=((z+roadScroll)/TL)%1;if(v<0)v+=1;const hw=HWs*k;ctx.drawImage(TRAILIMG,0,Ht-1-Math.floor(v*Ht),Wt,1,WW/2-hw,y,hw*2,1.25);}}
   if(forReady){drawPanelSide(-1);drawPanelSide(1);}
@@ -781,6 +782,68 @@ function drawForestWorld(dt){
   const top=ctx.createLinearGradient(0,0,0,HOR*.9);top.addColorStop(0,'rgba(5,3,10,.55)');top.addColorStop(1,'rgba(5,3,10,0)');ctx.fillStyle=top;ctx.fillRect(-20,-20,WW+40,HOR*.9+20);
 }
 
+
+/* ===================== STAGE 8: THE ISLAND =====================
+   A cutscene flight, a landing, then a running wave defense toward the lab (3 waves; the lab grows on the horizon).
+   Only grunts, runners and the new splitters. Wave 3 is one giant splitter that halves itself down to normal splitters,
+   which then burst into small spawn. Cutscene casts: full squad / Commander + Rook, Bruno, Frost, Blaze, Hex / Commander alone. */
+const S8_WAVES=3,S8_FULL=['rook','bruno','frost','blaze','hex','volt','nova'],S8_CORE=['rook','bruno','frost','blaze','hex'];
+function s8Cast(){const have=id=>!!save.heroes[id];return S8_FULL.every(have)?'full':S8_CORE.every(have)?'core':'solo';}
+const S8_CAST_LINE={full:'the whole squad',core:'the core squad',solo:'the Commander'};
+/* a shot whose art depends on who's left: s8_i2_full / s8_i2_core / s8_i2_solo; stand-in art until the renders arrive */
+function s8Shot(base,fb,d,vo,cam,o){const c=s8Cast();return sh5(base+'_'+c,fb,d,typeof vo==='object'?vo[c]:vo,cam,o);}
+function s8IntroList(){return[
+  sh5('s8_i1','s7_t3',5.5,"They flew south over black water until the island came up out of the fog. Another Cyber Future lab.",pullOut,{snd:()=>SND.engineSet&&SND.engineSet(true)}),
+  s8Shot('s8_i2','nr_h2',5,{full:"Commander: \"Hang on, everybody. We're putting down on the beach.\"",core:"Commander: \"Hang on, everybody. We're putting down on the beach.\"",solo:"Commander: \"Just me and the bird now. Putting down on the beach.\""},pushIn),
+  s8Shot('s8_i3','s6_e3_all',5.5,{full:"Commander: \"Lab's two klicks inland. Move fast and stay together.\"",core:"Commander: \"Lab's two klicks inland. Move fast and stay together.\"",solo:"Commander: \"Two klicks inland. Let's go.\""},pullOut)];}
+function s8GiantList(){return[
+  sh5('s8_g1','s6_e2',5,"Something huge pulled itself out of the trees between them and the lab.",pushIn,{snd:()=>{SND.groan&&SND.groan(0,1);},fx:(c,tt)=>{if(tt>2.5&&tt<3.4)c.shake=6;}}),
+  sh5('s8_g2','s7_t1',4.5,"Commander: \"Don't let it get close. Everybody, open up!\"",pullOut)];}
+function s8EndList(){return[
+  s8Shot('s8_e1','s6_e3',5.5,{full:"The lab doors were sealed. Something on the other side was waiting for them.",core:"The lab doors were sealed. Something on the other side was waiting for them.",solo:"The lab doors were sealed. The Commander checked his rifle and went to work on the lock."},pushIn,{fx:(c,tt)=>{c.dim(Math.max(0,(tt-4.2)*.7));}})];}
+function s8Start(w,skip){w=+w||1;stageRevive();forestLoad();
+  for(const id of['cmd',...Object.keys(save.heroes)])setHp(id,maxHp(id));for(const id of REVD)if(save.heroes[id])setHp(id,maxHp(id)*.5);REVD=[];
+  roadScroll=0;
+  R={stage:3,s8:1,wave:w,wall:0,wallMax:1,scatter:0,en:[],bu:[],cr:[],pa:[],bolts:[],tx:[],cd:{},an:{},banner:null,vx:0,prevSX:SX,dead:[],civ:[],
+    queue:[],kills:0,spawnLeft:0,spawnTotal:0,spawnT:2,bossPending:false,crateAt:[],jeepAt:-1,proj:[]};
+  if(w===1&&!skip){const L=s8IntroList();cineLoad(L);state='intro';startIntro(()=>s8Wave(1),L);return;}
+  if(w===3&&!skip){const L=s8GiantList();cineLoad(L);state='intro';startIntro(()=>s8Wave(3),L);return;}
+  s8Wave(w);}
+function s8Wave(w){R.wave=w;SND.alarm();markReach('8',w);save.ckpt={stage:'8',wave:w};persist();
+  const H2=HORDE()?2:1,q=[],add=(ty,n)=>{for(let i=0;i<Math.round(n*H2);i++)q.push(ty);};
+  if(w===1){add('grunt',28);add('runner',14);add('splitter',5);}
+  else if(w===2){add('grunt',36);add('runner',20);add('splitter',12);}
+  else add('giant',1/H2);
+  for(let i=q.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[q[i],q[j]]=[q[j],q[i]];}
+  R.queue=q;R.kills=0;R.spawnLeft=q.length;R.spawnTotal=q.length;R.spawnT=w===3?1.2:2.4;R.prog0=R.prog0||0;
+  R.banner=w===3?{txt:'IT KEEPS SPLITTING',t:3,col:'#ff4d5e'}:{txt:(w===1?'STAGE 8: THE ISLAND · ':'')+'WAVE '+w,t:2.4,col:'#ffc53d'};
+  state='play';ui();}
+function s8Pace(){return(R.wave===1?1.15:.85)*(.65+Math.random()*.7);}
+function s8Pack(){return Math.min(R.spawnLeft,R.wave===2&&Math.random()<.35?2:1);}
+function s8WaveClear(){if(R.ending)return;SND.waveClear();healRecovery();save.gold+=120+R.wave*60;persist();
+  if(R.wave>=S8_WAVES){R.ending=1;s8Finish();return;}state='inter';ui();}
+function s8Next(){const w=R.wave+1;if(w===3){const L=s8GiantList();cineLoad(L);state='intro';startIntro(()=>s8Wave(3),L);return;}s8Wave(w);}
+function s8Finish(){const L=s8EndList();cineLoad(L);markReach('8',4);persist();
+  startIntro(()=>{save.cleared=Math.max(save.cleared||0,8);save.s8Done=1;legacyStage&&legacyStage(8);story('stage_clear_island',{cast:s8Cast()});save.gold+=900;delete save.ckpt;persist();state='win8';ui();},L);}
+function s8WinHTML(){return `<h1 class="title">STAGE 8<span>COMPLETE</span></h1><div class="stripe"></div>
+  <p class="sub">The squad fought its way across the island to the lab doors. Stage 9, breaking into the lab, is next.</p>
+  <div class="row"><span class="sub">Score</span><span class="big">${save.gold.toLocaleString()}</span></div>
+  <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="s8">Play Stage 8 again</button></div>`;}
+/* the giant splitter and its halves */
+function s8Giant(e,tier){const b=e.r/ (e.tier||1);e.tier=tier;e.r=39*tier;e.hp=e.max=(tier>=4?5200:tier===2?1500:315)*(HORDE()?1.3:1);e.spd*=tier>=4?.45:tier===2?.7:1;e.dmg=12*tier;e.hd=e.dmg*HURT_K;if(tier>1){e.nokb=1;e.gold=10*tier;e.xp=7*tier;}return e;}
+function s8Split(e){const t=e.tier||1;if(t>1){for(const k of[-1,1]){const m=mkEnemy('splitter',Math.max(-LANE_E,Math.min(LANE_E,e.x+k*e.r*.6)),e.z+20);s8Giant(m,t/2);m.kb=k*60;}R.shake=Math.max(R.shake||0,t>=4?.6:.3);SND.explosion&&SND.explosion(t>=4?.8:.4);
+    if(t>=4)R.banner={txt:'IT SPLIT IN TWO',t:1.6,col:'#ff4d5e'};return true;}
+  for(const k of[-1,1]){const m=mkEnemy('runner',e.x+k*22,e.z);m.r=15;m.hp=m.max=40;m.gold=1;m.xp=1;m.spawn=1;}return true;}
+/* horizon: the lab grows as the squad gets closer */
+function s8Horizon(){const prog=Math.min(1,(R.wave-1+Math.min(1,R.spawnTotal?R.kills/(R.spawnTotal+(R.wave===3?14:0)):0))/3),sc=.35+prog*1.25,cx=WW/2,by=HOR+6;
+  const sky=ctx.createLinearGradient(0,0,0,HOR+10);sky.addColorStop(0,'#07050f');sky.addColorStop(1,'#2a1838');ctx.fillStyle=sky;ctx.fillRect(-20,-20,WW+40,HOR+30);
+  ctx.save();ctx.translate(cx,by);ctx.scale(sc,sc);
+  const glow=ctx.createRadialGradient(0,-40,10,0,-40,170);glow.addColorStop(0,'rgba(182,242,58,.18)');glow.addColorStop(1,'rgba(182,242,58,0)');ctx.fillStyle=glow;ctx.fillRect(-170,-210,340,220);
+  ctx.fillStyle='#120e1a';ctx.fillRect(-120,-46,240,46);ctx.fillRect(-70,-86,140,40);ctx.fillRect(-18,-128,36,42);ctx.beginPath();ctx.arc(52,-46,30,Math.PI,0);ctx.fill();ctx.fillRect(-2,-160,4,32);
+  ctx.fillStyle='rgba(182,242,58,.55)';for(let i=0;i<9;i++)for(let j=0;j<2;j++)if(hash3(i*5+j*11)<.6)ctx.fillRect(-110+i*25,-38+j*16,8,5);for(let i=0;i<5;i++)if(hash3(i*7+3)<.7)ctx.fillRect(-60+i*26,-78,8,5);
+  ctx.fillStyle=(t%1.2)<.6?'#ff4d5e':'#5a1a22';ctx.beginPath();ctx.arc(0,-162,3.5,0,6.283);ctx.fill();
+  ctx.fillStyle='#0c0a12';ctx.fillRect(-200,-14,400,14);for(let i=-200;i<=200;i+=20)ctx.fillRect(i,-22,2,8);
+  ctx.restore();}
 /* survivors who vanish in green light during wave 1 */
 const F_LINES=[['rook',"Boss... where'd the medic go?",'cmd',"Where'd the medic go?"],['cmd',"Keep them close! Nobody wanders off!"],['rook',"They're not wandering. They're disappearing.",'cmd',"They're not wandering off. They're vanishing."],['cmd',"Something's in these woods with us."],['rook',"That's all of them. We're alone out here.",'cmd',"That's all of them. I'm alone out here."]];
 const F_LINE_AT={1:0,3:1,5:2,8:3,10:4};
@@ -968,16 +1031,17 @@ const BOARDS=[
  {k:'4b',name:'Stage 4 · Cyber Future (forest route)',waves:[1,'f1','f2','f3'],heroes:w=>w==='f3'?['rook','hex','volt']:['rook','hex']},
  {k:'5',name:'Stage 5 · The Forest Run',waves:['w1','rit','post'],heroes:w=>((LSEL&&LSEL.route)||save.route||'highway')==='backroad'||w==='post'?['rook','hex','volt','bruno','blaze']:['rook','volt','bruno','blaze'],route:1},
  {k:'6',name:'Stage 6 · The Drive',waves:['start','hwy','city'],heroes:()=>['rook','hex','volt','bruno','blaze']},
- {k:'7',name:'Stage 7 · Nova\'s Watch',waves:['start','roof','rescue'],heroes:w=>w==='rescue'?['rook','hex','volt','bruno','blaze','frost']:['rook','hex','volt','bruno','blaze']}];
+ {k:'7',name:'Stage 7 · Nova\'s Watch',waves:['start','roof','rescue'],heroes:w=>w==='rescue'?['rook','hex','volt','bruno','blaze','frost']:['rook','hex','volt','bruno','blaze']},
+ {k:'8',name:'Stage 8 · The Island',waves:[1,2,3],heroes:()=>['rook','hex','volt','bruno','blaze','frost','nova']}];
 let LSEL=null,LOADSEL=null;
-function reachOf(k){if(k==='7')return (save.reach&&save.reach['7'])||(save.s7Done?2:0);if(k==='6')return (save.reach&&save.reach['6'])||(save.s6Done?3:0);if(k==='5')return (save.reach&&save.reach['5'])||(save.s5Done?3:0);if(k==='4a')return (save.reach&&save.reach['4a'])||(save.cfaDone?5:0);if(k==='4b')return (save.reach&&save.reach['4b'])||(save.cfbDone?4:0);const R0=(save.reach&&save.reach[k])||0,c=save.cleared||0;
+function reachOf(k){if(k==='8')return Math.max((save.reach&&save.reach['8'])||0,save.s7Done||(save.reach&&save.reach['7']>=2)?1:0);if(k==='7')return (save.reach&&save.reach['7'])||(save.s7Done?2:0);if(k==='6')return (save.reach&&save.reach['6'])||(save.s6Done?3:0);if(k==='5')return (save.reach&&save.reach['5'])||(save.s5Done?3:0);if(k==='4a')return (save.reach&&save.reach['4a'])||(save.cfaDone?5:0);if(k==='4b')return (save.reach&&save.reach['4b'])||(save.cfbDone?4:0);const R0=(save.reach&&save.reach[k])||0,c=save.cleared||0;
   if(k==='1')return Math.max(R0,c>=1?5:Math.min(5,(save.best||0)+1),1);
   if(k==='2')return Math.max(R0,c>=1?1:0);
   if(k==='3')return Math.max(R0,c>=2&&save.route==='highway'?1:0,c>=3&&save.route==='highway'?3:0);
   if(k==='3f')return Math.max(R0,c>=2&&save.route==='backroad'?1:0,save.forestDone?4:0);return 0;}
 const reachEnd=()=>!!(save.reach&&save.reach['3e'])||((save.cleared||0)>=3&&save.route==='highway');
-const waveOpen=(k,w)=>k==='7'?((save.reach&&save.reach['7'])||(save.s7Done?2:0))>S7_ORDER.indexOf(w):k==='6'?((save.reach&&save.reach['6'])||(save.s6Done?3:0))>S6_ORDER.indexOf(w):k==='5'?((save.reach&&save.reach['5'])||(save.s5Done?3:0))>S5_ORDER.indexOf(w):k==='4a'?((save.reach&&save.reach['4a'])||0)>CFA_ORDER.indexOf(w):k==='4b'?((save.reach&&save.reach['4b'])||0)>CF_ORDER.indexOf(w):w==='end'?(k==='3f'?!!(save.reach&&save.reach['3fe'])||!!save.forestDone:reachEnd()):reachOf(k)>=w;
-function markReach(k,w){save.reach=save.reach||{};if(k==='7'){save.reach['7']=Math.max(save.reach['7']||0,S7_ORDER.indexOf(w)+1);return;}if(k==='6'){save.reach['6']=Math.max(save.reach['6']||0,S6_ORDER.indexOf(w)+1);return;}if(k==='5'){save.reach['5']=Math.max(save.reach['5']||0,S5_ORDER.indexOf(w)+1);return;}if(k==='4a'){save.reach['4a']=Math.max(save.reach['4a']||0,CFA_ORDER.indexOf(w)+1);return;}if(k==='4b'){save.reach['4b']=Math.max(save.reach['4b']||0,CF_ORDER.indexOf(w)+1);return;}if(w==='end'){save.reach[k==='3f'?'3fe':'3e']=1;return;}save.reach[k]=Math.max(save.reach[k]||0,w);}
+const waveOpen=(k,w)=>k==='8'?reachOf('8')>=+w:k==='7'?((save.reach&&save.reach['7'])||(save.s7Done?2:0))>S7_ORDER.indexOf(w):k==='6'?((save.reach&&save.reach['6'])||(save.s6Done?3:0))>S6_ORDER.indexOf(w):k==='5'?((save.reach&&save.reach['5'])||(save.s5Done?3:0))>S5_ORDER.indexOf(w):k==='4a'?((save.reach&&save.reach['4a'])||0)>CFA_ORDER.indexOf(w):k==='4b'?((save.reach&&save.reach['4b'])||0)>CF_ORDER.indexOf(w):w==='end'?(k==='3f'?!!(save.reach&&save.reach['3fe'])||!!save.forestDone:reachEnd()):reachOf(k)>=w;
+function markReach(k,w){save.reach=save.reach||{};if(k==='8'){save.reach['8']=Math.max(save.reach['8']||0,+w||1);return;}if(k==='7'){save.reach['7']=Math.max(save.reach['7']||0,S7_ORDER.indexOf(w)+1);return;}if(k==='6'){save.reach['6']=Math.max(save.reach['6']||0,S6_ORDER.indexOf(w)+1);return;}if(k==='5'){save.reach['5']=Math.max(save.reach['5']||0,S5_ORDER.indexOf(w)+1);return;}if(k==='4a'){save.reach['4a']=Math.max(save.reach['4a']||0,CFA_ORDER.indexOf(w)+1);return;}if(k==='4b'){save.reach['4b']=Math.max(save.reach['4b']||0,CF_ORDER.indexOf(w)+1);return;}if(w==='end'){save.reach[k==='3f'?'3fe':'3e']=1;return;}save.reach[k]=Math.max(save.reach[k]||0,w);}
 function loadHTML(){const BUILD=(window.__VER||'artifact').slice(0,6);if(!LSEL){const b=BOARDS.find(b=>reachOf(b.k)>0)||BOARDS[0];LSEL={k:b.k,w:1,h:{bruno:1,rook:1,hex:1}};}
   let h=`<h2>Load</h2><div class="stripe"></div><p class="sub">Testing tool. Start any board you've reached, from any wave, with any squad that belongs there. Mode: ${HORDE()?'Horde':'Normal'}. Build ${BUILD}.</p>`;
   for(const b of BOARDS){const open=reachOf(b.k)>0,sel=LSEL.k===b.k;
@@ -1004,6 +1068,7 @@ function loadGo(){const b=BOARDS.find(b=>b.k===LSEL.k),w=LSEL.w,pick=b.heroes(w)
   else if(b.k==='4a'){cfaStart(w);}
   else if(b.k==='6'){s6Start(w,1);}
   else if(b.k==='7'){s7Start(w,1);}
+  else if(b.k==='8'){s8Start(w,1);}
   else if(b.k==='5'){save.route=LSEL.route||save.route||'highway';persist();s5Start(w);}
   else{startForest();if(w==='end'){R.wave=4;startForestEnd();}else if(w>1)startWaveF(w);}
   for(const id of pick)if(!save.heroes[id]&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];}
@@ -3024,7 +3089,7 @@ function s7WinHTML(){const o=save.nrOut;const txt=o==='saved'?"Nova is safe and 
   <p class="sub">The Ward fell forty floors and took the front of Nova's building with him.</p>
   <p class="sub">${txt}</p>
   <div class="row"><span class="sub">Score</span><span class="big">${save.gold.toLocaleString()}</span></div>
-  <div class="btns"><button class="btn" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="s7">Play Stage 7 again</button></div>`;}
+  <div class="btns"><button class="btn" data-act="s8">Fly to the island · Stage 8</button><button class="btn ghost" data-act="menu">Back to title</button><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="s7">Play Stage 7 again</button></div>`;}
 
 /* ---------- cutscenes (stand-in art until the riso shots arrive) ---------- */
 function s7IntroList(){return[
@@ -3507,6 +3572,7 @@ function mkEnemy(type,x,z){
 }
 function spawnEnemy(){
   let type=R.queue&&R.queue.length?R.queue.shift():(R.stage===2?'runner':'grunt');
+  if(type==='giant'){const e=mkEnemy('splitter',0,ZFAR+80);s8Giant(e,4);return;}
   mkEnemy(type,(Math.random()*2-1)*(LANE_E-20),ZFAR+Math.random()*120);
 }
 
@@ -3769,7 +3835,8 @@ function kill(e,own){addKill(own,e.type);supCharge(own,1/SUP_KILLS[own]);
     R.banner={txt:'MOMMA IS DEAD',t:2.6,col:'#b6f23a'};}
   const hm=HORDE()&&e.type!=='boss'&&e.type!=='momma'?.5:1;save.gold+=Math.round(e.gold*10);SND.die(e.type,e.x/600);
   if(R.jail)hitJail(R.jail.max*.035);
-  if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
+  if(e.split&&R.s8){s8Split(e);}
+  else if(e.split){for(let k=-1;k<=1;k+=2){const m=mkEnemy('runner',e.x+k*26,e.z);m.gold=1;if(e.elite){m.hp*=2;m.max=m.hp;}}}
   /* XP: the killer gets it all, everyone else in the squad gets a 20% share */
   for(const id of['cmd',...save.active]){const x=e.xp*hm*(id===own?1:XP_SHARE);if(id==='cmd')cmdXp(x);else giveXp(id,x);}
   R.kills=(R.kills||0)+1;if(own==='cmd'){R.cmdKills=(R.cmdKills||0)+1;if(save.cmd>=5&&R.cmdKills%10===0)rally();}
@@ -3819,8 +3886,8 @@ function update(dt){
   if(R.cine)cineUpdate(dt);
   hud.style.opacity=R.cine?'0':'1';
   if(R.spawnLeft>0&&!R.cinePending&&!R.cine){R.spawnT-=dt;if(R.spawnT<=0){
-    R.spawnT=R.forest?spawnPaceF():R.cfb?spawnPaceCF():R.stage===3?spawnPace3():Math.max(.3,1.85-R.wave*.12)*(.7+Math.random()*.6);
-    const pack=R.forest?Math.min(R.spawnLeft,packF()):R.cfb?Math.min(R.spawnLeft,1+Math.floor(Math.random()*2.2)):R.stage===3?Math.min(R.spawnLeft,R.wave===3?1+Math.floor(Math.random()*2.6):1):Math.min(R.spawnLeft,1+Math.floor(Math.random()*(R.wave/3)));
+    R.spawnT=R.s8?s8Pace():R.forest?spawnPaceF():R.cfb?spawnPaceCF():R.stage===3?spawnPace3():Math.max(.3,1.85-R.wave*.12)*(.7+Math.random()*.6);
+    const pack=R.s8?s8Pack():R.forest?Math.min(R.spawnLeft,packF()):R.cfb?Math.min(R.spawnLeft,1+Math.floor(Math.random()*2.2)):R.stage===3?Math.min(R.spawnLeft,R.wave===3?1+Math.floor(Math.random()*2.6):1):Math.min(R.spawnLeft,1+Math.floor(Math.random()*(R.wave/3)));
     for(let k=0;k<pack;k++){const idx=R.spawnTotal-R.spawnLeft;
     if(R.crateAt.includes(idx))spawnCrate();
     if(idx===R.jeepAt){R.cinePending=true;R.jeepAt=-1;break;}
@@ -3931,7 +3998,7 @@ function update(dt){
 function drawWorld(){
   const dt=Math.max(0,Math.min(.1,t-SKY.lastT));SKY.lastT=t;
   ctx.fillStyle='#1a1026';ctx.fillRect(-20,-20,WW+40,WH+40);
-  if(R&&R.stage===3){if(R.forest)drawForestWorld(dt);else if(R.cont)drawContWorld(dt);else drawTownWorld(dt);return;}
+  if(R&&R.stage===3){if(R.forest||R.s8)drawForestWorld(dt);else if(R.cont)drawContWorld(dt);else drawTownWorld(dt);return;}
   if(R&&R.stage===2){}else if(plateReady){const pw=WW*1.06,ph=pw*PLATE.height/PLATE.width,px=WW/2-pw/2-camX*.04,py=HOR-PLATE_HZ*ph;ctx.drawImage(PLATE,px,py,pw,ph);}
   if(!(R&&R.stage===2)){const yb=HOR+CAMH*K(WALL_Z),gr=ctx.createLinearGradient(0,yb-6,0,WH);gr.addColorStop(0,'rgba(18,10,26,.55)');gr.addColorStop(1,'rgba(18,10,26,.35)');ctx.fillStyle=gr;ctx.fillRect(-20,yb-6,WW+40,WH-yb+30);}
   if(R&&R.stage===2){drawStage2World(dt);if(plate2Ready){const pw=WW*1.06,ph=pw*PLATE2.height/PLATE2.width,py=HOR-PLATE_HZ*ph;
@@ -4144,8 +4211,8 @@ document.getElementById('pauseBtn').onclick=()=>{if(state==='play'){state='pause
 
 /* ---------- UI ---------- */
 const hW=document.getElementById('hWave'),hH=document.getElementById('hHp'),hG=document.getElementById('hGold');
-function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.s5){hW.textContent=R.s5ph==='w1'?'STAGE 5 · WAVE 1':'THE RITUAL';const wl=document.querySelector('.wl');const left=R.spawnLeft+R.en.filter(e=>!e.dead).length;if(wl)wl.textContent=R.s5ph==='w1'?'ENEMIES '+left:'';hH.style.width=(R.spawnTotal?Math.max(0,1-R.kills/(R.spawnTotal+8))*100:0)+'%';hH.style.background='var(--blood)';hG.textContent=save.gold.toLocaleString();return;}if(R.cfa){hW.textContent='CONTAINMENT';const wl=document.querySelector('.wl'),n=R.en.filter(e=>e.type==='brute'&&e.hp>0).length;if(wl)wl.textContent='BRUTES '+n;hH.style.width=(n/10*100)+'%';hH.style.background='var(--blood)';hG.textContent=save.gold.toLocaleString();return;}if(R.cfb){hW.textContent='CYBER FUTURE';const wl=document.querySelector('.wl');if(wl)wl.textContent=R.cfLost?'BRUNO & BLAZE · LOST':'BRUNO & BLAZE '+fmtClock(R.clock);const f=R.clock/R.clock0;hH.style.width=(f*100)+'%';hH.style.background=R.clock<60?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();}
-function waveClear(){if(R.s5){s5WaveDone();return;}if(R.cfa){cfaVaultDone();return;}if(R.cfb){cfbYardDone();return;}if(R.stage===2)return;if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healRecovery();save.gold+=50+R.wave*20;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{save.ckpt={stage:2,wave:1};persist();state='win';ui();},SHOTS2);return;}state='inter';ui();}
+function hudUpdate(){const hb=hH.parentElement;if(hb)hb.style.display='';if(R.s5){hW.textContent=R.s5ph==='w1'?'STAGE 5 · WAVE 1':'THE RITUAL';const wl=document.querySelector('.wl');const left=R.spawnLeft+R.en.filter(e=>!e.dead).length;if(wl)wl.textContent=R.s5ph==='w1'?'ENEMIES '+left:'';hH.style.width=(R.spawnTotal?Math.max(0,1-R.kills/(R.spawnTotal+8))*100:0)+'%';hH.style.background='var(--blood)';hG.textContent=save.gold.toLocaleString();return;}if(R.cfa){hW.textContent='CONTAINMENT';const wl=document.querySelector('.wl'),n=R.en.filter(e=>e.type==='brute'&&e.hp>0).length;if(wl)wl.textContent='BRUTES '+n;hH.style.width=(n/10*100)+'%';hH.style.background='var(--blood)';hG.textContent=save.gold.toLocaleString();return;}if(R.cfb){hW.textContent='CYBER FUTURE';const wl=document.querySelector('.wl');if(wl)wl.textContent=R.cfLost?'BRUNO & BLAZE · LOST':'BRUNO & BLAZE '+fmtClock(R.clock);const f=R.clock/R.clock0;hH.style.width=(f*100)+'%';hH.style.background=R.clock<60?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}if(R.forest){hW.textContent='WAVE '+R.wave+'/'+F_WAVES;const wl=document.querySelector('.wl'),mb=R.en.find(e=>e.type==='momma');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=R.wave>1&&f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}if(R.s8){hW.textContent='STAGE 8 · WAVE '+R.wave+'/'+S8_WAVES;const wl=document.querySelector('.wl'),left=R.spawnLeft+R.en.filter(e=>!e.dead).length;if(wl)wl.textContent='TO THE LAB';const f=Math.min(1,(R.wave-1+(R.spawnTotal?Math.min(1,R.kills/(R.spawnTotal+(R.wave===3?14:0))):0))/3);hH.style.width=(f*100)+'%';hH.style.background='var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}else if(R.stage===3){hW.textContent='WAVE '+R.wave+'/'+S3_WAVES;const wl=document.querySelector('.wl');if(wl)wl.textContent='SURVIVORS '+civsAlive().length;const f=civsAlive().length/CIV_N;hH.style.width=(f*100)+'%';hH.style.background=f<.4?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();return;}hW.textContent=R.stage===2?'ESCAPE':'WAVE '+R.wave;const wl=document.querySelector('.wl');if(wl)wl.textContent=R.stage===2?'TRUCK':'WALL';const wf=R.wall/R.wallMax;hH.style.width=(wf*100)+'%';hH.style.background=wf<.3?'var(--blood)':'var(--hazard)';hG.textContent=save.gold.toLocaleString();}
+function waveClear(){if(R.s5){s5WaveDone();return;}if(R.cfa){cfaVaultDone();return;}if(R.cfb){cfbYardDone();return;}if(R.stage===2)return;if(R.s8){s8WaveClear();return;}if(R.stage===3){if(R.forest)waveClearF();else waveClear3();return;}SND.waveClear();save.best=Math.max(save.best,R.wave);R.wall=Math.min(R.wallMax,R.wall+R.wallMax*.4);R.scatter=0;healRecovery();save.gold+=50+R.wave*20;persist();if(R.wave>=STAGE_WAVES){save.cleared=Math.max(save.cleared||0,1);legacyStage(1);persist();startIntro(()=>{save.ckpt={stage:2,wave:1};persist();state='win';ui();},SHOTS2);return;}state='inter';ui();}
 function gameOver(){clearCkpt();SND.gameOver();story('commander_fell',{});legacyEnd('commander_fell');save.best=Math.max(save.best,R.wave-1);persist();state='over';ui();}
 const STAGE_WAVES=5;
 function freshSave(){legacy();const LG=save.legacy;save={legacy:LG,seen:save.seen,mode:save.mode||'normal',downed:{},heroes:{},weapons:['pistol'],equip:'pistol',gold:0,best:save.best,cleared:save.cleared,stats:save.stats||{},runStats:{},cmd:1,active:[],fallen:[]};persist();}
@@ -4286,8 +4353,8 @@ function ui(){
   }else if(state==='over'){
     html=`<h1 class="title" style="color:var(--blood)">OVERRUN</h1><div class="stripe"></div>
     ${R&&(R.cfa||R.s5||R.s6||R.s7)?'':`<div class="row"><span class="sub">Reached wave</span><span class="big">${R.wave}</span></div>`}
-    <p class="sub">${R&&R.s7Fail==='ward'?'The Ward reached the roof. One swipe took Frost, the squad and the helicopter over the edge.':R&&R.s7Fail==='frost'?'The zombies reached Frost on the roof.':R&&R.s7Fail==='cmd'?'The Commander fell in the stairwell.':R&&R.s6Lost?'The jeep was destroyed.':R&&R.s5Swarm?'The horde swarmed the jeep before the key was found.':R&&R.s5NoOne?'No one was left to find the key.':R&&R.s5?'The Commander fell in the forest.':R&&R.sciFail?'Ten scientists were turned. There is no one left to save inside Cyber Future.':R&&R.cfb||R&&R.cfa?'The Commander fell inside Cyber Future.':R&&R.hexFail?'The spell fizzled at the walls of Cyber Future. The horde closed in.':R&&R.hexDied?'Hex fell. She has to survive the forest. Without her there is no way into Cyber Future.':R&&R.lostAll?(R.forest?'Every survivor is gone. The forest took them one by one.':'Every survivor is gone. The town swallowed them one by one.'):R&&R.forest?'The Commander fell in the forest.':R&&R.stage===3?'The Commander fell in the empty town.':'The Commander fell and the Outskirts are lost. Try again to retake the wall from wave 1.'}</p>
-    <div class="btns"><button class="btn" data-act="${R&&R.s7?'s7retry':R&&R.s6?'s6retry':R&&R.s5?'s5retry':R&&R.cfa?'cfaretry':R&&R.cfb?'cfbretry':R&&R.hexFail?'fend':R&&R.forest?'stage3f':R&&R.stage===3?'stage3':R&&R.stage===2?'stage2':'retry'}">Try again</button><button class="btn ghost" data-act="menu">Menu</button></div>`;
+    <p class="sub">${R&&R.s7Fail==='ward'?'The Ward reached the roof. One swipe took Frost, the squad and the helicopter over the edge.':R&&R.s7Fail==='frost'?'The zombies reached Frost on the roof.':R&&R.s7Fail==='cmd'?'The Commander fell in the stairwell.':R&&R.s6Lost?'The jeep was destroyed.':R&&R.s5Swarm?'The horde swarmed the jeep before the key was found.':R&&R.s5NoOne?'No one was left to find the key.':R&&R.s5?'The Commander fell in the forest.':R&&R.sciFail?'Ten scientists were turned. There is no one left to save inside Cyber Future.':R&&R.cfb||R&&R.cfa?'The Commander fell inside Cyber Future.':R&&R.hexFail?'The spell fizzled at the walls of Cyber Future. The horde closed in.':R&&R.hexDied?'Hex fell. She has to survive the forest. Without her there is no way into Cyber Future.':R&&R.lostAll?(R.forest?'Every survivor is gone. The forest took them one by one.':'Every survivor is gone. The town swallowed them one by one.'):R&&R.s8?'The Commander fell on the island.':R&&R.forest?'The Commander fell in the forest.':R&&R.stage===3?'The Commander fell in the empty town.':'The Commander fell and the Outskirts are lost. Try again to retake the wall from wave 1.'}</p>
+    <div class="btns"><button class="btn" data-act="${R&&R.s7?'s7retry':R&&R.s6?'s6retry':R&&R.s5?'s5retry':R&&R.cfa?'cfaretry':R&&R.cfb?'cfbretry':R&&R.hexFail?'fend':R&&R.s8?'s8retry':R&&R.forest?'stage3f':R&&R.stage===3?'stage3':R&&R.stage===2?'stage2':'retry'}">Try again</button><button class="btn ghost" data-act="menu">Menu</button></div>`;
   }else if(state==='win'){
     const alive=['cmd',...save.active].length,lost=save.fallen.length;
     html=`<h1 class="title">STAGE 1<span>COMPLETE</span></h1><div class="stripe"></div>
@@ -4314,6 +4381,7 @@ function ui(){
   }else if(state==='seat6'){html=s6SeatHTML();
   }else if(state==='win6'){html=s6WinHTML();
   }else if(state==='pick7'){html=s7PickHTML();
+  }else if(state==='win8'){html=s8WinHTML();
   }else if(state==='win7'){html=s7WinHTML();
   }else if(state==='pick5s'){html=s5SquadHTML();
   }else if(state==='pick5'){html=s5PickHTML();
@@ -4357,6 +4425,8 @@ ov.addEventListener('click',e=>{
   else if(a==='lh'){LSEL.h[b.dataset.id]=!LSEL.h[b.dataset.id];const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
   else if(a==='lgo'){loadGo();return;}
   else if(a==='s7retry'){const at=R.s7&&R.s7.phase==='boss'?'roof':(R.s7at||'start');SX=0;camX=0;R=null;s7Start(at,1);return;}
+  else if(a==='s8retry'){const w=R.wave;SX=0;camX=0;R=null;s8Start(w,1);return;}
+  else if(a==='s8'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:'8'});}SX=0;camX=0;s8Start(1);return;}
   else if(a==='s7'){if(!legacy().current){legacyStart(save.mode||'normal');story('started_at_stage',{stage:'7'});}SX=0;camX=0;s7Start('start');return;}
   else if(['s7slot','s7clr','s7hero','s7go'].includes(a)){s7PickAct(a,b);return;}
   else if(a==='s6retry'){const at=R.s6at,hp=R.s6ckHp;SX=0;camX=0;R=null;s6Start(at,1);R.s6hp=hp;return;}
@@ -4394,7 +4464,7 @@ ov.addEventListener('click',e=>{
   else if(a==='intro3'){startIntro(()=>{state='options';ui();},SHOTS3);}
   else if(a==='intro2'){startIntro(()=>{state='options';ui();},SHOTS2);}
   else if(a==='intro'){startIntro(()=>{state='options';ui();});}
-  else if(a==='next'){if(R.forest)forestNext();else if(R.stage===3)startWave3(R.wave+1);else startWave_(R.wave+1);}
+  else if(a==='next'){if(R.s8)s8Next();else if(R.forest)forestNext();else if(R.stage===3)startWave3(R.wave+1);else startWave_(R.wave+1);}
   else if(a==='resume'){state=R&&R.s7&&R.s7.on?'snipe':R&&R.s6&&R.s6.on?'drive':R&&R.side&&R.side.on?'side':'play';ui();last=performance.now();}
   else if(a==='quit'||a==='menu'){R=null;state='menu';ui();}
   else if(a==='roster'){rosterBack=state==='menu'?'menu':state;if(state==='menu')R=null;state='roster';ui();ov.scrollTop=0;}

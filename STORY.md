@@ -86,6 +86,9 @@ Starts straight after the Stage 7 ending when everyone is alive. Side-scroller i
 - Heroes left at a job can only die if they have no backup.
 - Load screen: Stage 7 → "Nova's rescue".
 
+## Cutscene casting rule (all cutscenes from Stage 8 on, unless a stage says otherwise)
+- Shots with the squad come in three versions: the full squad (everyone, including Volt and Nova), the core squad (Commander with Rook, Bruno, Frost, Blaze and Hex), and the Commander alone. The game plays the full version only if everyone is alive, the core version if those five are, otherwise the Commander-alone version. Solo Commander shots are used freely to keep the render count down. Nova and Volt are the most easily missed, so they only appear in full-squad shots.
+
 ## Roadmap: stages 5 to 10 (planned, not built)
 - **Stage 5:** distress call from Frost, holed up on a Mega City rooftop in a helicopter; she needs support and a pilot, and knows where a cure might be. The squad fires a grappling hook past the wall, zip-lines away from the horde into the forest, and heads for a ranger station with a vehicle. Town-route players can save and recruit Hex here, only if they have Volt.
   - Screechers appear in Stage 5 on both routes. The squad comes upon a ritual: Momma and a circle of Screechers levitating Hex.
@@ -105,7 +108,10 @@ Starts straight after the Stage 7 ending when everyone is alive. Side-scroller i
 - **Stage 7:** the player controls Nova, a sniper on a nearby rooftop, covering the squad as it climbs floor by floor on autopilot and covering Frost from zombies. Hidden 6-minute timer to reach the roof and clear it, saving Frost. Saving Nova needs everyone alive, each with a job: Commander preps the helicopter (no time to fly to her); Hex teleports the team over and back; Frost keeps the fires down so the building holds; Volt powers Nova's high-security door and stays at the circuit; Bruno defends Volt; Rook protects Frost; Blaze goes alone to get Nova. If anyone is missing, they thank Nova over the radio, she is overrun, and they fly off.
   - The 6-minute timer is how long the squad takes to reach Frost; it doesn't kill her. She dies only if enemies find her and take all her health. The player's job as Nova is cover fire protecting every party member.
   - If saved, Nova joins and plays in the usual stages, when picked for the party (the cap still applies).
-- **Stage 8:** helicopter to a remote island off Mega City with another Cyber Future lab. The squad runs up to the lab.
+- **Stage 8 (built, stand-in art):** the helicopter flight is a cutscene; they land on the beach and get off. Then a running wave defense toward the lab, 3 waves, the lab getting closer on the horizon each wave.
+  - No brutes, screechers, armored or bosses. Grunts, runners, and the new splitters: not human and never were. A splitter bursts into small spawn when it dies.
+  - Wave 3 is one giant splitter, about two stories tall. Killed, it splits into two half-size splitters; those split again until they're normal size, and normal ones burst into spawn.
+  - Ends at the sealed lab doors (Stage 9).
 - **Stage 9:** breaking into the lab. Heroes are assigned to roles, like the Mass Effect 2 suicide mission; the wrong hero in a role makes that part go wrong and someone dies.
   - The squad is paired off and split up depending on the player's strategy; no group is more than 4 deep. Details when the stage is built.
 - **Stage 10:** final boss. Then the cure room: the distribution system is broken and must be launched by hand from inside, killing whoever stays.
