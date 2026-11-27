@@ -1077,6 +1077,8 @@ function loadHTML(){const BUILD=(window.__VER||'artifact').slice(0,6);if(!LSEL){
     if(b.route){const r=LSEL.route||save.route||'highway';h+=`<h3>Route taken</h3><div class="chips"><button class="chip ${r==='highway'?'on':''}" data-act="lr" data-r="highway">Town route</button><button class="chip ${r==='backroad'?'on':''}" data-act="lr" data-r="backroad">Forest route</button></div>`;}
     const hs=b.heroes(LSEL.w);
     h+=`<h3>Squad</h3><div class="chips"><button class="chip on" disabled>Commander</button>${hs.map(id=>`<button class="chip ${LSEL.h[id]?'on':''}" data-act="lh" data-id="${id}">${HEROES[id].name}</button>`).join('')}${hs.length?'':'<span class="sub">The Commander fights alone here.</span>'}</div>
+    ${b.k==='8'?(()=>{const al=hs.filter(id=>LSEL.h[id]);LSEL.f=LSEL.f||{};for(const id in LSEL.f)if(!LSEL.h[id])delete LSEL.f[id];const nf=Object.keys(LSEL.f).filter(id=>LSEL.f[id]).length;
+      return `<p class="sub" style="margin:6px 0 2px">Squad above is who's still alive (it picks the cutscene versions). Pick up to ${MAX_ACTIVE} of them to fight beside the Commander:</p><div class="chips">${al.map(id=>`<button class="chip ${LSEL.f[id]?'on':''}" data-act="lf" data-id="${id}" ${!LSEL.f[id]&&nf>=MAX_ACTIVE?'disabled style="opacity:.35"':''}>${HEROES[id].name}</button>`).join('')}${al.length?'':'<span class="sub">Nobody else alive: the Commander fights alone.</span>'}</div>`;})():''}
     <div class="btns"><button class="btn" data-act="lgo">Start</button></div>`;}
   return h+`<div class="btns"><button class="btn ghost" data-act="roster">Squad &amp; stats</button><button class="btn ghost" data-act="menu">Back</button></div>`;}
 function loadGo(){const b=BOARDS.find(b=>b.k===LSEL.k),w=LSEL.w,pick=b.heroes(w).filter(id=>LSEL.h[id]);
@@ -1085,7 +1087,7 @@ function loadGo(){const b=BOARDS.find(b=>b.k===LSEL.k),w=LSEL.w,pick=b.heroes(w)
   for(const id of pick){if(save.heroes[id])continue;const src=save.away[id]||(save.downed&&save.downed[id]);
     save.heroes[id]=src?{lv:src.lv,xp:src.xp||0}:{lv:JOIN_LV[id]||1,xp:0};delete save.away[id];if(save.downed)delete save.downed[id];save.fallen=save.fallen.filter(x=>x!==id);}
   for(const id of Object.keys(save.heroes))if(!pick.includes(id))stashHero(id);
-  save.active=pick.slice(0,MAX_ACTIVE);if(b.k==='3')save.route='highway';if(b.k==='3f')save.route='backroad';
+  save.active=(b.k==='8'&&LSEL.f?pick.filter(id=>LSEL.f[id]):pick).slice(0,MAX_ACTIVE);if(b.k==='3')save.route='highway';if(b.k==='3f')save.route='backroad';
   LOADSEL=pick;SX=0;camX=0;delete save.ckpt;persist();
   if(b.k==='1')newRun(w);else if(b.k==='2')startStage2();
   else if(b.k==='3'){startStage3();if(w==='end'){R.wave=3;startTownEnd();}else if(w>1)startWave3(w);}
@@ -1097,7 +1099,7 @@ function loadGo(){const b=BOARDS.find(b=>b.k===LSEL.k),w=LSEL.w,pick=b.heroes(w)
   else if(b.k==='5'){save.route=LSEL.route||save.route||'highway';persist();s5Start(w);}
   else{startForest();if(w==='end'){R.wave=4;startForestEnd();}else if(w>1)startWaveF(w);}
   for(const id of pick)if(!save.heroes[id]&&save.away[id]){save.heroes[id]=save.away[id];delete save.away[id];}
-  save.active=pick.filter(id=>save.heroes[id]).slice(0,MAX_ACTIVE);for(const id of['cmd',...save.active])setHp(id,maxHp(id));
+  save.active=(b.k==='8'&&LSEL.f?pick.filter(id=>LSEL.f[id]):pick).filter(id=>save.heroes[id]).slice(0,MAX_ACTIVE);for(const id of['cmd',...save.active])setHp(id,maxHp(id));
   LOADSEL=null;persist();}
 
 /* ---------- STAGE 3A ENDING: the endless swarm, Blaze, the flamethrower mini-game ---------- */
@@ -4449,6 +4451,7 @@ ov.addEventListener('click',e=>{
   else if(a==='lr'){LSEL.route=b.dataset.r;const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
   else if(a==='lb'){LSEL.k=b.dataset.k;const bb=BOARDS.find(x=>x.k===LSEL.k);LSEL.w=bb?bb.waves[0]:1;const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
   else if(a==='lw'){const v=b.dataset.w;LSEL.w=isNaN(+v)?v:+v;const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
+  else if(a==='lf'){LSEL.f=LSEL.f||{};LSEL.f[b.dataset.id]=!LSEL.f[b.dataset.id];const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
   else if(a==='lh'){LSEL.h[b.dataset.id]=!LSEL.h[b.dataset.id];const y=ov.scrollTop;ui();ov.scrollTop=y;return;}
   else if(a==='lgo'){loadGo();return;}
   else if(a==='s7retry'){const at=R.s7&&R.s7.phase==='boss'?'roof':(R.s7at||'start');SX=0;camX=0;R=null;s7Start(at,1);return;}
